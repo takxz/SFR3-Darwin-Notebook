@@ -17,7 +17,7 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*", 
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
@@ -28,7 +28,7 @@ io.adapter(createAdapter(pubClient, subClient));
 
 io.on('connection', async (socket) => {
     console.log(`[Cluster ${process.pid}] User connected:`, socket.id);
-    
+
     // Ajout en base (await car c'est Redis maintenant)
     await store.addPlayer(socket.id);
 
@@ -53,7 +53,7 @@ io.on('connection', async (socket) => {
         // Gérer le combat en cours s'il y en a un
         const player = await store.getPlayer(socket.id);
         const roomId = player?.inBattle;
-        
+
         // Si le joueur était dans un combat
         if (roomId && roomId !== 'false') {
             const battle = await store.getBattle(roomId);
@@ -74,7 +74,7 @@ io.on('connection', async (socket) => {
     });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`
     🚀  Game Server [Cluster PID: ${process.pid}] running on port ${PORT}
