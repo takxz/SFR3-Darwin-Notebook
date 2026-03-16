@@ -79,4 +79,17 @@ const styles = StyleSheet.create({
   }
 });
 
+### 🔗 Imports et Alias (@/)
 
+Pour éviter l'enfer des chemins relatifs (les `../../../../`), nous utilisons un alias absolu configuré dans `jsconfig.json`. 
+Le symbole `@/` pointe toujours directement vers le dossier `src/`, peu importe où se trouve le fichier dans lequel vous codez.
+
+❌ À NE PLUS FAIRE (Chemins relatifs) :
+Si vous déplacez le fichier, l'import casse.
+import { PrimaryButton } from '../../../components/PrimaryButton';
+import { useHealthManager } from '../../hooks/useHealthManager';
+
+
+✅ FAIRE (Chemins absolus) :
+import { PrimaryButton } from '@/components/PrimaryButton';
+import { useHealthManager } from '@/features/fight/hooks/useHealthManager';
