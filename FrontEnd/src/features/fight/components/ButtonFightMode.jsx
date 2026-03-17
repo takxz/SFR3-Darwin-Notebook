@@ -1,5 +1,4 @@
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { MotiView } from "moti";
 import { LinearGradient } from "expo-linear-gradient";
 
 export default function ButtonFightMode({
@@ -14,7 +13,7 @@ export default function ButtonFightMode({
     extraText = null
 }) {
     return (
-        <MotiView
+        <View
             from={{ opacity: 0, translateY: 30 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: "spring", damping: 20, delay }}
@@ -53,7 +52,7 @@ export default function ButtonFightMode({
                     {extraText && <Text style={styles.extraText}>{extraText}</Text>}
                 </LinearGradient>
             </Pressable>
-        </MotiView>
+        </View>
     );
 }
 
