@@ -2,6 +2,10 @@ const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
 const cors = require('cors');
+require('dotenv').config();
+
+// 0. Importation des routes API
+const authRoutes = require('./src/routes/authRoutes');
 
 // 1. Importation du Redis-Adapter
 const { createAdapter } = require('@socket.io/redis-adapter');
@@ -13,6 +17,10 @@ const registerBattleHandlers = require('./src/handlers/battleHandler');
 
 const app = express();
 app.use(cors());
+app.use(express.json()); // TRÈS IMPORTANT: permet à Express de lire le JSON envoyé par l'app mobile
+
+// ======== MONTAGE DES ROUTES DE L'API REST (HTTP) ========
+app.use('/api/auth', authRoutes);
 
 const server = http.createServer(app);
 const io = new Server(server, {
