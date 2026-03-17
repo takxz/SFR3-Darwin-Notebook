@@ -16,3 +16,8 @@ Route /classification :
 
 
 
+Pour lancer le serveur : 
+- se placer dans le dossier PythonApi
+- pip install -r requirements.txt
+- python darwin.py
+- le serveur est lancé sur le port 5001
