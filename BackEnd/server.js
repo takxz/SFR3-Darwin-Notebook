@@ -6,6 +6,7 @@ require('dotenv').config();
 
 // 0. Importation des routes API
 const authRoutes = require('./src/routes/authRoutes');
+const userRoutes = require('./src/routes/userRoutes');
 
 // 1. Importation du Redis-Adapter
 const { createAdapter } = require('@socket.io/redis-adapter');
@@ -21,6 +22,7 @@ app.use(express.json()); // TRÈS IMPORTANT: permet à Express de lire le JSON e
 
 // ======== MONTAGE DES ROUTES DE L'API REST (HTTP) ========
 app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
 
 const server = http.createServer(app);
 const io = new Server(server, {
