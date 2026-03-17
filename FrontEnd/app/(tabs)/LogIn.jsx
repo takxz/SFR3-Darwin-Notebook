@@ -1,6 +1,6 @@
 import {useRef, useState} from 'react';
 import './Login.css';
-import Input from '../../../components/inputs/Inputs'; 
+import Input from '@/components/inputs/Inputs'; 
 
 export default function LogIn({ }) {
     const [email, setEmail] =  useState('');
@@ -8,10 +8,14 @@ export default function LogIn({ }) {
     const submitRef = useRef();
 
     const sendLogin = () => {
-        console.log(
-            email, 
-            password
-        );
+        const sendLogin = async () => {
+        const response = await fetch('http://ikdeksmp.fr:12000/api/auth/login', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+    };
     }
 
     return (
