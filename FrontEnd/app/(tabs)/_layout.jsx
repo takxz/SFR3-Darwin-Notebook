@@ -23,6 +23,7 @@ export default function TabLayout() {
                     headerShown: false
                 }}
             />
+            <Tabs.Screen name="camera" options={{ title: 'Scan' }} />
         </Tabs>
     );
 }
