@@ -1,11 +1,10 @@
 import { View, Text, StyleSheet } from "react-native";
+import { Zap, Sword, Map } from "lucide-react-native";
+import ButtonFightMode from "./components/ButtonFightMode";
 
 export default function FightScreen() {
     return (
         <View style={styles.screenContainer}>
-            {/* Ambiant Glow */}
-            <View style={(styles.glowTop)} />
-            <View style={(styles.glowBottom)} />
 
             {/* Header*/}
             <View style={styles.headerContainer}>
@@ -51,18 +50,6 @@ export default function FightScreen() {
 }
 
 const styles = StyleSheet.create({
-    // --- Background Glows ---
-    glowTop: {
-        position: "absolute", top: -100, right: -50,
-        width: 384, height: 384, borderRadius: 192,
-        backgroundColor: "rgba(251,191,36,0.1)",
-    },
-    glowBottom: {
-        position: "absolute", bottom: -100, left: -100,
-        width: 384, height: 384, borderRadius: 192,
-        backgroundColor: "rgba(16,185,129,0.1)",
-    },
-
     // --- Layout Global ---
     screenContainer: {
         flex: 1,

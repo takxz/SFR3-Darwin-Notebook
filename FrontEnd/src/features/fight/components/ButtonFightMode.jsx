@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: "rgba(255,255,255,0.8)",
         alignItems: "center", justifyContent: "center",
         shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15, shadowRadius: 32, elevation: 6,
+        // shadowOpacity: 0.15, shadowRadius: 32, elevation: 6,
     },
     iconCircle: {
         width: 96, height: 96, borderRadius: 48,

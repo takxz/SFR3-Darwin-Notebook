@@ -6,6 +6,9 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "experiments": {
+      "tsconfigPaths": true
+    },
     "splash": {
       "image": "./src/assets/logo.png",
       "resizeMode": "contain",
