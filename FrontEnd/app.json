@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "mon-projet",
-    "slug": "mon-projet",
+    "name": "darwin-notebook",
+    "slug": "darwin-notebook",
+    "scheme": "darwinnotebook",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -25,6 +26,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
