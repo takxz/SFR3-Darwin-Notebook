@@ -1,28 +1,24 @@
-import {useRef, useState} from 'react';
-import './Inputs.css';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 
-export default function Input({label, id, type, name, onKeyUp, format, errorMsg, submitRef}) {
-    const [error, setError] = useState(true);
-    const searchButtonRef = useRef();
-
-    const handleKeyUp = (value) => {
-        if (!format.test(value)) {
-            setError(true);
-            submitRef.current.disabled = true;
-        } else {
-            setError(false);
-            submitRef.current.disabled = false;
-        }
-        onKeyUp(value);
-    }
-
+export default function Input({
+    label, 
+    placeholder, 
+    value, 
+    setValue, 
+    secureTextEntry, 
+    keyboardType = 'default', 
+}) {
     return (
-        <div className='form-group'>
-            <label htmlFor={id}>{label}</label>
-            <input type={type} id={id} name={name} onKeyUp={(e) => handleKeyUp(e.target.value)} />
-            {error &&
-                <div className='error'>{errorMsg}</div>
-            }
-        </div>
+        <View>
+            <Text>{label}</Text>
+            <TextInput 
+                placeholder={placeholder}
+                value={value}
+                onChangeText={setValue}
+                secureTextEntry={secureTextEntry}
+                keyboardType={keyboardType}
+                autoCapitalize='none'
+            />
+        </View>
     );
 }
