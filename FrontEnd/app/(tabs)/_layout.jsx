@@ -38,7 +38,7 @@ export default function TabLayout() {
     ];
 
     return (
-        <Tabs screenOptions={{ tabBarActiveTintColor: '#D2B48C' }}>
+        <Tabs screenOptions={{ tabBarActiveTintColor: styles.activeTabs.color }}>
             {TABS_CONFIG.map((tab) => (
                 <Tabs.Screen
                     key={tab.name}
@@ -53,8 +53,11 @@ export default function TabLayout() {
     );
 }
 
-const styles = {
+const styles = StyleSheet.create({
     tabs: {
-        size: 24,
+        size: 24
+    },
+    activeTabs: {
+        color: '#D2B48C'
     }
-}
+});

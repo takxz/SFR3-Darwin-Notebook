@@ -5,7 +5,7 @@
         "profile": "Profil"
     },
     "homeScreen": {
-        "header_title": "Écran d'accueil"
+        "header_title": "Page d'accueil"
     },
     "collectionScreen": {
         "header_title": "Collection"
@@ -23,6 +23,6 @@
         "career_desc": "Progressez à travers le monde\net combattez l'Érosion"
     },
     "profileScreen": {
-        "header_title": "Écran de profil"
+        "header_title": "Page de profil"
     }
 }
