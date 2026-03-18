@@ -18,7 +18,7 @@ const registerBattleHandlers = require('./src/handlers/battleHandler');
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // TRÈS IMPORTANT: permet à Express de lire le JSON envoyé par l'app mobile
+app.use(express.json());
 
 // ======== MONTAGE DES ROUTES DE L'API REST (HTTP) ========
 app.use('/api/auth', authRoutes);

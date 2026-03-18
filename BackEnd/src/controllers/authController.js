@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
+const { errorMessageUserAlreadyExists } = require('../lib/fr.const');
 
 exports.register = async (req, res) => {
     try {
@@ -9,7 +10,7 @@ exports.register = async (req, res) => {
         // 1. Vérifier si l'utilisateur existe déjà
         const userCheck = await db.query('SELECT * FROM "PLAYER" WHERE email = $1 OR pseudo = $2', [email, pseudo]);
         if (userCheck.rows.length > 0) {
-            return res.status(400).json({ error: "Email ou pseudo déjà utilisé." });
+            return res.status(400).json({ error: errorMessageUserAlreadyExists });
         }
 
         // 2. Hacher le mot de passe
@@ -52,7 +53,7 @@ exports.login = async (req, res) => {
         if (userQuery.rows.length === 0) {
             return res.status(400).json({ error: "Email ou mot de passe incorrect." });
         }
-        
+
         const user = userQuery.rows[0];
 
         // 2. Vérifier le mot de passe
@@ -65,7 +66,7 @@ exports.login = async (req, res) => {
         const token = jwt.sign(
             { id: user.id, pseudo: user.pseudo },
             process.env.JWT_SECRET,
-            { expiresIn: '7d' } 
+            { expiresIn: '7d' }
         );
 
         res.json({

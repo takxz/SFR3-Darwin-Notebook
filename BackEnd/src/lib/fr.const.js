@@ -1,0 +1,1 @@
+export const errorMessageUserAlreadyExists = "Email ou pseudo déjà utilisé."
