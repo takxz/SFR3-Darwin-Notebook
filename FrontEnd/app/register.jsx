@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from 'expo-router';
 import { View, Text, Alert, StyleSheet, Button } from 'react-native';
-import Input from '../src/components/inputs/Inputs';
+import Input from '@/components/inputs/Inputs';
+import colors from '@/assets/constants/colors';
 
 export default function Register() {
     const [email, setEmail] =  useState('');
@@ -74,14 +75,14 @@ export default function Register() {
                     placeholder="Confirmez votre mot de passe"
                     secureTextEntry={true}
                 />
-                <Button style={styles.registerButton} title="Créer un compte" onPress={sendRegister} />
+                <Button backgroundColor={colors.marronCuir} style={styles.registerButton} title="Créer un compte" onPress={sendRegister} />
 
                 <Text style={styles.socialText}>Ou continuer avec</Text>
 
                 <Button style={styles.socialButton} title="Continuer avec Google" />
                 <Button style={styles.socialButton} title="Continuer avec Apple ID" />
             </View>
-                <Text style={styles.linkText}>Vous avez déjà un compte ? <Link href="/login">Se connecter</Link></Text>
+                <Text style={styles.linkText}>Vous avez déjà un compte ? <Link style={styles.link} href="/login">Se connecter</Link></Text>
         </View>
     )
 }
@@ -92,13 +93,32 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         textAlign: 'center',
-        backgroundColor: '#f0f0f0',
+        backgroundColor: colors.blanc,
     },
     container: {
         width: '80%',
         padding: 20,
-        backgroundColor: 'white',
+        backgroundColor: colors.blancJauni,
+        borderRadius: 25,
+        border: '2px solid ' + colors.noir,
+    },
+    title: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        textAlign: 'center',
+        color: colors.bleuCiel,
+    },
+    subtitle: {
+        fontSize: 16,
+        marginBottom: 20,
         textAlign: 'center',
     },
-
+    registerButton: {
+        marginTop: 20,
+        textColor: colors.marronCuir,
+    },
+    socialText: {
+        color: colors.vertSombre,
+    }
 });

@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import { View, Alert, StyleSheet, Button } from 'react-native';
-import Input from '../src/components/inputs/Inputs';
+import Input from '@/components/inputs/Inputs';
 
 export default function LogIn() {
     const [email, setEmail] =  useState('');
