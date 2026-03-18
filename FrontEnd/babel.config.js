@@ -12,7 +12,6 @@ module.exports = function (api) {
                     },
                 },
             ],
-            'expo-router/babel',
             '@babel/plugin-transform-optional-chaining',
             'react-native-reanimated/plugin',
         ],

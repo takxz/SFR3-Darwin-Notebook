@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Home, Sword, User, Library, Camera } from 'lucide-react-native';
 import fr from '@/assets/locales/fr.json';
+import { StyleSheet } from 'react-native';
 
 export default function TabLayout() {
 
