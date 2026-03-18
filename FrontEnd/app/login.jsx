@@ -42,7 +42,7 @@ export default function LogIn() {
                 Alert.alert('Erreur', data.message || fr.loginScreen.error_message);
             }
         } catch (error) {
-            Alert.alert('Erreur', 'Une erreur est survenue lors de la connexion');
+            Alert.alert('Erreur', fr.loginScreen.server_error_message);
         }
     };
 

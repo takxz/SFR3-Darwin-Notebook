@@ -36,6 +36,7 @@
         "register_link": "Créer un compte",
         "success_message": "Connexion réussie",
         "error_message": "Échec de la connexion",
+        "server_error_message": "Une erreur est survenue lors de la connexion. Veuillez réessayer plus tard.",
         "social_login_desc": "Ou continuez avec",
         "social_google": "Connection avec Google (bientôt disponible)"
     },
@@ -51,6 +52,7 @@
         "login_link": "Se connecter",
         "success_message": "Inscription réussie",
         "error_message": "Échec de l'inscription",
+        "server_error_message": "Une erreur est survenue lors de l'inscription. Veuillez réessayer plus tard.",
         "social_login_desc": "Ou continuez avec",
         "social_google": "Connection avec Google (bientôt disponible)"
     }

@@ -59,7 +59,7 @@ export default function Register() {
                 Alert.alert('Erreur', data.message || fr.registerScreen.error_message);
             }
         } catch (error) {
-            Alert.alert('Erreur', 'Une erreur est survenue lors de l\'inscription');
+            Alert.alert('Erreur', fr.registerScreen.server_error_message);
         }
     };
 
