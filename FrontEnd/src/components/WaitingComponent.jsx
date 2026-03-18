@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScanLine } from 'lucide-react-native';
+import fr from '../assets/locales/fr.json';
 
 export default function WaitingComponent() {
     return (
@@ -19,8 +20,8 @@ export default function WaitingComponent() {
                     <ScanLine style={styles.scanLine} />
                 </LinearGradient>
 
-                <Text style={styles.title}>Analyzing...</Text>
-                <Text style={styles.subtitle}>Identifying species data</Text>
+                <Text style={styles.title}>{fr.waitingScreen.analyzing}</Text>
+                <Text style={styles.subtitle}>{fr.waitingScreen.description}</Text>
             </MotiView>
         </View>
     );
