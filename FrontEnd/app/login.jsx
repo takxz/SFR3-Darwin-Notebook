@@ -48,6 +48,7 @@ export default function LogIn() {
                     placeholder="Entrez votre mot de passe"
                     secureTextEntry={true}
                 />
+                {/** TODO: ajouter "Mot de passe oublié?" lien et logique */}
 
                 <View>
                     <Pressable style={styles.loginButton} onPress={sendLogin}>
@@ -64,8 +65,9 @@ export default function LogIn() {
                 </View>
 
                 <Pressable style={styles.socialButton}>
-                    <Text style={styles.socialButtonText}>Connexion avec Google</Text>
+                    <Text style={styles.socialButtonText}>Connexion avec Google (Désactivé pour l'instant)</Text>
                 </Pressable>
+                {/** TODO: ajouter "Connexion avec Google" logique */}
             </View>
             <Text style={styles.linkText}>Vous n'avez pas de compte ? <Link style={styles.link} href="/register">Créer un compte</Link></Text>
         </View>

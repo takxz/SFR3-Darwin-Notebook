@@ -89,8 +89,9 @@ export default function Register() {
                 </View>
 
                 <Pressable style={styles.socialButton}>
-                    <Text style={styles.socialButtonText}>Connexion avec Google</Text>
+                    <Text style={styles.socialButtonText}>Connexion avec Google (Désactivé pour l'instant)</Text>
                 </Pressable>
+                {/** TODO: ajouter "Connexion avec Google" logique */}
             </View>
             <Text style={styles.linkText}>Vous avez déjà un compte ? <Link style={styles.link} href="/login">Se connecter</Link></Text>
         </View>
