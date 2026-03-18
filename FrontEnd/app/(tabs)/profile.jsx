@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import fr from '@/assets/locales/fr.json';
 import { clearToken } from '@/utils/auth';
+import colors from '@/assets/constants/colors';
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -37,11 +38,11 @@ const styles = StyleSheet.create({
     logoutButton: {
         paddingVertical: 12,
         paddingHorizontal: 20,
-        backgroundColor: '#C0392B',
+        backgroundColor: colors.rouge,
         borderRadius: 12,
     },
     logoutText: {
-        color: '#fff',
+        color: colors.blanc,
         fontWeight: 'bold',
     },
 });
