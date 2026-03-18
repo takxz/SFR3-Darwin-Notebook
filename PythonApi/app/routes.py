@@ -65,11 +65,16 @@ def classification():
     """
 
     try:
+        request_json = request.get_json(silent=True) or {}
+
         if 'image' in request.files:
             image_file = request.files['image']
             image = Image.open(image_file)
-        elif 'imageData' in request.json:
-            image_data = request.json['imageData'].split(',')[1]
+        elif 'imageData' in request_json:
+            if ',' not in request_json['imageData']:
+                return jsonify({'error': 'Format imageData invalide'}), 400
+
+            image_data = request_json['imageData'].split(',')[1]
             image_bytes = base64.b64decode(image_data)
             image = Image.open(io.BytesIO(image_bytes))
         else:
@@ -87,3 +92,5 @@ def classification():
 
     except IOError:
         return jsonify({'error': 'Erreur lors du traitement de l\'image'}), 500
+    except Exception as error:
+        return jsonify({'error': f'Erreur serveur: {str(error)}'}), 500

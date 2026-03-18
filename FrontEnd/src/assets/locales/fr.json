@@ -9,5 +9,9 @@
         "mode_career": "CARRIÈRE",
         "duel_desc": "1v1 Bataille en ligne",
         "career_desc": "Progressez à travers le monde\net combattez l'Érosion"
+    },
+    "cameraScreen": {
+        "ask_permission_desc":"Nous avons besoin de votre permission pour utiliser la caméra",
+        "button_permission_desc":"Accorder la permission"
     }
 }

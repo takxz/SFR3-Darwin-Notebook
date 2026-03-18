@@ -22,7 +22,14 @@
     },
     "web": {},
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "L'application a besoin d'accéder à la caméra pour prendre des photos."
+        }
+      ]
+      
     ]
   }
 }
