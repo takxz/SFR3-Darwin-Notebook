@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Home, Sword, User, Library } from 'lucide-react-native';
+import { Home, Sword, User, Library, Camera } from 'lucide-react-native';
 import fr from '@/assets/locales/fr.json';
 
 export default function TabLayout() {
@@ -15,6 +15,12 @@ export default function TabLayout() {
             name: 'collection',
             title: fr.navigationBar.collection,
             icon: Library,
+            headerShown: false
+        },
+        {
+            name: 'camera',
+            title: fr.navigationBar.camera,
+            icon: Camera,
             headerShown: false
         },
         {

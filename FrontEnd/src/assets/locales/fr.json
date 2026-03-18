@@ -10,6 +10,10 @@
     "collectionScreen": {
         "header_title": "Collection"
     },
+    "cameraScreen": {
+        "ask_permission_desc": "Nous avons besoin de votre permission pour utiliser la caméra",
+        "button_permission_desc": "Accorder la permission"
+    },
     "fightScreen": {
         "header_title": "ARENA",
         "header_subtitle": "Affrontez d'autres joueurs ou explorez l'inconnu",
