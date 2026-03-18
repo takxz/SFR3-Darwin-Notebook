@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet, Pressable, ScrollView } from 'react-nati
 import Constants from 'expo-constants';
 import WaitingComponent from './WaitingComponent';
 import CardInformationStatAnimal from './CardInformationStatAnimal';
-import { Heart, Shield, Sword } from 'lucide-react-native';
+import { ChevronsUp, Heart, Shield, Sword } from 'lucide-react-native';
 
 const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
 const API_URL = process.env.EXPO_PUBLIC_API_URL || (expoHost ? `http://${expoHost}:5001` : 'http://localhost:5001');
@@ -86,7 +86,7 @@ export default function InformationOrganisme({ photo, onClose }) {
                 <CardInformationStatAnimal title="DEF" color="#71a84f" stat={"80"} max={100} icon={<Shield size={16} color="#71a84f" strokeWidth={2.2} />}/>
               </View>
               <View style={styles.statItem}>
-                <CardInformationStatAnimal title="VIT" color="#44aad2" stat={"40"} max={100} icon={<Shield size={16} color="#44aad2" strokeWidth={2.2} />}/>
+                <CardInformationStatAnimal title="VIT" color="#44aad2" stat={"40"} max={100} icon={<ChevronsUp size={16} color="#44aad2" strokeWidth={2.2} />}/>
               </View>
             </View>
           </>

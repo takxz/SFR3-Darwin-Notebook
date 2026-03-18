@@ -25,7 +25,7 @@ export default function CardInformationStatAnimal({
         <Text style={styles.title}>{String(title).toUpperCase()}</Text>
 
         <View style={styles.iconWrap}>
-          {icon ? icon : <Activity size={14} color={color} strokeWidth={2.2} />}
+          {icon ? icon : <Activity style={[styles.iconDesign, { color }]} />}
         </View>
       </View>
 
@@ -87,4 +87,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#B61E34",
   },
+  iconDesign:{
+    size: 14,
+    strokeWidth: 2.2,
+  }
 });
