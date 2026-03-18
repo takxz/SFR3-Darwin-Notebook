@@ -1,9 +1,28 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Home, Sword, User, Library, Camera } from 'lucide-react-native';
 import fr from '@/assets/locales/fr.json';
 import { StyleSheet } from 'react-native';
+import { getToken } from '@/utils/auth';
 
 export default function TabLayout() {
+    const router = useRouter();
+    const [isReady, setIsReady] = useState(false);
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            const token = await getToken();
+            if (!token) {
+                router.replace('/login');
+                return;
+            }
+            setIsReady(true);
+        };
+
+        checkAuth();
+    }, [router]);
+
+    if (!isReady) return null;
 
     const TABS_CONFIG = [
         {

@@ -1,14 +1,27 @@
-import { useState } from "react";
-import { Link } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Link, useRouter } from 'expo-router';
 import { View, Text, Alert, StyleSheet, Pressable } from 'react-native';
 import Input from '@/components/inputs/Inputs';
 import colors from '@/assets/constants/colors';
+import { saveToken, getToken } from '@/utils/auth';
 
 export default function Register() {
-    const [email, setEmail] =  useState('');
+    const router = useRouter();
+    const [email, setEmail] = useState('');
     const [pseudo, setPseudo] = useState('');
-    const [password, setPassword] =  useState('');
+    const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+
+    useEffect(() => {
+        const checkToken = async () => {
+            const token = await getToken();
+            if (token) {
+                router.replace('/');
+            }
+        };
+
+        checkToken();
+    }, [router]);
 
     const sendRegister = async () => {
         if (password !== confirmPassword) {
@@ -34,6 +47,12 @@ export default function Register() {
             const data = await response.json();
 
             if (response.ok) {
+                const token = data?.token ?? data?.accessToken ?? data?.access_token;
+                if (token) {
+                    await saveToken(token);
+                    router.replace('/');
+                }
+
                 Alert.alert('Succès', 'Inscription réussie');
             } else {
                 Alert.alert('Erreur', data.message || 'Échec de l\'inscription');

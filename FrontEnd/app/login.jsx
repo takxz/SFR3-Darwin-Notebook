@@ -1,12 +1,23 @@
-import {useState} from 'react';
-import { Link } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Link, useRouter } from 'expo-router';
 import { View, Text, Alert, StyleSheet, Pressable } from 'react-native';
 import Input from '@/components/inputs/Inputs';
 import colors from '@/assets/constants/colors';
+import { getToken, saveToken } from '@/utils/auth';
 
 export default function LogIn() {
-    const [email, setEmail] =  useState('');
-    const [password, setPassword] =  useState('');
+    const router = useRouter();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
+    useEffect(() => {
+        const checkToken = async () => {
+            const token = await getToken();
+            if (token) router.replace('/');
+        };
+
+        checkToken();
+    }, [router]);
 
     const sendLogin = async () => {
         try {
@@ -20,7 +31,12 @@ export default function LogIn() {
             const data = await response.json();
             
             if (response.ok) {
+                const token = data?.token ?? data?.accessToken ?? data?.access_token;
+                if (token) {
+                    await saveToken(token);
+                }
                 Alert.alert('Succès', 'Connexion réussie');
+                router.replace('/');
             } else {
                 Alert.alert('Erreur', data.message || 'Échec de la connexion');
             }
