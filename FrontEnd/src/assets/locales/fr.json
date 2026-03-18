@@ -11,7 +11,7 @@
         "career_desc": "Progressez à travers le monde\net combattez l'Érosion"
     },
     "cameraScreen": {
-        "demander_permission":"Nous avons besoin de votre permission pour utiliser la caméra",
-        "bouton_permission":"Accorder la permission"
+        "ask_permission_desc":"Nous avons besoin de votre permission pour utiliser la caméra",
+        "button_permission_desc":"Accorder la permission"
     }
 }

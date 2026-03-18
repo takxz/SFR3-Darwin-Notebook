@@ -20,8 +20,10 @@ export default function CameraScreen() {
   if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <Text>{fr.cameraScreen.demander_permission}</Text>
-        <Button title={fr.cameraScreen.bouton_permission} onPress={requestPermission} />
+        <Text>{fr.cameraScreen.ask_permission_desc}</Text>
+        <Pressable onPress={requestPermission}>
+          <Text>{fr.cameraScreen.button_permission_desc}</Text>
+        </Pressable>
       </View>
     );
   }
