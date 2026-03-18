@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from "react-native";
 import { Zap, Sword, Map } from "lucide-react-native";
-import ButtonFightMode from "./components/ButtonFightMode";
+import ButtonFightMode from "@/features/fight/components/ButtonFightMode";
+import fr from "@/assets/locales/fr.json";
 
 export default function FightScreen() {
     return (
@@ -13,10 +14,10 @@ export default function FightScreen() {
             <View style={styles.headerContainer}>
                 <View style={styles.titleRow}>
                     <Zap size={24} color="#f59e0b" fill="#f59e0b" />
-                    <Text style={styles.mainTitle}>ARENA</Text>
+                    <Text style={styles.mainTitle}>{fr.fightScreen.header_title}</Text>
                 </View>
                 <Text style={styles.mainSubtitle}>
-                    Challenge others or explore the wild
+                    {fr.fightScreen.header_subtitle}
                 </Text>
             </View>
 
@@ -24,8 +25,8 @@ export default function FightScreen() {
             <View style={styles.mainContainer}>
                 {/* Duel Button */}
                 <ButtonFightMode
-                    title="DUEL"
-                    subtitle="1v1 Online Battle"
+                    title={fr.fightScreen.mode_duel}
+                    subtitle={fr.fightScreen.duel_desc}
                     Icon={Sword}
                     gradientColors={["rgba(255,251,235,0.9)", "rgba(255,237,213,0.8)"]}
                     themeColor="#f59e0b"
@@ -37,8 +38,8 @@ export default function FightScreen() {
 
                 {/* Carrière Button */}
                 <ButtonFightMode
-                    title="CARRIÈRE"
-                    subtitle="Progress through the world and fight the Erosion"
+                    title={fr.fightScreen.mode_career}
+                    subtitle={fr.fightScreen.career_desc}
                     Icon={Map}
                     gradientColors={["rgba(236,253,245,0.9)", "rgba(204,251,241,0.8)"]}
                     themeColor="#059669"
