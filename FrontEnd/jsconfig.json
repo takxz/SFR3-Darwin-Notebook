@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
-    "jsx": "react-native",
     "baseUrl": ".",
     "paths": {
       "@/*": [
         "src/*"
       ]
-    }
+    },
+    "resolveJsonModule": true
   },
   "exclude": [
     "node_modules"

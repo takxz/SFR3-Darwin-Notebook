@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "expo-linear-gradient": "^55.0.8",
+    "moti": "^0.30.0"
+  }
+}

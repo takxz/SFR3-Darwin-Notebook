@@ -1,0 +1,13 @@
+{
+    "homeScreen": {
+        "header_title": "Écran d'accueil"
+    },
+    "fightScreen": {
+        "header_title": "ARENA",
+        "header_subtitle": "Affrontez d'autres joueurs ou explorez l'inconnu",
+        "mode_duel": "DUEL",
+        "mode_career": "CARRIÈRE",
+        "duel_desc": "1v1 Bataille en ligne",
+        "career_desc": "Progressez à travers le monde\net combattez l'Érosion"
+    }
+}
