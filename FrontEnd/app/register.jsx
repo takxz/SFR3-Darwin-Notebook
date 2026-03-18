@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from 'expo-router';
-import { View, Text, Alert, StyleSheet, Button } from 'react-native';
+import { View, Text, Alert, StyleSheet, Pressable } from 'react-native';
 import Input from '@/components/inputs/Inputs';
 import colors from '@/assets/constants/colors';
 
@@ -45,9 +45,9 @@ export default function Register() {
 
     return (
         <View style={styles.background}>
+            <Text style={styles.title}>Bienvenue</Text>
+            <Text style={styles.subtitle}>Créez votre compte pour commencer à jouer !</Text>
             <View style={styles.container}>
-                <Text style={styles.title}>Bienvenue</Text>
-                <Text style={styles.subtitle}>Créez votre compte pour commencer à jouer !</Text>
                 <Input 
                     label="Email"
                     value={email}
@@ -60,6 +60,7 @@ export default function Register() {
                     value={pseudo}
                     setValue={setPseudo}
                     placeholder="Entrez votre nom d'utilisateur"
+                    autoCapitalize="words"
                 />
                 <Input
                     label="Mot de passe"
@@ -75,14 +76,23 @@ export default function Register() {
                     placeholder="Confirmez votre mot de passe"
                     secureTextEntry={true}
                 />
-                <Button backgroundColor={colors.marronCuir} style={styles.registerButton} title="Créer un compte" onPress={sendRegister} />
+                <Pressable style={styles.registerButton} onPress={sendRegister}>
+                    <Text style={styles.buttonText}>Créer un compte</Text>
+                </Pressable>
 
-                <Text style={styles.socialText}>Ou continuer avec</Text>
+                <View style={styles.socialTextAndHrContainer}>
+                    <View style={styles.hr} />
+                        <View style={styles.socialTextContainer}>
+                            <Text style={styles.socialText}>Ou continuer avec</Text>
+                        </View>
+                    <View style={styles.hr} />
+                </View>
 
-                <Button style={styles.socialButton} title="Continuer avec Google" />
-                <Button style={styles.socialButton} title="Continuer avec Apple ID" />
+                <Pressable style={styles.socialButton}>
+                    <Text style={styles.socialButtonText}>Connexion avec Google</Text>
+                </Pressable>
             </View>
-                <Text style={styles.linkText}>Vous avez déjà un compte ? <Link style={styles.link} href="/login">Se connecter</Link></Text>
+            <Text style={styles.linkText}>Vous avez déjà un compte ? <Link style={styles.link} href="/login">Se connecter</Link></Text>
         </View>
     )
 }
@@ -100,25 +110,81 @@ const styles = StyleSheet.create({
         padding: 20,
         backgroundColor: colors.blancJauni,
         borderRadius: 25,
-        border: '2px solid ' + colors.noir,
+        borderWidth: 1,
+        borderColor: colors.marronCuir + '80',
+        boxShadow: '0 4px 8px ' + colors.marronCuir + 'BB',
     },
     title: {
         fontSize: 32,
         fontWeight: 'bold',
         marginBottom: 10,
         textAlign: 'center',
-        color: colors.bleuCiel,
     },
     subtitle: {
         fontSize: 16,
         marginBottom: 20,
         textAlign: 'center',
+        color: colors.marronCuir,
     },
     registerButton: {
+        paddingVertical: 12,
+        paddingHorizontal: 24,
         marginTop: 20,
-        textColor: colors.marronCuir,
+        marginBottom: 10,
+        backgroundColor: colors.marronCuir,
+        borderRadius: 10,
+    },
+    buttonText: {
+        color: colors.blanc,
+        fontSize: 16,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    socialTextAndHrContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        flexDirection: 'row',
+        alignSelf: 'center',
+    },
+    socialTextContainer: {
+        backgroundColor: colors.marronCuir + '40',
+        borderRadius: 10,
+        paddingVertical: 5,
+        width: '40%',
+        display: 'flex',
+        alignSelf: 'center',
+    },
+    hr: {
+        borderBottomColor: colors.marronCuir,
+        borderBottomWidth: 1,
+        marginVertical: 10,
+        flex: 1,
     },
     socialText: {
-        color: colors.vertSombre,
-    }
+        fontSize: 10,
+        textAlign: 'center',
+        color: colors.marronCuir,
+    }, 
+    socialButton: {
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        marginTop: 10,
+        backgroundColor: colors.blanc + '80',
+        borderRadius: 10,
+    },
+    socialButtonText: {
+        color: colors.noir,
+        fontSize: 16,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    linkText: {
+        marginTop: 20,
+        fontSize: 14,
+        color: colors.marronCuir,
+    },
+    link: {
+        color: colors.marronCuir,
+        fontWeight: 'bold',
+    },
 });
