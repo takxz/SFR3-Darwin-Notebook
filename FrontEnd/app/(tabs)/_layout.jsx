@@ -1,28 +1,54 @@
 import { Tabs } from 'expo-router';
-import { Home, Sword } from 'lucide-react-native';
+import { Home, Sword, User, Library } from 'lucide-react-native';
+import fr from '@/assets/locales/fr.json';
 
 export default function TabLayout() {
+
+    const TABS_CONFIG = [
+        {
+            name: 'index',
+            title: fr.navigationBar.home,
+            icon: Home
+
+        },
+        {
+            name: 'collection',
+            title: fr.navigationBar.collection,
+            icon: Library,
+            headerShown: false
+        },
+        {
+            name: 'fight',
+            title: fr.navigationBar.fight,
+            icon: Sword,
+            headerShown: false
+        },
+        {
+            name: 'profile',
+            title: fr.navigationBar.profile,
+            icon: User,
+            headerShown: false
+        }
+    ];
+
     return (
-        <Tabs screenOptions={{ tabBarActiveTintColor: '#059669' }}>
-
-            {/* Home Tab */}
-            <Tabs.Screen
-                name="index"
-                options={{
-                    title: 'Accueil',
-                    tabBarIcon: ({ color }) => <Home size={24} color={color} />
-                }}
-            />
-
-            {/* Fight Tab */}
-            <Tabs.Screen
-                name="fight"
-                options={{
-                    title: 'Arène',
-                    tabBarIcon: ({ color }) => <Sword size={24} color={color} />,
-                    headerShown: false
-                }}
-            />
+        <Tabs screenOptions={{ tabBarActiveTintColor: '#D2B48C' }}>
+            {TABS_CONFIG.map((tab) => (
+                <Tabs.Screen
+                    key={tab.name}
+                    name={tab.name}
+                    options={{
+                        title: tab.title,
+                        tabBarIcon: ({ color }) => <tab.icon size={styles.tabs.size} color={color} />,
+                    }}
+                />
+            ))}
         </Tabs>
     );
+}
+
+const styles = {
+    tabs: {
+        size: 24,
+    }
 }

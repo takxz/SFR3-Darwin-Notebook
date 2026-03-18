@@ -1,6 +1,14 @@
 {
+    "navigationBar": {
+        "home": "Accueil",
+        "fight": "Combat",
+        "profile": "Profil"
+    },
     "homeScreen": {
         "header_title": "Écran d'accueil"
+    },
+    "collectionScreen": {
+        "header_title": "Collection"
     },
     "fightScreen": {
         "header_title": "ARENA",
@@ -9,5 +17,8 @@
         "mode_career": "CARRIÈRE",
         "duel_desc": "1v1 Bataille en ligne",
         "career_desc": "Progressez à travers le monde\net combattez l'Érosion"
+    },
+    "profileScreen": {
+        "header_title": "Écran de profil"
     }
 }
