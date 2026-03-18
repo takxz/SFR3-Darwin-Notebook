@@ -4,6 +4,7 @@ import { View, Text, Alert, StyleSheet, Pressable } from 'react-native';
 import Input from '@/components/inputs/Inputs';
 import colors from '@/assets/constants/colors';
 import { getToken, saveToken } from '@/utils/auth';
+import fr from '@/assets/locales/fr.json';
 
 export default function LogIn() {
     const router = useRouter();
@@ -35,10 +36,10 @@ export default function LogIn() {
                 if (token) {
                     await saveToken(token);
                 }
-                Alert.alert('Succès', 'Connexion réussie');
+                Alert.alert('Succès', fr.loginScreen.success_message);
                 router.replace('/');
             } else {
-                Alert.alert('Erreur', data.message || 'Échec de la connexion');
+                Alert.alert('Erreur', data.message || fr.loginScreen.error_message);
             }
         } catch (error) {
             Alert.alert('Erreur', 'Une erreur est survenue lors de la connexion');
@@ -47,45 +48,45 @@ export default function LogIn() {
 
     return (
         <View style={styles.background}>
-            <Text style={styles.title}>Bon retour !</Text>
-            <Text style={styles.subtitle}>Connectez-vous à votre compte</Text>
+            <Text style={styles.title}>{fr.loginScreen.header_title}</Text>
+            <Text style={styles.subtitle}>{fr.loginScreen.header_subtitle}</Text>
             <View style={styles.container}>
                 <Input
-                    label="Email"
+                    label={fr.loginScreen.email_placeholder}
                     value={email}
                     setValue={setEmail}
-                    placeholder="Entrez votre email"
+                    placeholder={fr.loginScreen.email_placeholder}
                     keyboardType="email-address"
                 />
                 <Input
-                    label="Mot de passe"
+                    label={fr.loginScreen.password_placeholder}
                     value={password}
                     setValue={setPassword}
-                    placeholder="Entrez votre mot de passe"
+                    placeholder={fr.loginScreen.password_placeholder}
                     secureTextEntry={true}
                 />
                 {/** TODO: ajouter "Mot de passe oublié?" lien et logique */}
 
                 <View>
                     <Pressable style={styles.loginButton} onPress={sendLogin}>
-                        <Text style={styles.buttonText}>Se connecter</Text>
+                        <Text style={styles.buttonText}>{fr.loginScreen.login_button}</Text>
                     </Pressable>
                 </View>
 
                 <View style={styles.socialTextAndHrContainer}>
                     <View style={styles.hr} />
                         <View style={styles.socialTextContainer}>
-                            <Text style={styles.socialText}>Ou continuer avec</Text>
+                            <Text style={styles.socialText}>{fr.loginScreen.social_login_desc}</Text>
                         </View>
                     <View style={styles.hr} />
                 </View>
 
                 <Pressable style={styles.socialButton}>
-                    <Text style={styles.socialButtonText}>Connexion avec Google (Désactivé pour l'instant)</Text>
+                    <Text style={styles.socialButtonText}>{fr.loginScreen.social_google}</Text>
                 </Pressable>
                 {/** TODO: ajouter "Connexion avec Google" logique */}
             </View>
-            <Text style={styles.linkText}>Vous n'avez pas de compte ? <Link style={styles.link} href="/register">Créer un compte</Link></Text>
+            <Text style={styles.linkText}>{fr.loginScreen.register_prompt}<Link style={styles.link} href="/register"> {fr.loginScreen.register_link}</Link></Text>
         </View>
     )
 }

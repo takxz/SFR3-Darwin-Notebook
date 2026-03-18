@@ -24,5 +24,33 @@
     },
     "profileScreen": {
         "header_title": "Page de profil"
+    },
+    "loginScreen": {
+        "header_title": "Bon retour !",
+        "header_subtitle": "Connectez-vous à votre compte",
+        "email_placeholder": "Adresse e-mail",
+        "password_placeholder": "Mot de passe",
+        "login_button": "Se connecter",
+        "register_prompt": "Vous n'avez pas de compte ? ",
+        "register_link": "Créer un compte",
+        "success_message": "Connexion réussie",
+        "error_message": "Échec de la connexion",
+        "social_login_desc": "Ou continuez avec",
+        "social_google": "Connection avec Google (bientôt disponible)"
+    },
+    "registerScreen": {
+        "header_title": "Bienvenue",
+        "header_subtitle": "Créez votre compte pour commencer à jouer",
+        "pseudo_placeholder": "Nom d'utilisateur",
+        "email_placeholder": "Adresse e-mail",
+        "password_placeholder": "Mot de passe",
+        "confirm_password_placeholder": "Confirmer le mot de passe",
+        "register_button": "Créer un compte",
+        "login_prompt": "Vous avez déjà un compte ? ",
+        "login_link": "Se connecter",
+        "success_message": "Inscription réussie",
+        "error_message": "Échec de l'inscription",
+        "social_login_desc": "Ou continuez avec",
+        "social_google": "Connection avec Google (bientôt disponible)"
     }
 }

@@ -4,6 +4,7 @@ import { View, Text, Alert, StyleSheet, Pressable } from 'react-native';
 import Input from '@/components/inputs/Inputs';
 import colors from '@/assets/constants/colors';
 import { saveToken, getToken } from '@/utils/auth';
+import fr from '@/assets/locales/fr.json';
 
 export default function Register() {
     const router = useRouter();
@@ -53,9 +54,9 @@ export default function Register() {
                     router.replace('/');
                 }
 
-                Alert.alert('Succès', 'Inscription réussie');
+                Alert.alert('Succès', fr.registerScreen.success_message);
             } else {
-                Alert.alert('Erreur', data.message || 'Échec de l\'inscription');
+                Alert.alert('Erreur', data.message || fr.registerScreen.error_message);
             }
         } catch (error) {
             Alert.alert('Erreur', 'Une erreur est survenue lors de l\'inscription');
@@ -64,55 +65,55 @@ export default function Register() {
 
     return (
         <View style={styles.background}>
-            <Text style={styles.title}>Bienvenue</Text>
-            <Text style={styles.subtitle}>Créez votre compte pour commencer à jouer !</Text>
+            <Text style={styles.title}>{fr.registerScreen.header_title}</Text>
+            <Text style={styles.subtitle}>{fr.registerScreen.header_subtitle}</Text>
             <View style={styles.container}>
                 <Input 
-                    label="Email"
+                    label={fr.registerScreen.email_placeholder}
                     value={email}
                     setValue={setEmail}
-                    placeholder="Entrez votre email"
+                    placeholder={fr.registerScreen.email_placeholder}
                     keyboardType="email-address"
                 />
                 <Input
-                    label="Nom d'utilisateur"
+                    label={fr.registerScreen.pseudo_placeholder}
                     value={pseudo}
                     setValue={setPseudo}
-                    placeholder="Entrez votre nom d'utilisateur"
+                    placeholder={fr.registerScreen.pseudo_placeholder}
                     autoCapitalize="words"
                 />
                 <Input
-                    label="Mot de passe"
+                    label={fr.registerScreen.password_placeholder}
                     value={password}
                     setValue={setPassword}
-                    placeholder="Entrez votre mot de passe"
+                    placeholder={fr.registerScreen.password_placeholder}
                     secureTextEntry={true}            
                 />
                 <Input
-                    label="Confirmer le mot de passe"
+                    label={fr.registerScreen.confirm_password_placeholder}
                     value={confirmPassword}
                     setValue={setConfirmPassword}
-                    placeholder="Confirmez votre mot de passe"
+                    placeholder={fr.registerScreen.confirm_password_placeholder}
                     secureTextEntry={true}
                 />
                 <Pressable style={styles.registerButton} onPress={sendRegister}>
-                    <Text style={styles.buttonText}>Créer un compte</Text>
+                    <Text style={styles.buttonText}>{fr.registerScreen.register_button}</Text>
                 </Pressable>
 
                 <View style={styles.socialTextAndHrContainer}>
                     <View style={styles.hr} />
                         <View style={styles.socialTextContainer}>
-                            <Text style={styles.socialText}>Ou continuer avec</Text>
+                            <Text style={styles.socialText}>{fr.registerScreen.social_login_desc}</Text>
                         </View>
                     <View style={styles.hr} />
                 </View>
 
                 <Pressable style={styles.socialButton}>
-                    <Text style={styles.socialButtonText}>Connexion avec Google (Désactivé pour l'instant)</Text>
+                    <Text style={styles.socialButtonText}>{fr.registerScreen.social_google}</Text>
                 </Pressable>
                 {/** TODO: ajouter "Connexion avec Google" logique */}
             </View>
-            <Text style={styles.linkText}>Vous avez déjà un compte ? <Link style={styles.link} href="/login">Se connecter</Link></Text>
+            <Text style={styles.linkText}>{fr.registerScreen.login_prompt} <Link style={styles.link} href="/login"> {fr.registerScreen.login_link}</Link></Text>
         </View>
     )
 }
