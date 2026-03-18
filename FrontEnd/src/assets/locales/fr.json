@@ -1,6 +1,18 @@
 {
+    "navigationBar": {
+        "home": "Accueil",
+        "fight": "Combat",
+        "profile": "Profil"
+    },
     "homeScreen": {
-        "header_title": "Écran d'accueil"
+        "header_title": "Page d'accueil"
+    },
+    "collectionScreen": {
+        "header_title": "Collection"
+    },
+    "cameraScreen": {
+        "ask_permission_desc": "Nous avons besoin de votre permission pour utiliser la caméra",
+        "button_permission_desc": "Accorder la permission"
     },
     "fightScreen": {
         "header_title": "ARENA",
@@ -10,8 +22,7 @@
         "duel_desc": "1v1 Bataille en ligne",
         "career_desc": "Progressez à travers le monde\net combattez l'Érosion"
     },
-    "cameraScreen": {
-        "ask_permission_desc":"Nous avons besoin de votre permission pour utiliser la caméra",
-        "button_permission_desc":"Accorder la permission"
+    "profileScreen": {
+        "header_title": "Page de profil"
     }
 }
