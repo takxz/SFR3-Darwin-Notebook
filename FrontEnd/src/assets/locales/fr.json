@@ -23,7 +23,8 @@
         "career_desc": "Progressez à travers le monde\net combattez l'Érosion"
     },
     "profileScreen": {
-        "header_title": "Page de profil"
+        "header_title": "Page de profil",
+        "logout_button": "Déconnexion"
     },
     "loginScreen": {
         "header_title": "Bon retour !",

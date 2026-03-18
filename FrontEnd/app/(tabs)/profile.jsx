@@ -16,7 +16,7 @@ export default function ProfilePage() {
         <View style={styles.container}>
             <Text style={styles.title}>{fr.profileScreen.header_title}</Text>
             <Pressable style={styles.logoutButton} onPress={handleLogout}>
-                <Text style={styles.logoutText}>Déconnexion</Text>
+                <Text style={styles.logoutText}>{fr.profileScreen.logout_button}</Text>
             </Pressable>
         </View>
     );
