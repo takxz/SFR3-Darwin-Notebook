@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Darwin Notebook - Expo Go (Develop)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Librairie de génération de QR Code -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #8B5CF6;
+            --secondary: #3B82F6;
+            --dark: #0F172A;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: var(--dark);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow: hidden;
+            background: radial-gradient(circle at top right, #1e1b4b, transparent),
+                        radial-gradient(circle at bottom left, #1e3a8a, transparent),
+                        #020617;
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 90%;
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header h1 {
+            font-weight: 700;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #A78BFA, #60A5FA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            font-weight: 300;
+            color: #94A3B8;
+            margin-bottom: 2rem;
+            letter-spacing: 0.05rem;
+        }
+
+        .qr-wrapper {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 2rem;
+            display: inline-block;
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.2);
+            margin-bottom: 2rem;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .qr-wrapper:hover {
+            transform: scale(1.05) rotate(1deg);
+        }
+
+        canvas {
+            width: 280px !important;
+            height: 280px !important;
+            display: block;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1.2rem;
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            color: #C4B5FD;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .badge::before {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background: #8B5CF6;
+            border-radius: 50%;
+            margin-right: 0.6rem;
+            box-shadow: 0 0 15px #8B5CF6;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0.4; transform: scale(0.9); }
+        }
+
+        .instructions {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            border: 1px solid var(--glass-border);
+            margin-top: 1rem;
+        }
+
+        .instructions h3 {
+            font-size: 1rem;
+            color: #CBD5E1;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+        }
+
+        .instructions ul {
+            list-style: none;
+        }
+
+        .instructions li {
+            font-size: 0.9rem;
+            color: #94A3B8;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: flex-start;
+            line-height: 1.4;
+        }
+
+        .instructions li::before {
+            content: '\2713';
+            margin-right: 0.8rem;
+            color: #8B5CF6;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 2.5rem;
+            font-size: 0.8rem;
+            color: #475569;
+            letter-spacing: 0.02rem;
+        }
+
+        .blob {
+            position: absolute;
+            z-index: 1;
+            width: 400px;
+            height: 400px;
+            background: var(--primary);
+            filter: blur(120px);
+            opacity: 0.15;
+            border-radius: 50%;
+        }
+
+        .blob-1 { top: -150px; right: -150px; background: #8B5CF6; }
+        .blob-2 { bottom: -150px; left: -150px; background: #3B82F6; }
+
+    </style>
+</head>
+<body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="container">
+        <div class="badge">Branch: develop</div>
+        
+        <div class="header">
+            <h1>Darwin Notebook</h1>
+            <p>Portail Expo Go Développeur</p>
+        </div>
+
+        <div class="qr-wrapper">
+            <canvas id="qrcode"></canvas>
+        </div>
+
+        <div class="instructions">
+            <h3>Comment utiliser ce code ?</h3>
+            <ul>
+                <li>Installez l'app <strong>Expo Go</strong> (iOS/Android)</li>
+                <li>Connectez-vous au même réseau que le serveur</li>
+                <li>Scannez ce code pour lancer la version <strong>Develop</strong></li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            Dernière synchronisation : <span id="last-update">...</span>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURATION
+        const CONFIG = {
+            // URL du serveur Expo (ex: exp://votre-ip:8081)
+            // Laissez vide pour détecter l'host actuel automatiquement
+            expoUrl: "", 
+            defaultPort: 8081
+        };
+
+        function generateQR() {
+            const canvas = document.getElementById('qrcode');
+            let url = CONFIG.expoUrl;
+
+            // Auto-détection si vide
+            if (!url) {
+                // Si accédé via IP ou Domain, on utilise exp://...
+                const hostname = window.location.hostname;
+                url = `exp://${hostname}:${CONFIG.defaultPort}`;
+            }
+
+            QRCode.toCanvas(canvas, url, {
+                width: 280,
+                margin: 0,
+                color: {
+                    dark: '#020617',
+                    light: '#ffffff'
+                },
+                errorCorrectionLevel: 'H'
+            }, function (error) {
+                if (error) {
+                    console.error('Erreur génération QR:', error);
+                    alert("Impossible de générer le QR Code.");
+                } else {
+                    console.log('QR code généré pour:', url);
+                }
+            });
+        }
+
+        // Mise à jour de la date
+        const updateDate = () => {
+            const now = new Date();
+            document.getElementById('last-update').textContent = now.toLocaleString('fr-FR', {
+                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+            });
+        };
+
+        updateDate();
+        generateQR();
+    </script>
+</body>
+</html>

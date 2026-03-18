@@ -36,8 +36,8 @@ if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
         cd ..
     fi
     
-    # Optionnel : Redémarrage des services (ex: pm2 restart)
-    # pm2 restart all >> "$LOG_FILE" 2>&1
+    # Redémarrage des services avec PM2
+    pm2 restart all --update-env >> "$LOG_FILE" 2>&1
     
     echo "$(date): Mise à jour terminée avec succès." >> "$LOG_FILE"
 else
