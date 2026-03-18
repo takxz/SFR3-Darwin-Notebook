@@ -1,17 +1,17 @@
+import { useState } from 'react';
 import { View, Text, Button, StyleSheet, Pressable } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { Aperture } from 'lucide-react-native';
-import { useCamera } from '../../src/hooks/useCamera';
+import { useCamera } from '@/hooks/useCamera';
+import InformationOrganisme from '@/components/InformationOrganisme';
 
 export default function CameraScreen() {
-  const { permission, requestPermission, cameraRef, takePicture, isCapturing } = useCamera();
+  const { permission, requestPermission, cameraRef, takePicture } = useCamera();
+  const [photo, setPhoto] = useState(null);
 
   const handleCapture = async () => {
-    try {
-      await takePicture();
-    } catch (error) {
-      console.warn('Erreur de capture:', error);
-    }
+    const captured = await takePicture();
+    if (captured) setPhoto(captured);
   };
 
   if (!permission) return <View />;
@@ -28,44 +28,13 @@ export default function CameraScreen() {
   return (
     <View style={styles.container}>
       <CameraView style={styles.camera} ref={cameraRef}>
-        <Pressable
-          onPress={handleCapture}
-          disabled={isCapturing}
-          style={{
-            position: 'absolute',
-            bottom: 128,
-            left: '50%',
-            marginLeft: -48,
-            width: 96,
-            height: 96,
-            borderRadius: 48,
-            borderWidth: 4,
-            borderColor: 'rgba(168,220,171,0.3)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 40,
-            opacity: isCapturing ? 0.6 : 1,
-          }}
-        >
-          <View
-            style={{
-              width: 64,
-              height: 64,
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              borderRadius: 32,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.5)',
-              shadowColor: '#2E6F40',
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.2,
-              shadowRadius: 30,
-            }}
-          >
+        <Pressable onPress={handleCapture} style={styles.captureButton}>
+          <View style={styles.captureInner}>
             <Aperture size={32} color="rgba(255,255,255,0.8)" />
           </View>
         </Pressable>
+
+        <InformationOrganisme photo={photo} onClose={() => setPhoto(null)} />
       </CameraView>
     </View>
   );
@@ -74,4 +43,25 @@ export default function CameraScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   camera: { flex: 1 },
+  captureButton: {
+    position: 'absolute',
+    bottom: 64,
+    left: '50%',
+    marginLeft: -44,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureInner: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
