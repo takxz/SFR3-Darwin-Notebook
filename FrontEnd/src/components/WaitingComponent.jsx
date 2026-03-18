@@ -16,7 +16,7 @@ export default function WaitingComponent() {
                     colors={['#2E6F40', '#14b8a6']}
                     style={styles.gradient}
                 >
-                    <ScanLine size={48} color="white" />
+                    <ScanLine style={styles.scanLine} />
                 </LinearGradient>
 
                 <Text style={styles.title}>Analyzing...</Text>
@@ -60,5 +60,9 @@ const styles = StyleSheet.create({
     subtitle: {
         color: 'rgba(110,231,183,0.8)',
         fontSize: 16,
+    },
+    scanLine: {
+        size: 48,
+        color: "white",
     },
 });
