@@ -1,4 +1,7 @@
 {
+    "homeScreen": {
+        "header_title": "Écran d'accueil"
+    },
     "fightScreen": {
         "header_title": "ARENA",
         "header_subtitle": "Affrontez d'autres joueurs ou explorez l'inconnu",

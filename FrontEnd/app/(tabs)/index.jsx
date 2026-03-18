@@ -1,9 +1,10 @@
 import { View, Text, StyleSheet } from 'react-native';
+import fr from '@/assets/locales/fr.json';
 
 export default function HomePage() {
     return (
         <View style={styles.container}>
-            <Text>Écran Accueil</Text>
+            <Text>{fr.homeScreen.header_title}</Text>
         </View>
     );
 }
