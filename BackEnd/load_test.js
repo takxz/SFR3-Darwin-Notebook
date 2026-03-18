@@ -1,6 +1,6 @@
 const io = require('socket.io-client');
 
-const URL = 'http://localhost:3000'; // Change IP if running from another machine
+const URL = 'http://ikdeksmp.fr:12000'; // Change IP if running from another machine
 const CLIENTS_ONLINE = 1000; // Users just sitting in lobby
 const CLIENTS_BATTLE = 1000; // Users looking for fight
 
