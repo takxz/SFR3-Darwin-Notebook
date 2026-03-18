@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { View, Text, Button, StyleSheet, Pressable } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { Aperture } from 'lucide-react-native';
-import { useCamera } from '@/hooks/useCamera';
-import InformationOrganisme from '@/components/InformationOrganisme';
+import { useCamera } from '../../src/hooks/useCamera.jsx';
+import InformationOrganisme from '../../src/components/InformationOrganisme.jsx';
 
 export default function CameraScreen() {
   const { permission, requestPermission, cameraRef, takePicture } = useCamera();
