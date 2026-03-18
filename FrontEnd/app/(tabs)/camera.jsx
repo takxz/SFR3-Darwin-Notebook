@@ -4,6 +4,7 @@ import { CameraView } from 'expo-camera';
 import { Aperture } from 'lucide-react-native';
 import { useCamera } from '../../src/hooks/useCamera.jsx';
 import InformationOrganisme from '../../src/components/InformationOrganisme.jsx';
+import fr from '../../src/assets/locales/fr.json';
 
 export default function CameraScreen() {
   const { permission, requestPermission, cameraRef, takePicture } = useCamera();
@@ -19,8 +20,8 @@ export default function CameraScreen() {
   if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <Text>Nous avons besoin de votre permission pour utiliser la caméra</Text>
-        <Button title="Accorder la permission" onPress={requestPermission} />
+        <Text>{fr.cameraScreen.demander_permission}</Text>
+        <Button title={fr.cameraScreen.bouton_permission} onPress={requestPermission} />
       </View>
     );
   }
@@ -30,7 +31,7 @@ export default function CameraScreen() {
       <CameraView style={styles.camera} ref={cameraRef}>
         <Pressable onPress={handleCapture} style={styles.captureButton}>
           <View style={styles.captureInner}>
-            <Aperture size={32} color="rgba(255,255,255,0.8)" />
+            <Aperture size={32} style={styles.aperture} />
           </View>
         </Pressable>
 
@@ -63,5 +64,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  aperture: {
+    width: 32,
+    height: 32,
+    color: "#ffffffbb",
   },
 });
