@@ -1,6 +1,8 @@
 {
     "navigationBar": {
         "home": "Accueil",
+        "collection": "Collection",
+        "camera": "Caméra",
         "fight": "Combat",
         "profile": "Profil"
     },

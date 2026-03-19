@@ -4,7 +4,7 @@ import fr from '@/assets/locales/fr.json';
 export default function ProfilePage() {
     return (
         <View style={styles.container}>
-            <Text>{fr.collectionScreen.header_title}</Text>
+            <Text>{fr.profileScreen.header_title}</Text>
         </View>
     );
 }
