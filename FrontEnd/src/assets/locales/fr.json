@@ -1,6 +1,8 @@
 {
     "navigationBar": {
         "home": "Accueil",
+        "collection": "Collection",
+        "camera": "Caméra",
         "fight": "Combat",
         "profile": "Profil"
     },
@@ -55,5 +57,9 @@
         "server_error_message": "Une erreur est survenue lors de l'inscription. Veuillez réessayer plus tard.",
         "social_login_desc": "Ou continuez avec",
         "social_google": "Connection avec Google (bientôt disponible)"
+    },
+    "waitingScreen": {
+        "analyzing": "Analyse en cours...",
+        "description": "Identification de l'organisme..."
     }
 }

@@ -4,7 +4,7 @@ import fr from '@/assets/locales/fr.json';
 export default function CollectionPage() {
     return (
         <View style={styles.container}>
-            <Text>{fr.homeScreen.header_title}</Text>
+            <Text>{fr.collectionScreen.header_title}</Text>
         </View>
     );
 }
