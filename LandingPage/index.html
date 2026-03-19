@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Darwin Notebook - Expo Go (Develop)</title>
+    
+    <!-- Polices -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles externes -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Librairie de génération de QR Code -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="container">
+        <div class="badge">Branch: develop</div>
+        
+        <div class="header">
+            <h1>Darwin Notebook</h1>
+            <p>Portail Expo Go Développeur</p>
+        </div>
+
+        <div class="qr-wrapper">
+            <canvas id="qrcode"></canvas>
+        </div>
+
+        <div class="instructions">
+            <h3>Comment utiliser ce code ?</h3>
+            <ul>
+                <li>Installez l'app <strong>Expo Go</strong> (iOS/Android)</li>
+                <li>Connectez-vous au même réseau que le serveur</li>
+                <li>Scannez ce code pour lancer la version <strong>Develop</strong></li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            Dernière synchronisation : <span id="last-update">...</span>
+        </div>
+    </div>
+
+    <!-- Scripts externes -->
+    <script src="script.js"></script>
+</body>
+</html>
