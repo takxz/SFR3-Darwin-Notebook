@@ -102,10 +102,10 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
       {!loading && !error ?
         <View style={styles.bottomButtonContainer}>
           <Pressable onPress={onClose} style={styles.bottomButtonReject}>
-            <Text style={styles.buttonText}>{fr.informationAnimalScreen.reject_button}</Text>
+            <Text style={styles.buttonTextDismiss}>{fr.informationAnimalScreen.reject_button}</Text>
           </Pressable>
           <Pressable onPress={() => addToDex?.(result)} style={styles.bottomButtonAccept}>
-            <Text style={styles.buttonText}>{fr.informationAnimalScreen.accept_button}</Text>
+            <Text style={styles.buttonTextAccept}>{fr.informationAnimalScreen.accept_button}</Text>
           </Pressable>
         </View>
         : null}
@@ -157,8 +157,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  buttonText: {
-    color: '#000',
+  buttonTextAccept: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  buttonTextDismiss: {
+    color: '#97572B',
     fontWeight: '600',
   },
   hrLine: {
@@ -190,7 +194,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   bottomButtonReject: {
-    backgroundColor: '#D95C5C',
+    flex: 1,
+    backgroundColor: '#f8dcb7',
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
@@ -198,7 +203,7 @@ const styles = StyleSheet.create({
   },
   bottomButtonAccept: {
     flex: 1,
-    backgroundColor: '#71a84f',
+    backgroundColor: '#97572B',
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
