@@ -19,7 +19,7 @@ module.exports = {
       name: 'darwin-expo-develop',
       cwd: './FrontEnd',
       script: 'npx',
-      args: 'expo start --no-dev --no-interactive',
+      args: 'expo start --no-dev',
       env: {
         // You can force the host if needed
         // EXPO_PACKAGER_HOSTNAME: 'votre-domaine.com'
