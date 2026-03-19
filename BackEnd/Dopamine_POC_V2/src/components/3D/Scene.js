@@ -22,7 +22,10 @@ const LOOK_AT_Y = 1;
 const LOOK_AT_Z = -10;
 // --------------------------------
 
-export default function Scene({ hitTrigger, triggerHit, isSpecialAttack, combo, isIntro, zawarudoProgress, themeColor }) {
+export default function Scene({ 
+    hitTrigger, enemyHitTrigger, triggerHit, isSpecialAttack, isBerserkStrike, isFinisher,
+    combo, isIntro, zawarudoProgress, themeColor 
+}) {
     const meshRef = useRef();
     const impactAnchor = useRef(new THREE.Vector3(0, 0.5, -13));
     const shake = useRef(0);
@@ -91,11 +94,17 @@ export default function Scene({ hitTrigger, triggerHit, isSpecialAttack, combo, 
             <MossyFloor />
             <ForestBackground />
 
-            <PlayerCharacter hitTrigger={hitTrigger} isSpecialAttack={isSpecialAttack} />
+            <PlayerCharacter 
+                attackTrigger={hitTrigger} 
+                damageTrigger={enemyHitTrigger} 
+                isSpecialAttack={isBerserkStrike}
+                isFinisher={isFinisher} 
+            />
 
             <TargetGolem
                 ref={meshRef}
-                hitTrigger={hitTrigger}
+                damageTrigger={hitTrigger}
+                attackTrigger={enemyHitTrigger}
                 isSpecialAttack={isSpecialAttack}
                 color={themeColor}
             />

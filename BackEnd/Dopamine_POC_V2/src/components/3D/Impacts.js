@@ -13,15 +13,15 @@ export function SlashEffect({ active, position }) {
         mesh.current.material.opacity = THREE.MathUtils.lerp(mesh.current.material.opacity, active ? 1.0 : 0.0, 0.2);
         
         if (active) {
-            mesh.current.scale.setScalar(THREE.MathUtils.lerp(mesh.current.scale.x, 1.2, 0.4));
+            mesh.current.scale.setScalar(THREE.MathUtils.lerp(mesh.current.scale.x, 2.5, 0.6)); // PLUS GRAND !
         } else {
-            mesh.current.scale.setScalar(0.8);
+            mesh.current.scale.setScalar(0.5);
         }
     });
 
     return (
         <mesh ref={mesh} position={position} rotation={[0, 0, Math.PI / 4]}>
-            <torusGeometry args={[4, 0.05, 16, 100, Math.PI / 1.5]} />
+            <torusGeometry args={[8, 0.15, 16, 100, Math.PI / 1.2]} />
             <primitive object={new SlashMaterial()} attach="material" transparent />
         </mesh>
     );
@@ -29,12 +29,18 @@ export function SlashEffect({ active, position }) {
 
 export function ImpactParticles({ position, trigger }) {
     const mesh = useRef();
+    const PARTICLE_COUNT = 100; // ON TRIPLE LE NOMBRE !
+
     const particles = useMemo(() => {
         const p = [];
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
             p.push({
                 pos: new THREE.Vector3(),
-                vel: new THREE.Vector3((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10),
+                vel: new THREE.Vector3(
+                    (Math.random() - 0.5) * 25, // EXPLOSION PLUS LARGE
+                    (Math.random() - 0.5) * 25, 
+                    (Math.random() - 0.5) * 25
+                ),
                 alive: 0
             });
         }
@@ -46,13 +52,20 @@ export function ImpactParticles({ position, trigger }) {
         const dummy = new THREE.Object3D();
         particles.forEach((p, i) => {
             if (trigger && p.alive <= 0) {
-                p.pos.copy(position);
+                p.pos.set(
+                    position.x + (Math.random() - 0.5) * 4, 
+                    position.y + (Math.random() - 0.5) * 4, 
+                    position.z + (Math.random() - 0.5) * 4
+                );
                 p.alive = 1.0;
+                // Re-randomiser la vélocité pour chaque explosion
+                p.vel.set((Math.random() - 0.5) * 30, (Math.random() - 0.5) * 30, (Math.random() - 0.5) * 30);
             }
             if (p.alive > 0) {
                 p.pos.add(p.vel);
-                p.alive -= 0.05;
-                const s = Math.sin(p.alive * Math.PI) * 0.15;
+                p.vel.multiplyScalar(0.85); // Décélération forte pour l'impact
+                p.alive -= 0.08; // Vie courte (environ 12 frames = 200ms)
+                const s = Math.sin(p.alive * Math.PI) * 0.6; // Plus gros éclats
                 dummy.position.copy(p.pos);
                 dummy.scale.set(s, s, s);
                 dummy.updateMatrix();
@@ -67,9 +80,15 @@ export function ImpactParticles({ position, trigger }) {
     });
 
     return (
-        <instancedMesh ref={mesh} args={[null, null, 30]}>
-            <sphereGeometry args={[1, 8, 8]} />
-            <meshBasicMaterial color="#ffffff" transparent opacity={0.8} />
+        <instancedMesh ref={mesh} args={[null, null, PARTICLE_COUNT]}>
+            <sphereGeometry args={[1, 6, 6]} />
+            <meshBasicMaterial 
+                color="#ffffff" 
+                transparent 
+                opacity={1.0} 
+                blending={THREE.AdditiveBlending} // EFFET BRILLANT / ÉTINCELLE
+                depthWrite={false}
+            />
         </instancedMesh>
     );
 }

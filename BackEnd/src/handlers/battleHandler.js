@@ -49,29 +49,54 @@ module.exports = function(io, socket) {
         myState.action = 'IDLE';
         opState.action = 'IDLE';
 
-        if (data.action === 'ATTACK') {
-            const dmg = 10 + Math.floor(Math.random() * 10); // 10-20 dmg
-            let finalDmg = dmg;
+        // TICK COOLDOWNS
+        if (myState.specialCooldown > 0) {
+            myState.specialCooldown--;
+        }
 
-            opState.hp = Math.max(0, opState.hp - finalDmg);
-            myState.action = 'ATTACK';
-            opState.action = 'HIT'; // Visual reaction
-            message = `Joueur ${socket.id.substr(0, 4)} attaque (-${finalDmg} PV)`;
+        const calculateDamage = (attacker, defender, isSpecial) => {
+            const hitProb = 0.85 + ((attacker.speed - defender.speed) / 200);
+            if (Math.random() > hitProb) return "MISS"; // Dodge
+
+            const atkStat = isSpecial ? attacker.specialAttack : attacker.attack;
+            const variance = 0.9 + (Math.random() * 0.2); // 0.9 to 1.1
+            const dmgBase = atkStat * (atkStat / (atkStat + defender.defense));
+            const dmg = Math.round(dmgBase * variance * (isSpecial ? 1.5 : 1.0));
+            return dmg;
+        };
+
+        if (data.action === 'ATTACK' || data.action === 'SPECIAL') {
+            const isSp = data.action === 'SPECIAL';
+
+            if (isSp && myState.specialCooldown > 0) {
+                socket.emit('error', 'Special en cooldown !');
+                return;
+            }
+
+            const dmg = calculateDamage(myState, opState, isSp);
+
+            if (dmg === "MISS") {
+                myState.action = 'IDLE'; 
+                opState.action = 'DODGE';
+                message = `Joueur ${socket.id.substr(0, 4)} rate son attaque !`;
+            } else {
+                opState.hp = Math.max(0, opState.hp - dmg);
+                myState.action = isSp ? 'SPECIAL' : 'ATTACK';
+                opState.action = 'HIT';
+                message = `Joueur ${socket.id.substr(0, 4)} inflige ${dmg} PV${isSp ? ' (COUP CRITIQUE !)' : ''}`;
+                
+                if (isSp) {
+                    myState.specialCooldown = 3;
+                }
+            }
 
         } else if (data.action === 'DEFEND') {
             myState.action = 'IDLE'; 
             message = `Joueur ${socket.id.substr(0, 4)} se défend.`;
 
-        } else if (data.action === 'HEAL') {
-            if (myState.inventory.potion > 0) {
-                myState.inventory.potion--;
-                const heal = 30;
-                myState.hp = Math.min(myState.maxHp, myState.hp + heal);
-                myState.action = 'HEAL';
-                message = `Joueur ${socket.id.substr(0, 4)} se soigne (+${heal} PV)`;
-            } else {
-                message = "Plus de potions !";
-            }
+        } else if (data.action === 'HEAL') { // Equivalent of 'Passer'
+            myState.action = 'IDLE';
+            message = `Joueur ${socket.id.substr(0, 4)} a passé son tour.`;
         }
 
         // Check Win/Loss

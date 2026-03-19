@@ -1,18 +1,19 @@
 
 export const FBX_ASSETS = {
-    HERO: require('../../assets/Pig.fbx'),
-    ENEMY: require('../../assets/Pig.fbx')
+    HERO: require('../../assets/models/Pig.fbx'),
+    ENEMY: require('../../assets/models/Pig.fbx')
 };
 
 export const TEXTURE_ASSETS = {
-    GROUND: require('../../assets/ground.png'),
-    BACKGROUND: require('../../assets/background.png'),
+    GROUND: require('../../assets/textures/ground.png'),
+    BACKGROUND: require('../../assets/textures/background.png'),
 };
 
 export const AUDIO_ASSETS = {
-    BGM: require('../../assets/berserk_theme.mp3'),
-    SPECIAL_BGM: require('../../assets/berserk_theme.mp3'),
     HITS: [
-        require('../../assets/hit.mp3')
+        require('../../assets/audio/sfx/hits/hit_1.wav'),
+        require('../../assets/audio/sfx/hits/hit_2.wav'),
+        require('../../assets/audio/sfx/hits/hit_3.wav'),
+        require('../../assets/audio/sfx/hits/hit_4.wav'),
     ]
 };
