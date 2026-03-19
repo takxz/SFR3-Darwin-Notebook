@@ -1,8 +1,27 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Alert } from "react-native";
+import { useRouter } from "expo-router";
 import { Zap, Sword, Map } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ButtonFightMode from "@/features/fight/components/ButtonFightMode";
 import fr from "@/assets/locales/fr.json";
 import globalColors from "@/assets/constants/colors.json";
+
+const COLORS = {
+    background: globalColors.blancJauni,
+    textMain: globalColors.noir,
+    textSub: globalColors.marronCuir,
+    zap: globalColors.rouge,
+    duel: {
+        theme: globalColors.rouge,
+        corner: "rgba(176, 30, 40, 0.1)",
+        gradient: [globalColors.blanc, globalColors.blancJauni],
+    },
+    career: {
+        theme: globalColors.vertSombre,
+        corner: "rgba(46, 111, 64, 0.1)",
+        gradient: [globalColors.vertClair, globalColors.blanc]
+    }
+};
 
 const FIGHT_MODES = [
     {
@@ -14,7 +33,8 @@ const FIGHT_MODES = [
         themeColor: COLORS.duel.theme,
         cornerColor: COLORS.duel.corner,
         isTopCorners: true,
-        extraText: "MMR: 500"
+        extraText: "MMR: 500",
+        route: "/choose-beast"
     },
     {
         id: "career",
@@ -25,26 +45,10 @@ const FIGHT_MODES = [
         themeColor: COLORS.career.theme,
         cornerColor: COLORS.career.corner,
         isTopCorners: false,
-        extraText: null
+        extraText: null,
+        route: null
     }
 ];
-
-const COLORS = {
-    background: globalColors.blancJauni,
-    textMain: globalColors.noir,
-    textSub: globalColors.marronCuir,
-    zap: globalColors.rouge,
-    duel: {
-        theme: globalColors.rouge,
-        corner: "rgba(176, 30, 40, 0.1)",
-        gradient: [globalColors.blanc, globalColors.blancJauni]
-    },
-    career: {
-        theme: globalColors.vertSombre,
-        corner: "rgba(46, 111, 64, 0.1)",
-        gradient: [globalColors.vertClair, globalColors.blanc]
-    }
-};
 
 export default function FightScreen() {
 
@@ -52,6 +56,7 @@ export default function FightScreen() {
     // Ou trop proche du bord sur les petits écrans
     const insets = useSafeAreaInsets();
 
+    const router = useRouter();
     return (
         <View style={styles.screenContainer}>
             {/* Header */}
@@ -71,6 +76,13 @@ export default function FightScreen() {
                     <ButtonFightMode
                         key={mode.id}
                         {...mode}
+                        onPress={() => {
+                            if (mode.route) {
+                                router.push(mode.route)
+                            } else {
+                                Alert.alert(fr.fightScreen.coming_soon);
+                            }
+                        }}
                     />
                 ))}
             </View>

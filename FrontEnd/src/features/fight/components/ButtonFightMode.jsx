@@ -19,7 +19,8 @@ export default function ButtonFightMode({
     cornerColor,
     isTopCorners = true,
     delay = 100,
-    extraText = null
+    extraText = null,
+    onPress
 }) {
 
     const cornerTopOrBottom = isTopCorners
@@ -28,7 +29,7 @@ export default function ButtonFightMode({
 
     return (
         <View>
-            <Pressable style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}>
+            <Pressable style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]} onPress={onPress}>
                 <LinearGradient
                     colors={gradientColors}
                     style={[styles.cardBase, { shadowColor: themeColor }]}
