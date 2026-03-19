@@ -21,6 +21,7 @@ module.exports = {
       script: 'npx',
       args: 'expo start --no-dev',
       env: {
+        EXPO_PUBLIC_API_URL: 'http://37.59.111.34:5002',
         // You can force the host if needed
         // EXPO_PACKAGER_HOSTNAME: 'votre-domaine.com'
       }
