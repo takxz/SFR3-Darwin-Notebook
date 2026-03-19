@@ -26,5 +26,9 @@
     },
     "profileScreen": {
         "header_title": "Page de profil"
+    },
+    "waitingScreen": {
+        "analyzing": "Analyse en cours...",
+        "description": "Identification de l'organisme..."
     }
 }
