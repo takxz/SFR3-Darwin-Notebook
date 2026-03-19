@@ -13,7 +13,7 @@ module.exports = {
       name: 'darwin-python-api',
       cwd: './PythonApi',
       script: 'darwin.py',
-      interpreter: 'venv/bin/python',
+      interpreter: '/home/darwinnotbook/SFR3-Darwin-Notebook/PythonApi/venv/bin/python',
     },
     {
       name: 'darwin-expo-develop',
