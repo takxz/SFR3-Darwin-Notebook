@@ -12,8 +12,8 @@ module.exports = {
     {
       name: 'darwin-python-api',
       cwd: './PythonApi',
-      script: 'python',
-      args: 'darwin.py',
+      script: 'darwin.py',
+      interpreter: './venv/bin/python',
     },
     {
       name: 'darwin-expo-develop',
