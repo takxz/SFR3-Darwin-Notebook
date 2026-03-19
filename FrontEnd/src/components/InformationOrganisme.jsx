@@ -6,7 +6,7 @@ import CardInformationStatAnimal from './CardInformationStatAnimal';
 import { ChevronsUp, Heart, Shield, Sword } from 'lucide-react-native';
 
 const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
-const API_URL = process.env.EXPO_PUBLIC_API_URL || (expoHost ? `http://${expoHost}:5001` : 'http://localhost:5001');
+const API_URL = process.env.EXPO_PUBLIC_API_URL || (expoHost ? `http://${expoHost}:5002` : 'http://localhost:5002');
 
 export default function InformationOrganisme({ photo, onClose }) {
   const [result, setResult] = useState(null);
@@ -23,7 +23,7 @@ export default function InformationOrganisme({ photo, onClose }) {
 
       try {
         console.log(`[Classification] Tentative d'appel API sur : ${API_URL}/classification`);
-        
+
         if (!photo.base64) {
           console.error('[Classification] Erreur: Image Base64 manquante');
           throw new Error('Image invalide');
@@ -85,16 +85,16 @@ export default function InformationOrganisme({ photo, onClose }) {
             <View style={styles.mainContainer}>
               {/*Ici, il faudra placer les stats de l'API */}
               <View style={styles.statItem}>
-                <CardInformationStatAnimal title="PV" color="#D95C5C" stat={"15"} max={100} icon={<Heart size={16} color="#D95C5C" strokeWidth={2.2}/>}/>
+                <CardInformationStatAnimal title="PV" color="#D95C5C" stat={"15"} max={100} icon={<Heart size={16} color="#D95C5C" strokeWidth={2.2} />} />
               </View>
               <View style={styles.statItem}>
-                <CardInformationStatAnimal title="ATT" color="#e3902b" stat={"200"} max={100} icon={<Sword size={16} color="#e3902b" strokeWidth={2.2} />}/>
+                <CardInformationStatAnimal title="ATT" color="#e3902b" stat={"200"} max={100} icon={<Sword size={16} color="#e3902b" strokeWidth={2.2} />} />
               </View>
               <View style={styles.statItem}>
-                <CardInformationStatAnimal title="DEF" color="#71a84f" stat={"80"} max={100} icon={<Shield size={16} color="#71a84f" strokeWidth={2.2} />}/>
+                <CardInformationStatAnimal title="DEF" color="#71a84f" stat={"80"} max={100} icon={<Shield size={16} color="#71a84f" strokeWidth={2.2} />} />
               </View>
               <View style={styles.statItem}>
-                <CardInformationStatAnimal title="VIT" color="#44aad2" stat={"40"} max={100} icon={<ChevronsUp size={16} color="#44aad2" strokeWidth={2.2} />}/>
+                <CardInformationStatAnimal title="VIT" color="#44aad2" stat={"40"} max={100} icon={<ChevronsUp size={16} color="#44aad2" strokeWidth={2.2} />} />
               </View>
             </View>
           </>
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     color: '#97572B',
     fontSize: 14,
   },
-  battleStatsTitle:{
+  battleStatsTitle: {
     color: '#97572B',
     fontSize: 18,
   },
@@ -152,12 +152,12 @@ const styles = StyleSheet.create({
     color: '#000',
     fontWeight: '600',
   },
-  hrLine : {
+  hrLine: {
     borderBottomColor: '#97572B',
     borderBottomWidth: 1,
     marginVertical: 8,
   },
-  statsCard : {
+  statsCard: {
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 8,
