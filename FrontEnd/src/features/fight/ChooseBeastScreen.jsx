@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Heart, Star, Swords } from "lucide-react-native";
+import fr from "@/assets/locales/fr.json";
 
 // Mock beasts data
 const mockBeasts = [
@@ -121,11 +122,11 @@ export default function ChooseBeastScreen() {
             <View style={styles.header}> 
                 <Pressable onPress={() => router.back()} style={styles.backButton}>
                     <ArrowLeft size={24} color="#97572B" />
-                    <Text style={styles.backText}>Retour</Text>
+                    <Text style={styles.backText}>{fr.chooseBeastScreen.back}</Text>
                 </Pressable>
-                <Text style={styles.title}>CHOISIR VOTRE BÊTE</Text>
+                <Text style={styles.title}>{fr.chooseBeastScreen.title}</Text>
                 <Text style={styles.subtitle}>
-                    Sélectionnez l'animal qui vous représentera au combat
+                    {fr.chooseBeastScreen.subtitle}
                 </Text>
             </View>
 
