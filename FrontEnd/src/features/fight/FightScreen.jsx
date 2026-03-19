@@ -1,9 +1,11 @@
 import { View, Text, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 import { Zap, Sword, Map } from "lucide-react-native";
 import ButtonFightMode from "@/features/fight/components/ButtonFightMode";
 import fr from "@/assets/locales/fr.json";
 
 export default function FightScreen() {
+    const router = useRouter();
     return (
         <View style={styles.screenContainer}>
             {/* Ambiant Glow */}
@@ -34,6 +36,7 @@ export default function FightScreen() {
                     isTopCorners={true}
                     delay={100}
                     extraText="MMR: 500"
+                    onPress={() => router.push("/choose-beast")}
                 />
 
                 {/* Carrière Button */}

@@ -61,5 +61,11 @@
     "waitingScreen": {
         "analyzing": "Analyse en cours...",
         "description": "Identification de l'organisme..."
+    },
+    "chooseBeastScreen": {
+        "back": "Retour",
+        "title": "CHOISIR VOTRE BÊTE",
+        "subtitle": "Sélectionnez l'animal qui vous représentera au combat",
+        "start_battle": "COMMENCER LE DUEL"
     }
 }
