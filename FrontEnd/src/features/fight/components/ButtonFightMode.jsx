@@ -10,11 +10,12 @@ export default function ButtonFightMode({
     cornerColor,
     isTopCorners = true,
     delay = 100,
-    extraText = null
+    extraText = null,
+    onPress = () => {}
 }) {
     return (
         <View>
-            <Pressable>
+            <Pressable onPress={onPress}>
                 <LinearGradient
                     colors={gradientColors}
                     style={[styles.cardBase, { shadowColor: themeColor }]}
