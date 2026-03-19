@@ -99,6 +99,7 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
           </>
         ) : null}
       </ScrollView>
+      {!loading && !error ?
         <View style={styles.bottomButtonContainer}>
           <Pressable onPress={onClose} style={styles.bottomButtonReject}>
             <Text style={styles.buttonText}>{fr.informationAnimalScreen.reject_button}</Text>
@@ -107,6 +108,7 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
             <Text style={styles.buttonText}>{fr.informationAnimalScreen.accept_button}</Text>
           </Pressable>
         </View>
+        : null}
       </View>
   );
 }
