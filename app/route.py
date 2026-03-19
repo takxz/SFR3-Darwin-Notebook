@@ -1,22 +1,22 @@
-from app import app, module_detection
-from app.sharpness import compute_sharpness
+from . import app, load_model_detection, module_detection
 from app.scoring import (
     global_score as compute_global_score,
     rarity_score_from_observation_count,
 )
 from app.ivs import distribute_ivs
-from app.base_species import (
-    final_stats_from_formula,
-    get_base_stats,
-    level_from_global_score,
-)
+from app.base_species import final_stats_from_formula, get_base_stats
 from flask import jsonify, request
 import requests
 from PIL import Image
 import base64
 import io
 
-model_detection = app.config['MODEL_DETECTION']
+
+def compute_sharpness(image):
+    # Import tardif: évite de forcer numpy/OpenCV au simple import des routes (utile en tests).
+    from app.sharpness import compute_sharpness as _compute_sharpness
+
+    return _compute_sharpness(image)
 
 
 @app.route('/')
@@ -110,6 +110,10 @@ def classification():
 
         sharp = compute_sharpness(image)
 
+        model_detection = load_model_detection() or app.config.get("MODEL_DETECTION")
+        if model_detection is None:
+            return jsonify({"success": False, "error": "Modèle de détection non disponible"}), 503
+
         predictions = model_detection(image)
         top = predictions[0]
         predicted_label = top['label'].split(', ')[0]
@@ -161,7 +165,7 @@ def classification():
         client_level = None
         if request.is_json and request.json:
             client_level = request.json.get("level")
-        level = int(client_level) if client_level is not None else level_from_global_score(gscore)
+        level = 7
 
         final_stats = None
         if base is not None:
