@@ -61,5 +61,9 @@
     "waitingScreen": {
         "analyzing": "Analyse en cours...",
         "description": "Identification de l'organisme..."
+    },
+    "informationAnimalScreen": {
+        "reject_button": "Rejeter",
+        "accept_button": "Ajouter au Dex"
     }
 }
