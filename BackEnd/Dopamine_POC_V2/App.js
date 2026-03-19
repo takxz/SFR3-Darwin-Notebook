@@ -132,7 +132,7 @@ export default function App() {
         Animated.spring(comboScaleAnim, { toValue: 1, friction: 4, useNativeDriver: true }).start();
 
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        setTimeout(() => setHit(0), 80);
+        setTimeout(() => setHit(0), 40);
     };
 
     const triggerSpecial = async () => {
@@ -200,7 +200,7 @@ export default function App() {
 
             {hit > 0 && (
                 <LinearGradient
-                    colors={[isSpecial ? 'rgba(255, 0, 255, 0.5)' : 'rgba(0, 255, 255, 0.4)', 'transparent']}
+                    colors={[isSpecial ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.5)', 'transparent']}
                     style={StyleSheet.absoluteFill}
                     pointerEvents="none"
                 />

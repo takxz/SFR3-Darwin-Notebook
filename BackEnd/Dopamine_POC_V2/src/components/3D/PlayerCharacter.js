@@ -26,40 +26,50 @@ const PlayerCharacter = ({ hitTrigger, isSpecialAttack }) => {
         }
     }, [model]);
 
+    const lastHitRef = useRef(false);
+    const targetPos = useRef(new THREE.Vector3(0, -1.8, 10));
+
     useFrame(() => {
         if (!groupRef.current) return;
 
-        if (isNaN(groupRef.current.position.z)) {
-            groupRef.current.position.set(0, -1.8, 10);
-            return;
-        }
-
+        // Dépendance sur le mode Spécial
         if (isSpecialAttack) {
-            groupRef.current.visible = true;
-            const targetZ = hitTrigger ? -25 : 10;
-            const targetX = hitTrigger ? (Math.random() - 0.5) * 6 : 0;
+            // DÉTECTION DU NOUVEL IMPACT (Rising Edge)
+            if (hitTrigger && !lastHitRef.current) {
+                // On calcule une position sur un ARC devant l'ennemi (z = -15)
+                const radius = 12 + Math.random() * 4; // Distance de sécurité élevée
+                const theta = (Math.random() - 0.5) * Math.PI * 0.8; // Arc frontal de 140 degrés devant lui
+                const baseY = -1.8; // ON RESTE AU SOL !
+
+                targetPos.current.set(
+                    Math.sin(theta) * radius,       // X
+                    baseY,                          // Y
+                    -15 + Math.cos(theta) * radius  // Z (pivoté autour du vrai centre Golem à -15)
+                );
+            }
+            lastHitRef.current = hitTrigger;
+
+            // Suivi fluide
+            groupRef.current.position.lerp(targetPos.current, 0.75);
             
-            groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, targetZ, 0.85);
-            groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, targetX, 0.85);
-            groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, (Math.random() * 4), 0.85);
-
-            groupRef.current.rotation.y = groupRef.current.position.z < -15 ? 0 : Math.PI;
-            groupRef.current.rotation.x = -0.4;
-            model.traverse(c => c.visible = true);
+            // Regard fixe et propre vers le centre du Golem (z = -15)
+            groupRef.current.lookAt(0, 1.5, -15);
+            
         } else {
-            groupRef.current.visible = true;
-            model.traverse(c => c.visible = true);
-            groupRef.current.rotation.y = Math.PI; 
-            groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, 0, 0.1);
+            // MODE NORMAL (Repos ou simple coup)
+            lastHitRef.current = false;
+            
+            const idleZ = hitTrigger ? -12 : 10;
+            const idleY = hitTrigger ? 2.5 : -1.8;
+            const idleX = hitTrigger ? (Math.random() - 0.5) * 2 : 0;
+            
+            const baseIdle = new THREE.Vector3(idleX, idleY, idleZ);
+            groupRef.current.position.lerp(baseIdle, hitTrigger ? 0.4 : 0.08);
 
-            const targetZ = hitTrigger ? -12 : 10;
-            groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, targetZ, hitTrigger ? 0.35 : 0.08);
-
-            const targetY = hitTrigger ? 2.5 : -1.8;
-            groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, targetY, hitTrigger ? 0.45 : 0.05);
-
-            const targetRotX = hitTrigger ? -0.25 : 0;
-            groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRotX, hitTrigger ? 0.4 : 0.1);
+            // Rotation douce de repos
+            groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, hitTrigger ? -0.4 : 0, 0.1);
+            groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, Math.PI, 0.1);
+            groupRef.current.rotation.z = 0;
         }
     });
 

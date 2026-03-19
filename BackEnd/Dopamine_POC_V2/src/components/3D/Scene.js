@@ -8,21 +8,23 @@ import { DeviceMotion } from 'expo-sensors';
 
 import PlayerCharacter from './PlayerCharacter';
 import TargetGolem from './TargetGolem';
-import { ZaWarudoOverlay, VoxelSpeedLines } from './Effects';
+
 import { ImpactParticles, SlashEffect } from './Impacts';
 import { MossyFloor, ForestBackground } from '../Environment/Level';
 
-// --- RÉGLAGES CAMÉRA ---
-const CAMERA_Z = 40;    // Distance (22 = Défaut, 40 = Large)
-const LOOK_AT_X = 0;    // Direction regard Gauche/Droite
-const LOOK_AT_Y = 1;    // Direction regard Haut/Bas (1 = Milieu)
-const LOOK_AT_Z = -10;  // Direction regard Profondeur (-10 = Vers le Golem)
-// ------------------------
+// --- RÉGLAGES CAMÉRA ORBITALE ---
+const CAMERA_DISTANCE = 50;  // Recul (Rayon)
+const CAMERA_ROTATION_H = 20;  // Rotation Horizontale (en degrés : 0 = face, 90 = côté)
+const CAMERA_ROTATION_V = 0.2; // Angle Vertical (en radians : 0.3 = légère plongée)
+
+const LOOK_AT_X = -4;
+const LOOK_AT_Y = 1;
+const LOOK_AT_Z = -10;
+// --------------------------------
 
 export default function Scene({ hitTrigger, triggerHit, isSpecialAttack, combo, isIntro, zawarudoProgress, themeColor }) {
     const meshRef = useRef();
     const impactAnchor = useRef(new THREE.Vector3(0, 0.5, -13));
-    const flashIntensity = useRef(0);
     const shake = useRef(0);
     const { progress } = useProgress();
     const parallax = useRef({ x: 0, y: 0 });
@@ -43,57 +45,51 @@ export default function Scene({ hitTrigger, triggerHit, isSpecialAttack, combo, 
         // 1. HIT LOGIC (Correction du cumul de FOV)
         if (hitTrigger) {
             shake.current = isSpecialAttack ? 12.0 : 4.0;
-            flashIntensity.current = isSpecialAttack ? 150 : 60;
-            sphereVel.current.set((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);
         }
 
         // Lerp du FOV pour éviter le cumul infini
         state.camera.fov = THREE.MathUtils.lerp(state.camera.fov, hitTrigger ? 68 : (isSpecialAttack ? 65 : 55), 0.2);
-
-        if (flashIntensity.current > 0.1) flashIntensity.current *= 0.82;
-        else flashIntensity.current = 0;
 
         // 2. CAMERA OSCILLATION & PARALLAX
         const clock = state.clock.elapsedTime;
         const floatX = Math.sin(clock * 0.6) * 0.4;
         const floatY = Math.cos(clock * 0.4) * 0.3;
 
-        if (shake.current > 0.1) {
+        // CALCUL ORBITAL (Position de base propre avec Rotation Spéciale)
+        // On rajoute une rotation automatique pendant le Berserk
+        const berserkRotation = isSpecialAttack ? clock * 2.0 : 0; 
+        const radH = ((CAMERA_ROTATION_H) * Math.PI) / 180 + berserkRotation;
+        
+        const baseX = Math.sin(radH) * CAMERA_DISTANCE;
+        const baseZ = Math.cos(radH) * CAMERA_DISTANCE;
+        const baseY = Math.sin(CAMERA_ROTATION_V) * CAMERA_DISTANCE;
+
+        // MIX PARALLAX (Hardware) + FLOAT (Respiration auto) + ORBIT (Réglages)
+        const targetX = baseX + floatX + parallax.current.y * 4.0;
+        const targetY = baseY + floatY - (parallax.current.x - 0.8) * 4.0;
+        const targetZ = baseZ;
+
+        // ON LERP TOUJOURS VERS LA CIBLE (Assure la fluidité)
+        state.camera.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), isSpecialAttack ? 0.05 : 0.1);
+
+        // ON AJOUTE LE SHAKE COMME UN DÉCALAGE ADDITIF
+        if (shake.current > 0.05) {
             state.camera.position.x += (Math.random() - 0.5) * shake.current;
             state.camera.position.y += (Math.random() - 0.5) * shake.current;
-            shake.current *= 0.85;
-        } else {
-            // MIX PARALLAX (Hardware) + FLOAT (Respiration auto)
-            const targetX = floatX + parallax.current.y * 4.0; // SENSITIVITÉ BOOSTÉE
-            const targetY = floatY - (parallax.current.x - 0.8) * 4.0; // Correction angle naturel (0.8 rad)
-
-            state.camera.position.lerp(new THREE.Vector3(targetX, targetY, CAMERA_Z), 0.1);
-            state.camera.lookAt(LOOK_AT_X, LOOK_AT_Y, LOOK_AT_Z);
+            shake.current *= 0.85; 
         }
+
+        state.camera.lookAt(LOOK_AT_X, LOOK_AT_Y, LOOK_AT_Z);
     });
 
     return (
         <>
             <fog attach="fog" args={['#000000', isSpecialAttack ? 5 : 20, 150]} />
-            <ambientLight
-                intensity={isSpecialAttack ? 0.2 : 0.7}
-                color={flashIntensity.current > 10 ? themeColor : "#ffffff"}
-            />
+            <ambientLight intensity={isSpecialAttack ? 0.3 : 0.7} color="#ffffff" />
             <directionalLight position={[10, 20, 5]} intensity={1.5} color="#ffeebb" />
 
             <MossyFloor />
             <ForestBackground />
-
-            <VoxelSpeedLines active={isSpecialAttack} />
-
-            {flashIntensity.current > 0 && (
-                <pointLight
-                    position={[0, 1.5, -13]}
-                    intensity={flashIntensity.current * 8}
-                    color={isSpecialAttack ? "#ff00ff" : "#ffaa00"}
-                    distance={150}
-                />
-            )}
 
             <PlayerCharacter hitTrigger={hitTrigger} isSpecialAttack={isSpecialAttack} />
 
@@ -106,8 +102,6 @@ export default function Scene({ hitTrigger, triggerHit, isSpecialAttack, combo, 
 
             <ImpactParticles position={impactAnchor.current} trigger={hitTrigger} />
             <SlashEffect active={hitTrigger} position={[0, 0.5, -13]} />
-
-            <ZaWarudoOverlay progress={zawarudoProgress} />
         </>
     );
 }
