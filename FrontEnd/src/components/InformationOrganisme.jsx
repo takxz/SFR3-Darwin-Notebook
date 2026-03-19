@@ -22,7 +22,10 @@ export default function InformationOrganisme({ photo, onClose }) {
       setResult(null);
 
       try {
+        console.log(`[Classification] Tentative d'appel API sur : ${API_URL}/classification`);
+        
         if (!photo.base64) {
+          console.error('[Classification] Erreur: Image Base64 manquante');
           throw new Error('Image invalide');
         }
 
@@ -32,17 +35,22 @@ export default function InformationOrganisme({ photo, onClose }) {
           body: JSON.stringify({ imageData: `data:image/jpeg;base64,${photo.base64}` }),
         });
 
+        console.log(`[Classification] Statut réponse: ${response.status}`);
+
         const timer = new Promise((res) => setTimeout(res, 3000));
         const dataPromise = response.json();
         const [data] = await Promise.all([dataPromise, timer]);
 
         if (!response.ok || !data?.success) {
+          console.error('[Classification] Erreur API:', data);
           throw new Error(data?.error || 'Erreur API');
         }
 
+        console.log('[Classification] Succès:', data.common_name);
         setResult(data);
       } catch (e) {
         const message = e?.message || 'Erreur inconnue';
+        console.error('[Classification] Catch Error:', message);
         if (message.toLowerCase().includes('network request failed')) {
           setError(`Connexion API impossible: ${API_URL}/classification`);
         } else {
