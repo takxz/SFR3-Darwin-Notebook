@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { Zap, Sword, Map } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -58,7 +58,10 @@ export default function FightScreen() {
 
     const router = useRouter();
     return (
-        <View style={styles.screenContainer}>
+        <ScrollView
+            contentContainerStyle={styles.mainContainer}
+            showsVerticalScrollIndicator={false}
+        >
             {/* Header */}
             <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top + 20, 40) }]}>
                 <View style={styles.titleRow}>
@@ -86,7 +89,7 @@ export default function FightScreen() {
                     />
                 ))}
             </View>
-        </View>
+        </ScrollView>
     );
 }
 
@@ -99,7 +102,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     mainContainer: {
-        flex: 1,
+        flexGrow: 1,
         justifyContent: "center",
         paddingHorizontal: "5%",
         gap: 24,
