@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import hashlib
@@ -66,4 +67,3 @@ def distribute_ivs(
             speed += 1
 
     return IVs(hp=hp, atk=atk, defense=defense, speed=speed)
-

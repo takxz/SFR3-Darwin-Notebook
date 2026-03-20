@@ -49,3 +49,9 @@ def load_model_detection() -> Callable[[Any], Any] | None:
     model = pipeline("image-classification", model="google/vit-base-patch16-224")
     app.config["MODEL_DETECTION"] = model
     return model
+
+
+from . import route
+
+# Enregistrement des routes après la création de l'app pour éviter un cycle d'import.
+route.init_routes(app)

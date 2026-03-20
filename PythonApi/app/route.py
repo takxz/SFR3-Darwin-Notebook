@@ -1,11 +1,11 @@
-from . import app, load_model_detection, module_detection
+from . import load_model_detection, module_detection
 from app.scoring import (
     global_score as compute_global_score,
     rarity_score_from_observation_count,
 )
 from app.ivs import distribute_ivs
 from app.base_species import final_stats_from_formula, get_base_stats
-from flask import jsonify, request
+from flask import jsonify, request, current_app
 import requests
 from PIL import Image
 import base64
@@ -19,15 +19,14 @@ def compute_sharpness(image):
     return _compute_sharpness(image)
 
 
-@app.route('/')
 def hello_world():
     return 'Hello World!'
 
-@app.route('/test')
+
 def index():
     return requestInaturalist("cheetah")
 
-@app.route('/ping')
+
 def ping():
     return 'pong'
 
@@ -88,7 +87,6 @@ def requestInaturalist(animal, extra: dict | None = None):
         return jsonify({'success': False, 'message': f'Erreur API: {response.status_code}'}), response.status_code
 
 
-@app.route('/classification', methods=['POST'])
 def classification():
     """
     Reçoit l'image du front-end et l'analyse dans le back-end
@@ -110,7 +108,8 @@ def classification():
 
         sharp = compute_sharpness(image)
 
-        model_detection = load_model_detection() or app.config.get("MODEL_DETECTION")
+        from . import load_model_detection
+        model_detection = load_model_detection() or current_app.config.get("MODEL_DETECTION")
         if model_detection is None:
             return jsonify({"success": False, "error": "Modèle de détection non disponible"}), 503
 
@@ -169,7 +168,12 @@ def classification():
 
         final_stats = None
         if base is not None:
-            final_stats = final_stats_from_formula(base=base, level=level, ivs=ivs_dict)
+            final_stats = final_stats_from_formula(
+                base=base,
+                level=level,
+                ivs=ivs_dict,
+                sharpness_score=sharp.score_0_100,
+            )
 
         return jsonify(
             {
@@ -194,6 +198,13 @@ def classification():
 
     except IOError:
         return jsonify({'error': 'Erreur lors du traitement de l\'image'}), 500
+
+
+def init_routes(app):
+    app.add_url_rule("/", endpoint="hello_world", view_func=hello_world)
+    app.add_url_rule("/test", endpoint="index", view_func=index)
+    app.add_url_rule("/ping", endpoint="ping", view_func=ping)
+    app.add_url_rule("/classification", endpoint="classification", view_func=classification, methods=["POST"])
 
 
 ### Routes /capture et /sharpness supprimées (éviter redondance).

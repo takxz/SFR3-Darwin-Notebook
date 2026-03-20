@@ -54,4 +54,3 @@ def global_score(
     base = float(max(0.0, min(100.0, rarity_score_0_100)))
     bonus = sharpness_bonus(sharpness_score_0_100, bonus_max=bonus_max)
     return float(max(0.0, min(100.0, base + bonus)))
-

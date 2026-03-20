@@ -1,30 +1,27 @@
-from app import app, module_detection
 from flask import jsonify, request
+from . import module_detection
+from app.scoring import (
+    global_score as compute_global_score,
+    rarity_score_from_observation_count,
+)
+from app.ivs import distribute_ivs
+from app.base_species import final_stats_from_formula, get_base_stats
 import requests
 from PIL import Image
 import base64
 import io
 
-model_detection = app.config['MODEL_DETECTION']
+
+def compute_sharpness(image):
+    # Import tardif: évite de forcer numpy/OpenCV au simple import des routes (utile en tests).
+    from app.sharpness import compute_sharpness as _compute_sharpness
+
+    return _compute_sharpness(image)
 
 
-@app.route('/')
-def hello_world():
-    return 'Hello World!'
-
-@app.route('/test')
-def index():
-    return requestInaturalist("cheetah")
-
-@app.route('/ping')
-def ping():
-    return 'pong'
-
-# ========= ROUTES DE RECHERCHES INATURALIST ===========
-
-def requestInaturalist(animal):
+def requestInaturalist(animal, extra: dict | None = None):
     """
-    :param animal: str (doit venir de notre modèle d'IA)
+    :param animal: str
     :return: json avec les informations de l'animal en question
     """
 
@@ -32,7 +29,7 @@ def requestInaturalist(animal):
     params = {
         "q": animal,
         "per_page": 1,
-        "locale": "fr"
+        "locale": "fr",
     }
 
     response = requests.get(url, params=params)
@@ -40,57 +37,161 @@ def requestInaturalist(animal):
     if response.status_code == 200:
         data = response.json()
 
-        if data['results']:
-            animals = data['results'][0]
-            return jsonify({
-                'success': True,
-                'animal_id': animals.get('id'),
-                'common_name': animals.get("preferred_common_name"),
-                'scientific_name': animals.get("name"),
-                'observation_count': animals.get("observations_count"),
-                "image_url": animals['default_photo']["medium_url"],
-            })
+        if data["results"]:
+            animals = data["results"][0]
+            observation_count = animals.get("observations_count")
+            rarity_score = rarity_score_from_observation_count(observation_count)
+            sharpness_score = None
+            if extra and "sharpness_score" in extra:
+                sharpness_score = extra.get("sharpness_score")
+            final_score = (
+                compute_global_score(
+                    rarity_score_0_100=rarity_score,
+                    sharpness_score_0_100=float(sharpness_score or 0.0),
+                    bonus_max=25.0,
+                )
+                if sharpness_score is not None
+                else rarity_score
+            )
+
+            payload = {
+                "success": True,
+                "animal_id": animals.get("id"),
+                "common_name": animals.get("preferred_common_name"),
+                "scientific_name": animals.get("name"),
+                "observation_count": observation_count,
+                "image_url": animals["default_photo"]["medium_url"],
+                "rarity_score": rarity_score,
+                "global_score": final_score,
+            }
+            if extra:
+                payload.update(extra)
+            return jsonify(payload)
         else:
-            return jsonify({'success': False, 'message': 'Aucun résultat trouvé'}), 404
+            return jsonify({"success": False, "message": "Aucun résultat trouvé"}), 404
 
     else:
-        return jsonify({'success': False, 'message': f'Erreur API: {response.status_code}'}), response.status_code
+        return jsonify({"success": False, "message": f"Erreur API: {response.status_code}"}), response.status_code
 
 
-@app.route('/classification', methods=['POST'])
-def classification():
-    """
-    Reçoit l'image du front-end et l'analyse dans le back-end
-    :return: les informations de INaturalist si organisme ou alors une erreur si ce n'est pas un organisme
-    """
+def init_routes(app):
 
-    try:
-        request_json = request.get_json(silent=True) or {}
+    @app.route("/")
+    def hello_world():
+        return "Hello World!"
 
-        if 'image' in request.files:
-            image_file = request.files['image']
-            image = Image.open(image_file)
-        elif 'imageData' in request_json:
-            if ',' not in request_json['imageData']:
-                return jsonify({'error': 'Format imageData invalide'}), 400
+    @app.route("/test")
+    def index():
+        return requestInaturalist("cheetah")
 
-            image_data = request_json['imageData'].split(',')[1]
-            image_bytes = base64.b64decode(image_data)
-            image = Image.open(io.BytesIO(image_bytes))
-        else:
-            return jsonify({'error': 'Aucune image fournie'}), 400
+    @app.route("/ping")
+    def ping():
+        return "pong"
 
-        predictions = model_detection(image)
-        top_prediction = predictions[0]
-        predicted_label = top_prediction['label'].split(', ')[0]
+    @app.route("/classification", methods=["POST"])
+    def classification():
+        """
+        Reçoit l'image du front-end et l'analyse dans le back-end
+        :return: les informations de INaturalist si organisme ou alors une erreur si ce n'est pas un organisme
+        """
 
-        if module_detection.is_this_an_organism(predicted_label):
-            inaturalist_response = requestInaturalist(predicted_label)
-            return inaturalist_response
-        else:
-            return jsonify({'error': 'L\'image ne correspond pas à un organisme vivant'}), 400
+        from . import load_model_detection
 
-    except IOError:
-        return jsonify({'error': 'Erreur lors du traitement de l\'image'}), 500
-    except Exception as error:
-        return jsonify({'error': f'Erreur serveur: {str(error)}'}), 500
+        try:
+            if "image" in request.files:
+                image_file = request.files["image"]
+                image = Image.open(image_file)
+                filename = getattr(image_file, "filename", None)
+            elif request.is_json and request.json and "imageData" in request.json:
+                image_data = request.json["imageData"].split(",")[1]
+                image_bytes = base64.b64decode(image_data)
+                image = Image.open(io.BytesIO(image_bytes))
+                filename = request.json.get("filename")
+            else:
+                return jsonify({"error": "Aucune image fournie"}), 400
+
+            sharp = compute_sharpness(image)
+
+            model_detection = load_model_detection() or app.config.get("MODEL_DETECTION")
+            if model_detection is None:
+                return jsonify({"success": False, "error": "Modèle de détection non disponible"}), 503
+
+            predictions = model_detection(image)
+            top = predictions[0]
+            predicted_label = top["label"].split(", ")[0]
+            predicted_conf = float(top.get("score", 0.0))
+
+            if not module_detection.is_this_an_organism(predicted_label):
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "error": "L'image ne correspond pas à un organisme vivant",
+                            "filename": filename,
+                            "predicted_label": predicted_label,
+                            "predicted_confidence": predicted_conf,
+                            "sharpness_score": sharp.score_0_100,
+                            "sharpness_var_laplacian": sharp.variance_of_laplacian,
+                            "sharpness_rank": sharp.rank,
+                        }
+                    ),
+                    400,
+                )
+
+            url = "https://api.inaturalist.org/v1/taxa/autocomplete"
+            params = {"q": predicted_label, "per_page": 1, "locale": "fr"}
+            r = requests.get(url, params=params)
+            if r.status_code != 200:
+                return jsonify({"success": False, "error": f"Erreur API iNaturalist: {r.status_code}"}), 502
+
+            data = r.json()
+            if not data.get("results"):
+                return jsonify({"success": False, "error": "Aucun résultat iNaturalist"}), 404
+
+            animal = data["results"][0]
+            observation_count = animal.get("observations_count")
+            rarity_score = rarity_score_from_observation_count(observation_count)
+            gscore = compute_global_score(
+                rarity_score_0_100=rarity_score,
+                sharpness_score_0_100=sharp.score_0_100,
+                bonus_max=25.0,
+            )
+
+            seed = f"{animal.get('id','')}-{predicted_label}-{sharp.score_0_100:.3f}-{filename or ''}"
+            ivs = distribute_ivs(gscore, seed=seed, max_total=25)
+            ivs_dict = ivs.as_dict()
+
+            base = get_base_stats(animal.get("id"))
+            client_level = None
+            if request.is_json and request.json:
+                client_level = request.json.get("level")
+            level = client_level or 7
+
+            final_stats = None
+            if base is not None:
+                final_stats = final_stats_from_formula(base=base, level=level, ivs=ivs_dict)
+
+            response_payload = {
+                "success": True,
+                "filename": filename,
+                "animal_id": animal.get("id"),
+                "common_name": animal.get("preferred_common_name"),
+                "scientific_name": animal.get("name"),
+                "observation_count": observation_count,
+                "image_url": animal.get("default_photo", {}).get("medium_url"),
+                "predicted_label": predicted_label,
+                "predicted_confidence": predicted_conf,
+                "sharpness_score": sharp.score_0_100,
+                "sharpness_var_laplacian": sharp.variance_of_laplacian,
+                "sharpness_rank": sharp.rank,
+                "rarity_score": rarity_score,
+                "global_score": gscore,
+                "level": level,
+                "final_stats": final_stats,
+                "ivs": ivs_dict,
+            }
+
+            return jsonify(response_payload)
+
+        except IOError:
+            return jsonify({"error": "Erreur lors du traitement de l\'image"}), 500

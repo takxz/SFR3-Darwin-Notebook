@@ -18,15 +18,18 @@ def _ensure_wordnet_downloaded() -> None:
         nltk.download("omw-1.4")
 
 
-def is_this_an_organism(predicted_label: str) -> bool:
+def is_this_an_organism(predicted_label: str | None) -> bool:
     """
     :param predicted_label: str
     :return: bool
     Détermine si le label prédit correspond à un organisme vivant en utilisant WordNet.
     """
-    # Fallback "safe" si NLTK/WordNet n'est pas dispo (ex: tests unitaires).
+    if not predicted_label:
+        return False
+
+    # Fallback "safe" si NLTK/WordNet n'est dispo (ex: tests unitaires).
     if nltk is None or wordnet is None:
-        return bool((predicted_label or "").strip())
+        return bool(str(predicted_label).strip())
 
     _ensure_wordnet_downloaded()
 

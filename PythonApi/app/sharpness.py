@@ -69,4 +69,3 @@ def compute_sharpness(
         rank = "Instable"
 
     return SharpnessResult(score_0_100=score_f, variance_of_laplacian=var_lap, rank=rank)
-
