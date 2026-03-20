@@ -43,7 +43,7 @@ const mockAnimals = [
     rarity: 3,
     hp: 55,
     maxHp: 80,
-    image: 'https://images.unsplash.com/photo-1543549049-9fbcc3cd9003?w=400&fit=crop',
+    image: 'https://base-prod.rspb-prod.magnolia-platform.com/.imaging/focalpoint/_WIDTH_x_HEIGHT_/dam/jcr:2bf52d08-2eb9-4c24-b0d2-2e2c076bc48d/374227486-Species-Barn-owl-in-flight-before-attack-clean-background.jpg',
   },
   {
     name: 'Clownfish',
@@ -61,7 +61,7 @@ const mockAnimals = [
     rarity: 4,
     hp: 75,
     maxHp: 100,
-    image: 'https://images.unsplash.com/photo-1570144820100-f5a6fa71f79e?w=400&fit=crop',
+    image: 'https://i.natgeofe.com/k/68424626-f7d0-4275-8d50-0450b5800563/peregrine-falcon-wings-extended_4x3.jpg',
   },
   {
     name: 'Giant Panda',
@@ -79,7 +79,7 @@ const mockAnimals = [
     rarity: 2,
     hp: 48,
     maxHp: 80,
-    image: 'https://images.unsplash.com/photo-1463320726281-696a485928c7?w=400&fit=crop',
+    image: 'https://newfs.s3.amazonaws.com/taxon-images-1000s1000/Osmundaceae/osmunda-regalis-le-mlovit.jpg',
   },
   {
     name: 'Blue Agave',
@@ -88,7 +88,7 @@ const mockAnimals = [
     rarity: 4,
     hp: 112,
     maxHp: 140,
-    image: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400&fit=crop',
+    image: 'https://www.ranchotissue.com/wp-content/uploads/2024/01/Agave-tequiliana-blue-1.jpg',
   },
 ];
 
