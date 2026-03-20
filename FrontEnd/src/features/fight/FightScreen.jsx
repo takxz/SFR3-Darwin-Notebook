@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { View, Text, StyleSheet } from "react-native";
-=======
 import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
->>>>>>> develop
 import { useRouter } from "expo-router";
 import { Zap, Sword, Map } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -54,21 +50,9 @@ const FIGHT_MODES = [
     }
 ];
 
-export default function FightScreen() {
-<<<<<<< HEAD
-    const router = useRouter();
-    return (
-        <View style={styles.screenContainer}>
-            {/* Ambiant Glow */}
-            {/* <View style={(styles.glowTop)} /> */}
-            {/* <View style={(styles.glowBottom)} /> */}
-=======
->>>>>>> develop
-
-    // Ajoute un padding intelligent pour que le contenu ne soit pas caché derrière l'encoche
-    // Ou trop proche du bord sur les petits écrans
+export default function FightScreen() 
+{
     const insets = useSafeAreaInsets();
-
     const router = useRouter();
     return (
         <ScrollView
@@ -88,34 +72,6 @@ export default function FightScreen() {
 
             {/* Main Content */}
             <View style={styles.mainContainer}>
-<<<<<<< HEAD
-                {/* Duel Button */}
-                <ButtonFightMode
-                    title={fr.fightScreen.mode_duel}
-                    subtitle={fr.fightScreen.duel_desc}
-                    Icon={Sword}
-                    gradientColors={["rgba(255,251,235,0.9)", "rgba(255,237,213,0.8)"]}
-                    themeColor="#f59e0b"
-                    cornerColor="rgba(120,53,15,0.1)"
-                    isTopCorners={true}
-                    delay={100}
-                    extraText="MMR: 500"
-                />
-
-                {/* Carrière Button */}
-                <ButtonFightMode
-                    title={fr.fightScreen.mode_career}
-                    subtitle={fr.fightScreen.career_desc}
-                    Icon={Map}
-                    gradientColors={["rgba(236,253,245,0.9)", "rgba(204,251,241,0.8)"]}
-                    themeColor="#059669"
-                    cornerColor="rgba(6,78,59,0.1)"
-                    isTopCorners={false}
-                    delay={200}
-                    onPress={() => router.push("/campaign")}
-                />
-
-=======
                 {FIGHT_MODES.map((mode) => (
                     <ButtonFightMode
                         key={mode.id}
@@ -129,7 +85,6 @@ export default function FightScreen() {
                         }}
                     />
                 ))}
->>>>>>> develop
             </View>
         </ScrollView>
     );

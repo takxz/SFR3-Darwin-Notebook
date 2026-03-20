@@ -29,11 +29,7 @@ export default function ButtonFightMode({
 
     return (
         <View>
-<<<<<<< HEAD
-            <Pressable onPress={onPress}>
-=======
             <Pressable style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]} onPress={onPress}>
->>>>>>> develop
                 <LinearGradient
                     colors={gradientColors}
                     style={[styles.cardBase, { shadowColor: themeColor }]}
