@@ -35,9 +35,9 @@ export default function ChooseBeastScreen() {
 
     const handleSelectBeast = (beast) => {
         if (selectedBeast?.id === beast.id) {
-            // Ici, naviguer vers le matchmaking avec la bête sélectionnée
-            alert(`Bête sélectionnée : ${beast.name} - {chooseBeastScreen.start_battle} !`);
-            // router.push({ pathname: "/fight/matchmaking", params: { beastId: beast.id } });
+            // alert(`Bête sélectionnée : ${beast.name} - {chooseBeastScreen.start_battle} !`);
+            router.push({ pathname: "/fight/arena", params: { beastId: beast.id } });
+
         } else {
             setSelectedBeast(beast);
         }
@@ -45,8 +45,9 @@ export default function ChooseBeastScreen() {
 
     const handleStartBattle = () => {
         if (selectedBeast) {
-            alert(`Commencer le duel avec ${selectedBeast.name} !`);
-            // router.push({ pathname: "/fight/matchmaking", params: { beastId: selectedBeast.id } });
+            // alert(`Commencer le duel avec ${selectedBeast.name} !`);
+            router.push({ pathname: "/fight/arena", params: { beastId: selectedBeast.id } });
+
         }
     };
 
