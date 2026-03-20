@@ -1,9 +1,11 @@
 import { View, Text, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 import { Zap, Sword, Map } from "lucide-react-native";
 import ButtonFightMode from "@/features/fight/components/ButtonFightMode";
 import fr from "@/assets/locales/fr.json";
 
 export default function FightScreen() {
+    const router = useRouter();
     return (
         <View style={styles.screenContainer}>
             {/* Ambiant Glow */}
@@ -46,6 +48,7 @@ export default function FightScreen() {
                     cornerColor="rgba(6,78,59,0.1)"
                     isTopCorners={false}
                     delay={200}
+                    onPress={() => router.push("/campaign")}
                 />
 
             </View>
