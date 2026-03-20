@@ -118,37 +118,24 @@ def classification():
         predicted_label = top['label'].split(', ')[0]
         predicted_conf = float(top.get("score", 0.0))
 
-        if not module_detection.is_this_an_organism(predicted_label):
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "error": "L'image ne correspond pas à un organisme vivant",
-                        "filename": filename,
-                        "predicted_label": predicted_label,
-                        "predicted_confidence": predicted_conf,
-                        "sharpness_score": sharp.score_0_100,
-                        "sharpness_var_laplacian": sharp.variance_of_laplacian,
-                        "sharpness_rank": sharp.rank,
-                    }
-                ),
-                400,
-            )
+        is_organism = module_detection.is_this_an_organism(predicted_label)
 
         # Récupérer rareté via iNaturalist (observation_count), puis score global.
         url = "https://api.inaturalist.org/v1/taxa/autocomplete"
         params = {"q": predicted_label, "per_page": 1, "locale": "fr"}
         r = requests.get(url, params=params)
-        if r.status_code != 200:
-            return jsonify({"success": False, "error": f"Erreur API iNaturalist: {r.status_code}"}), 502
+        animal = None
+        observation_count = 0
+        rarity_score = 0.0
 
-        data = r.json()
-        if not data.get("results"):
-            return jsonify({"success": False, "error": "Aucun résultat iNaturalist"}), 404
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("results"):
+                animal = data["results"][0]
+                observation_count = animal.get("observations_count", 0)
+                rarity_score = rarity_score_from_observation_count(observation_count)
 
-        animal = data["results"][0]
-        observation_count = animal.get("observations_count")
-        rarity_score = rarity_score_from_observation_count(observation_count)
+        # Global score même si iNaturalist absent (len par défaut)
         gscore = compute_global_score(
             rarity_score_0_100=rarity_score,
             sharpness_score_0_100=sharp.score_0_100,
@@ -160,7 +147,7 @@ def classification():
         ivs = distribute_ivs(gscore, seed=seed, max_total=25)
         ivs_dict = ivs.as_dict()
 
-        base = get_base_stats(animal.get("id"))
+        base = get_base_stats(animal.get("id") if animal else None)
         client_level = None
         if request.is_json and request.json:
             client_level = request.json.get("level")
@@ -178,12 +165,13 @@ def classification():
         return jsonify(
             {
                 "success": True,
+                "is_organism": is_organism,
                 "filename": filename,
-                "animal_id": animal.get("id"),
-                "common_name": animal.get("preferred_common_name"),
-                "scientific_name": animal.get("name"),
+                "animal_id": animal.get("id") if animal else None,
+                "common_name": animal.get("preferred_common_name") if animal else None,
+                "scientific_name": animal.get("name") if animal else predicted_label,
                 "observation_count": observation_count,
-                "image_url": animal.get("default_photo", {}).get("medium_url"),
+                "image_url": animal.get("default_photo", {}).get("medium_url") if animal else None,
                 "predicted_label": predicted_label,
                 "predicted_confidence": predicted_conf,
                 "sharpness_score": sharp.score_0_100,

@@ -50,11 +50,12 @@ def load_base_stats() -> dict[int, BaseStats]:
     return out
 
 
-def get_base_stats(animal_id: int | None) -> BaseStats | None:
-    if animal_id is None:
-        return None
+def get_base_stats(animal_id: int | None) -> BaseStats:
     table = load_base_stats()
-    return table.get(int(animal_id))
+    if animal_id is None:
+        # fallback générique
+        return BaseStats(hp=20.0, atk=20.0, defense=20.0, speed=20.0)
+    return table.get(int(animal_id), BaseStats(hp=20.0, atk=20.0, defense=20.0, speed=20.0))
 
 
 def level_from_global_score(global_score_0_100: float, *, min_level: int = 1, max_level: int = 100) -> int:
