@@ -87,11 +87,14 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
             {result.image_url ? <Image source={{ uri: result.image_url }} style={styles.image} /> : null}
             <Text style={styles.title}>{result.common_name || 'Nom inconnu'}</Text>
             <Text style={styles.subtitle}>{result.scientific_name || ''}</Text>
+            <View style={styles.sharpnessBadge}>
+              <Text style={styles.sharpnessLabel}>Netteté :</Text>
+              <Text style={styles.sharpnessValue}>{result.sharpness_rank || '-'}</Text>
+            </View>
+            <Text style={styles.battleStatsTitle}>Statistique de la créature</Text>
             <View style={styles.hrLine} />
-            <Text style={styles.battleStatsTitle}>Battle Stats</Text>
             <View style={styles.gap} />
             <View style={styles.mainContainer}>
-              {/*Ici, il faudra placer les stats de l'API */}
               <View style={styles.statItem}>
                 <CardInformationStatAnimal title="PV" color="#D95C5C" stat={result.final_stats?.hp} max={100} icon={<Heart size={16} color="#D95C5C" strokeWidth={2.2} />} />
               </View>
@@ -149,6 +152,27 @@ const styles = StyleSheet.create({
   subtitle: {
     color: '#97572B',
     fontSize: 14,
+  },
+  sharpnessBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: '#f8dcb7',
+  },
+  sharpnessLabel: {
+    color: '#97572B',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  sharpnessValue: {
+    color: '#97572B',
+    fontSize: 12,
+    fontWeight: '700',
   },
   battleStatsTitle: {
     color: '#97572B',
