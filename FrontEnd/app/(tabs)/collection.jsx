@@ -1,12 +1,24 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, ActivityIndicator, Text } from 'react-native';
-import { AnimalCard } from '../../src/components/AnimalCard';
+import { AnimalCard } from '../../src/components/Collection/AnimalCard';
+import { SpeciesFilterBar } from '../../src/components/Collection/SpeciesFilterBar';
 import { fetchCollectionAnimals } from '../../src/utils/tempCollectionApi';
+
+const SPECIES_OPTIONS = [
+    { key: 'all', label: 'Tous' },
+    { key: 'fauna', label: 'Faune' },
+    { key: 'flora', label: 'Flore' },
+];
 
 export default function CollectionPage() {
     const [animalData, setAnimalData] = useState([]);
+    const [selectedSpecies, setSelectedSpecies] = useState('all');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const filteredAnimals = selectedSpecies === 'all'
+        ? animalData
+        : animalData.filter((animal) => animal.category === selectedSpecies);
 
     useEffect(() => {
         let isMounted = true;
@@ -54,15 +66,25 @@ export default function CollectionPage() {
 
     return (
         <View style={styles.container}>
+            <SpeciesFilterBar
+                options={SPECIES_OPTIONS}
+                selectedKey={selectedSpecies}
+                onSelect={setSelectedSpecies}
+            />
             <FlatList
-                data={animalData}
+                data={filteredAnimals}
                 numColumns={2}
-                keyExtractor={(_, index) => index.toString()}
+                keyExtractor={(item, index) => `${item.name}-${index}`}
                 contentContainerStyle={styles.listContent}
                 columnWrapperStyle={styles.column}
                 renderItem={({ item, index }) => (
                     <AnimalCard animal={item} index={index} />
                 )}
+                ListEmptyComponent={
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyText}>No species available in this category yet.</Text>
+                    </View>
+                }
             />
         </View>
     );
@@ -75,11 +97,11 @@ const styles = StyleSheet.create({
     },
     listContent: {
       paddingHorizontal: 16,
-      paddingTop: 16,
+            paddingTop: 8,
       paddingBottom: 24,
     },
     column: {
-      justifyContent: 'space-between',
+            justifyContent: 'space-between',
         },
         centeredState: {
             justifyContent: 'center',
@@ -89,5 +111,14 @@ const styles = StyleSheet.create({
             color: '#8b3a3a',
             fontSize: 16,
             fontWeight: '600',
+        },
+        emptyState: {
+            alignItems: 'center',
+            paddingTop: 24,
+        },
+        emptyText: {
+            color: '#8a7558',
+            fontSize: 14,
+            fontWeight: '500',
     }
 });

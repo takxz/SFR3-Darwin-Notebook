@@ -1,7 +1,9 @@
+// Temporaire, à remplacer par la route API réelle une fois celle-ci en place
 const mockAnimals = [
   {
     name: 'Red Fox',
     type: 'terrestrial',
+    category: 'fauna',
     rarity: 2,
     hp: 68,
     maxHp: 100,
@@ -9,7 +11,8 @@ const mockAnimals = [
   },
   {
     name: 'Great White Shark',
-    type: 'aquatic',
+    type: 'marine',
+    category: 'fauna',
     rarity: 4,
     hp: 210,
     maxHp: 300,
@@ -17,7 +20,8 @@ const mockAnimals = [
   },
   {
     name: 'Bald Eagle',
-    type: 'aerial',
+    type: 'flying',
+    category: 'fauna',
     rarity: 3,
     hp: 90,
     maxHp: 120,
@@ -26,6 +30,7 @@ const mockAnimals = [
   {
     name: 'Snow Leopard',
     type: 'terrestrial',
+    category: 'fauna',
     rarity: 5,
     hp: 145,
     maxHp: 180,
@@ -33,7 +38,8 @@ const mockAnimals = [
   },
   {
     name: 'Barn Owl',
-    type: 'nocturnal',
+    type: 'flying',
+    category: 'fauna',
     rarity: 3,
     hp: 55,
     maxHp: 80,
@@ -41,7 +47,8 @@ const mockAnimals = [
   },
   {
     name: 'Clownfish',
-    type: 'aquatic',
+    type: 'marine',
+    category: 'fauna',
     rarity: 2,
     hp: 30,
     maxHp: 50,
@@ -49,7 +56,8 @@ const mockAnimals = [
   },
   {
     name: 'Peregrine Falcon',
-    type: 'aerial',
+    type: 'flying',
+    category: 'fauna',
     rarity: 4,
     hp: 75,
     maxHp: 100,
@@ -58,10 +66,29 @@ const mockAnimals = [
   {
     name: 'Giant Panda',
     type: 'terrestrial',
+    category: 'fauna',
     rarity: 5,
     hp: 200,
     maxHp: 200,
     image: 'https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=400&fit=crop',
+  },
+  {
+    name: 'Royal Fern',
+    type: 'flora',
+    category: 'flora',
+    rarity: 2,
+    hp: 48,
+    maxHp: 80,
+    image: 'https://images.unsplash.com/photo-1463320726281-696a485928c7?w=400&fit=crop',
+  },
+  {
+    name: 'Blue Agave',
+    type: 'flora',
+    category: 'flora',
+    rarity: 4,
+    hp: 112,
+    maxHp: 140,
+    image: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400&fit=crop',
   },
 ];
 
