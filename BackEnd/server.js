@@ -21,6 +21,9 @@ app.use(cors());
 app.use(express.json());
 
 // ======== MONTAGE DES ROUTES DE L'API REST (HTTP) ========
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 
