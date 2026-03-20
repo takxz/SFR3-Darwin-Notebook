@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, StyleSheet, Pressable, ScrollView } from 'react-native';
 import Constants from 'expo-constants';
 import WaitingComponent from './WaitingComponent';
@@ -13,6 +13,7 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     if (!photo?.uri) return;
@@ -69,7 +70,16 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
 
   return (
     <View style={styles.card}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={true}
+        persistentScrollbar={true}
+        indicatorStyle="black"
+        scrollIndicatorInsets={{ right: -5 }}
+        onContentSizeChange={() => scrollRef.current?.flashScrollIndicators()}
+        contentContainerStyle={styles.contentContainer}
+      >
         {loading ? <WaitingComponent /> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
         {result ? (
@@ -127,6 +137,9 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingBottom: 12,
+  },
+  scrollView: {
+    marginRight: -4,
   },
   title: {
     color: '#000',
