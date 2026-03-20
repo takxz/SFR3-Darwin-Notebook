@@ -120,6 +120,21 @@ def classification():
 
         is_organism = module_detection.is_this_an_organism(predicted_label)
 
+        if not is_organism:
+            return jsonify(
+                {
+                    "success": False,
+                    "is_organism": False,
+                    "message": "L'image ne correspond pas à un organisme vivant",
+                    "filename": filename,
+                    "predicted_label": predicted_label,
+                    "predicted_confidence": predicted_conf,
+                    "sharpness_score": sharp.score_0_100,
+                    "sharpness_var_laplacian": sharp.variance_of_laplacian,
+                    "sharpness_rank": sharp.rank,
+                }
+            )
+
         # Récupérer rareté via iNaturalist (observation_count), puis score global.
         url = "https://api.inaturalist.org/v1/taxa/autocomplete"
         params = {"q": predicted_label, "per_page": 1, "locale": "fr"}
