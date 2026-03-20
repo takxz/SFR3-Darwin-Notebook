@@ -1,5 +1,4 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
-import { useEffect, useMemo, useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { Zap, Sword, Map } from "lucide-react-native";
 import ButtonFightMode from "@/features/fight/components/ButtonFightMode";
@@ -8,127 +7,6 @@ import fr from "@/assets/locales/fr.json";
 
 export default function FightScreen() {
     const router = useRouter();
-    const roomId = socket.currentRoomId;
-    const [battleState, setBattleState] = useState(null);
-    const [turn, setTurn] = useState(null);
-    const [logs, setLogs] = useState([]);
-    const [status, setStatus] = useState("En attente du combat...");
-    const [isReady, setIsReady] = useState(false);
-    const [actionPending, setActionPending] = useState(false);
-
-    const playerId = useMemo(() => socket.id, [socket.id]);
-
-    useEffect(() => {
-        if (!roomId) return;
-
-        setStatus("Match trouvé, attente du début...");
-
-        const onBattleStart = ({ turn: initialTurn }) => {
-            setStatus("Combat commencé !");
-            setTurn(initialTurn);
-            setIsReady(true);
-        };
-
-        const onGameUpdate = ({ players, turn: nextTurn, lastLog, result }) => {
-            setBattleState(players);
-            setTurn(nextTurn);
-            setLogs((existing) => [...existing.slice(-4), lastLog]);
-
-            if (result) {
-                if (result.winner === playerId) setStatus("Victoire !");
-                else setStatus("Défaite...");
-            }
-        };
-
-        const onPlayerDisconnected = () => {
-            setStatus("Adversaire déconnecté, victoire par forfait.");
-        };
-
-        const onError = (message) => {
-            setStatus(`Erreur: ${message}`);
-        };
-
-        socket.on("battleStart", onBattleStart);
-        socket.on("gameUpdate", onGameUpdate);
-        socket.on("playerDisconnected", onPlayerDisconnected);
-        socket.on("error", onError);
-
-        return () => {
-            socket.off("battleStart", onBattleStart);
-            socket.off("gameUpdate", onGameUpdate);
-            socket.off("playerDisconnected", onPlayerDisconnected);
-            socket.off("error", onError);
-        };
-    }, [roomId, playerId]);
-
-    const dispatchAction = (action) => {
-        if (!roomId || actionPending || !isReady) return;
-        setActionPending(true);
-        socket.emit("playerAction", { action }, () => {
-            setActionPending(false);
-        });
-    };
-
-    if (roomId && isReady) {
-        const currentPlayer = battleState?.[playerId] ?? { hp: 0, maxHp: 0 };
-        const opponentId = Object.keys(battleState || {}).find((id) => id !== playerId);
-        const opponent = opponentId ? battleState?.[opponentId] : null;
-
-        return (
-            <View style={styles.screenContainer}>
-                <View style={styles.battleHeader}>
-                    <Text style={styles.battleTitle}>Combat 1v1</Text>
-                    <Text style={styles.battleStatus}>{status}</Text>
-                </View>
-                <View style={styles.healthRow}>
-                    <View style={styles.playerBlock}>
-                        <Text style={styles.playerName}>Vous</Text>
-                        <Text style={styles.playerHp}>{currentPlayer.hp}/{currentPlayer.maxHp} PV</Text>
-                    </View>
-                    <View style={styles.playerBlock}>
-                        <Text style={styles.playerName}>Adversaire</Text>
-                        <Text style={styles.playerHp}>{opponent?.hp ?? 0}/{opponent?.maxHp ?? 0} PV</Text>
-                    </View>
-                </View>
-                <Text style={styles.turnText}>{turn === playerId ? "Votre tour" : "Tour de l'adversaire"}</Text>
-
-                <View style={styles.actionsRow}>
-                    <Pressable
-                        style={styles.actionBtn}
-                        onPress={() => dispatchAction("ATTACK")}
-                        disabled={actionPending || turn !== playerId}
-                    >
-                        <Text style={styles.actionBtnText}>Attaquer</Text>
-                    </Pressable>
-                    <Pressable
-                        style={styles.actionBtn}
-                        onPress={() => dispatchAction("DEFEND")}
-                        disabled={actionPending || turn !== playerId}
-                    >
-                        <Text style={styles.actionBtnText}>Défendre</Text>
-                    </Pressable>
-                    <Pressable
-                        style={styles.actionBtn}
-                        onPress={() => dispatchAction("HEAL")}
-                        disabled={actionPending || turn !== playerId || currentPlayer?.inventory?.potion <= 0}
-                    >
-                        <Text style={styles.actionBtnText}>Soigner</Text>
-                    </Pressable>
-                </View>
-
-                <View style={styles.logBox}>
-                    {logs.map((log, i) => (
-                        <Text key={`${log}-${i}`} style={styles.logLine}>{log}</Text>
-                    ))}
-                </View>
-
-                <Pressable style={styles.backBtn} onPress={() => router.push('/fight')}>
-                    <Text style={styles.backText}>Retour aux modes</Text>
-                </Pressable>
-            </View>
-        );
-    }
-
     return (
         <View style={styles.screenContainer}>
             <View style={styles.headerContainer}>
@@ -149,7 +27,7 @@ export default function FightScreen() {
                     isTopCorners={true}
                     delay={100}
                     extraText="MMR: 500"
-                    onPress={() => router.push('/lobby')}
+                    onPress={() => router.push("/choose-beast")}
                 />
                 <ButtonFightMode
                     title={fr.fightScreen.mode_career}

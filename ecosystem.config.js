@@ -12,15 +12,16 @@ module.exports = {
     {
       name: 'darwin-python-api',
       cwd: './PythonApi',
-      script: 'python',
-      args: 'darwin.py',
+      script: 'darwin.py',
+      interpreter: '/home/darwinnotbook/SFR3-Darwin-Notebook/PythonApi/venv/bin/python',
     },
     {
       name: 'darwin-expo-develop',
       cwd: './FrontEnd',
       script: 'npx',
-      args: 'expo start --no-dev --no-interactive',
+      args: 'expo start --no-dev',
       env: {
+        EXPO_PUBLIC_API_URL: 'http://37.59.111.34:5002',
         // You can force the host if needed
         // EXPO_PACKAGER_HOSTNAME: 'votre-domaine.com'
       }
@@ -31,7 +32,7 @@ module.exports = {
       script: 'node',
       args: 'server.js',
       env: {
-          PORT: 3000
+          PORT: 3001
       }
     }
   ]

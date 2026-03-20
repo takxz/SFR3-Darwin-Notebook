@@ -11,7 +11,7 @@ export default function ButtonFightMode({
     isTopCorners = true,
     delay = 100,
     extraText = null,
-    onPress = () => {}
+    onPress
 }) {
     return (
         <View>

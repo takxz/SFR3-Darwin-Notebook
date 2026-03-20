@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { View, Text, Button, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Alert, StyleSheet, Pressable } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { Aperture } from 'lucide-react-native';
 import { useCamera } from '../../src/hooks/useCamera.jsx';
 import InformationOrganisme from '../../src/components/InformationOrganisme.jsx';
 import fr from '../../src/assets/locales/fr.json';
+import { getToken } from '../../src/utils/auth.js';
+
+const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || 'http://localhost:3001';
 
 export default function CameraScreen() {
   const { permission, requestPermission, cameraRef, takePicture } = useCamera();
@@ -13,6 +16,58 @@ export default function CameraScreen() {
   const handleCapture = async () => {
     const captured = await takePicture();
     if (captured) setPhoto(captured);
+  };
+
+  const addToDex = async (result) => {
+    try {
+      const token = await getToken();
+
+      if (!token) {
+        Alert.alert('Erreur', 'Token manquant. Connecte-toi avant d\'ajouter une créature.');
+        return;
+      }
+
+      const payload = {
+        species_id: Number(result?.animal_id) || 1,
+        gamification_name: result?.common_name || result?.scientific_name || 'Créature inconnue',
+        scan_url: result?.image_url || photo?.uri || '',
+        scan_quality: 95,
+        gps_location: '48.8584, 2.2945',
+      };
+
+      console.log('[addToDex] Envoi requête add creature', {
+        url: `${USER_API_URL}/api/user/creatures/add`,
+        hasToken: Boolean(token),
+        payload,
+      });
+
+      const response = await fetch(`${USER_API_URL}/api/user/creatures/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      console.log('[addToDex] Réponse API add creature', {
+        status: response.status,
+        ok: response.ok,
+        data,
+      });
+
+      if (!response.ok) {
+        Alert.alert('Erreur', data?.message || data?.error || 'Impossible d\'ajouter la créature.');
+        return;
+      }
+
+      Alert.alert('Succès', 'Créature ajoutée avec succès.');
+      setPhoto(null);
+    } catch (error) {
+      console.error('[addToDex] Erreur réseau add creature', error);
+      Alert.alert('Erreur', 'Erreur réseau lors de l\'ajout de la créature.');
+    }
   };
 
   if (!permission) return <View />;
@@ -37,7 +92,7 @@ export default function CameraScreen() {
           </View>
         </Pressable>
 
-        <InformationOrganisme photo={photo} onClose={() => setPhoto(null)} />
+        <InformationOrganisme photo={photo} onClose={() => setPhoto(null)} addToDex={addToDex} />
       </CameraView>
     </View>
   );

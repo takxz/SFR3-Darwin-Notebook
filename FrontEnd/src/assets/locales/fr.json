@@ -61,5 +61,15 @@
     "waitingScreen": {
         "analyzing": "Analyse en cours...",
         "description": "Identification de l'organisme..."
+    },
+    "informationAnimalScreen": {
+        "reject_button": "Rejeter",
+        "accept_button": "Ajouter au Dex"
+    },
+    "chooseBeastScreen": {
+        "back": "Retour",
+        "title": "CHOISIR VOTRE BÊTE",
+        "subtitle": "Sélectionnez l'animal qui vous représentera au combat",
+        "start_battle": "COMMENCER LE DUEL"
     }
 }
