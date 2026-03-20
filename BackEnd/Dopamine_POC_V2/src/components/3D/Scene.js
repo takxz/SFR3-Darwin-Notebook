@@ -39,7 +39,7 @@ export default function Scene({
             parallax.current.x = THREE.MathUtils.lerp(parallax.current.x, rotation.beta * 0.8, 0.1);
             parallax.current.y = THREE.MathUtils.lerp(parallax.current.y, rotation.gamma * 0.8, 0.1);
         });
-        DeviceMotion.setUpdateInterval(16);
+        DeviceMotion.setUpdateInterval(10); // Faster updates for 60fps feel
         return () => sub.remove();
     }, []);
 
@@ -68,9 +68,10 @@ export default function Scene({
         const baseY = Math.sin(CAMERA_ROTATION_V) * CAMERA_DISTANCE;
 
         // MIX PARALLAX (Hardware) + FLOAT (Respiration auto) + ORBIT (Réglages)
-        const targetX = baseX + floatX + parallax.current.y * 4.0;
-        const targetY = baseY + floatY - (parallax.current.x - 0.8) * 4.0;
-        const targetZ = baseZ;
+        // Accentuation : Multiplicateurs passés de 4.0 à 8.0 pour un effet plus "profond"
+        const targetX = baseX + floatX + parallax.current.y * 8.0;
+        const targetY = baseY + floatY - (parallax.current.x - 0.8) * 8.0;
+        const targetZ = baseZ + Math.abs(parallax.current.y) * 4.0; // Zoom dynamique léger sur les côtés
 
         // ON LERP TOUJOURS VERS LA CIBLE (Assure la fluidité)
         state.camera.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), isSpecialAttack ? 0.05 : 0.1);
@@ -82,7 +83,12 @@ export default function Scene({
             shake.current *= 0.85; 
         }
 
-        state.camera.lookAt(LOOK_AT_X, LOOK_AT_Y, LOOK_AT_Z);
+        // LOOK AT : On décale aussi le point de focus pour accentuer l'immersion
+        state.camera.lookAt(
+            LOOK_AT_X + parallax.current.y * 3, 
+            LOOK_AT_Y - (parallax.current.x - 0.8) * 3, 
+            LOOK_AT_Z
+        );
     });
 
     return (

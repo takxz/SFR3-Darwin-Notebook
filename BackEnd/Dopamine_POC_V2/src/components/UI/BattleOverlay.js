@@ -7,14 +7,14 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 /**
  * 🌟 ROTATING HALO COMPONENT
  */
-const RotatingHalo = () => {
+const RotatingHalo = ({ intensity = 0.3 }) => {
     const rotateAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         Animated.loop(
             Animated.timing(rotateAnim, {
                 toValue: 1,
-                duration: 3000,
+                duration: 8000,
                 easing: Easing.linear,
                 useNativeDriver: true,
             })
@@ -28,16 +28,78 @@ const RotatingHalo = () => {
 
     return (
         <View style={styles.borderBeamContainer} pointerEvents="none">
-            <Animated.View style={[styles.haloLine, { transform: [{ rotate }] }]}>
+            {/* BOLD WHITE BORDER THAT LIGHTS UP ON PRESS */}
+            <Animated.View style={[
+                StyleSheet.absoluteFill, 
+                { 
+                    borderWidth: 3, 
+                    borderColor: '#ffffff', 
+                    borderRadius: 14,
+                    opacity: intensity.interpolate({
+                        inputRange: [0.3, 1.0],
+                        outputRange: [0, 1.0]
+                    })
+                }
+            ]} />
+
+            {/* ROTATING TRACER BEAM */}
+            <Animated.View style={[styles.haloLine, { transform: [{ rotate }], opacity: intensity }]}>
                 <LinearGradient
-                    colors={['transparent', '#ffffff', 'transparent']}
-                    locations={[0.45, 0.5, 0.55]}
+                    colors={['transparent', 'rgba(255, 255, 255, 0.9)', 'transparent']}
+                    locations={[0.3, 0.5, 0.7]}
                     style={{ flex: 1 }}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 />
             </Animated.View>
         </View>
+    );
+};
+
+/**
+ * 🕹️ ANIMATED BATTLE BUTTON COMPONENT
+ */
+const BattleButton = ({ children, onPress, disabled, style, colors }) => {
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const glowAnim = useRef(new Animated.Value(0)).current;
+
+    const handlePressIn = () => {
+        Animated.parallel([
+            Animated.spring(scaleAnim, { toValue: 1.05, friction: 3, tension: 40, useNativeDriver: true }),
+            Animated.timing(glowAnim, { toValue: 1, duration: 200, useNativeDriver: true })
+        ]).start();
+    };
+
+    const handlePressOut = () => {
+        Animated.parallel([
+            Animated.spring(scaleAnim, { toValue: 1, friction: 3, tension: 40, useNativeDriver: true }),
+            Animated.timing(glowAnim, { toValue: 0, duration: 200, useNativeDriver: true })
+        ]).start();
+    };
+
+    const intensity = glowAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.3, 1.0]
+    });
+
+    return (
+        <TouchableOpacity
+            activeOpacity={1}
+            onPress={onPress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            disabled={disabled}
+            style={[style, disabled && { opacity: 0.5 }]}
+        >
+            <Animated.View style={{ flex: 1, transform: [{ scale: scaleAnim }] }}>
+                <RotatingHalo intensity={intensity} />
+                <View style={{ flex: 1, borderRadius: 12, overflow: 'hidden' }}>
+                    <LinearGradient colors={colors} style={styles.actionButton}>
+                        {children}
+                    </LinearGradient>
+                </View>
+            </Animated.View>
+        </TouchableOpacity>
     );
 };
 
@@ -138,59 +200,63 @@ export const BattleOverlay = ({
             {!isIntro && (
                 <View style={styles.actionMenuContainer}>
                     <View style={styles.actionRow}>
-                        <TouchableOpacity activeOpacity={0.7} onPress={() => isMyTurn && sendAction('ATTACK')} disabled={!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0} style={[styles.actionBtnTop, (!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0) && { opacity: 0.5 }]}>
-                            <RotatingHalo />
-                            <LinearGradient colors={['#d14d53', '#8e1b1b']} style={styles.actionButton}>
-                                <Ionicons name="flash-outline" size={24} color="white" />
-                                <Text style={styles.actionText}>Attaque</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
+                        <BattleButton 
+                            onPress={() => isMyTurn && sendAction('ATTACK')} 
+                            disabled={!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0} 
+                            style={styles.actionBtnTop}
+                            colors={['#d14d53', '#8e1b1b']}
+                        >
+                            <Ionicons name="flash-outline" size={24} color="white" />
+                            <Text style={styles.actionText}>Attaque</Text>
+                        </BattleButton>
 
-                        <TouchableOpacity activeOpacity={0.7} onPress={() => isMyTurn && sendAction('DEFEND')} disabled={!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0} style={[styles.actionBtnTop, (!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0) && { opacity: 0.5 }]}>
-                            <RotatingHalo />
-                            <LinearGradient colors={['#6bb57c', '#2c693b']} style={styles.actionButton}>
-                                <Ionicons name="shield-outline" size={24} color="white" />
-                                <Text style={styles.actionText}>Défense</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
+                        <BattleButton 
+                            onPress={() => isMyTurn && sendAction('DEFEND')} 
+                            disabled={!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0} 
+                            style={styles.actionBtnTop}
+                            colors={['#6bb57c', '#2c693b']}
+                        >
+                            <Ionicons name="shield-outline" size={24} color="white" />
+                            <Text style={styles.actionText}>Défense</Text>
+                        </BattleButton>
 
-                        <TouchableOpacity 
-                            activeOpacity={0.7} 
+                        <BattleButton 
                             onPress={() => {
                                 if (isMyTurn && !isSpecial) {
                                     triggerSpecial();
-                                    sendAction('ATTACK'); // Fallback au backend pour les dégâts
+                                    sendAction('ATTACK'); 
                                 }
                             }} 
                             disabled={isSpecial || !isMyTurn || stats.hp <= 0 || stats.opHp <= 0} 
-                            style={[styles.actionBtnTop, (isSpecial || !isMyTurn || stats.hp <= 0 || stats.opHp <= 0) && { opacity: 0.5 }]}
+                            style={styles.actionBtnTop}
+                            colors={['#71b5d6', '#327094']}
                         >
-                            <RotatingHalo />
-                            <LinearGradient colors={['#71b5d6', '#327094']} style={styles.actionButton}>
-                                <MaterialCommunityIcons name="weather-windy" size={24} color="white" />
-                                <Text style={styles.actionText}>
-                                    {stats.specialCooldown > 0 ? `CD: ${stats.specialCooldown}` : "Spécial"}
-                                </Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
+                            <MaterialCommunityIcons name="weather-windy" size={24} color="white" />
+                            <Text style={styles.actionText}>
+                                {stats.specialCooldown > 0 ? `CD: ${stats.specialCooldown}` : "Spécial"}
+                            </Text>
+                        </BattleButton>
                     </View>
 
                     <View style={styles.actionRow}>
-                        <TouchableOpacity activeOpacity={0.7} style={styles.actionBtnBottom}>
-                            <RotatingHalo />
-                            <LinearGradient colors={['#b87c53', '#69381b']} style={styles.actionButton}>
-                                <Ionicons name="arrow-back-outline" size={24} color="white" />
-                                <Text style={styles.actionText}>Fuir</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
+                        <BattleButton 
+                            activeOpacity={0.7} 
+                            style={styles.actionBtnBottom}
+                            colors={['#b87c53', '#69381b']}
+                        >
+                            <Ionicons name="arrow-back-outline" size={24} color="white" />
+                            <Text style={styles.actionText}>Fuir</Text>
+                        </BattleButton>
 
-                        <TouchableOpacity activeOpacity={0.7} onPress={() => isMyTurn && sendAction('HEAL')} disabled={!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0} style={[styles.actionBtnBottom, (!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0) && { opacity: 0.5 }]}>
-                            <RotatingHalo />
-                            <LinearGradient colors={['#b87c53', '#69381b']} style={styles.actionButton}>
-                                <Ionicons name="play-skip-forward-outline" size={24} color="white" />
-                                <Text style={styles.actionText}>Passer</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
+                        <BattleButton 
+                            onPress={() => isMyTurn && sendAction('HEAL')} 
+                            disabled={!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0} 
+                            style={styles.actionBtnBottom}
+                            colors={['#b87c53', '#69381b']}
+                        >
+                            <Ionicons name="play-skip-forward-outline" size={24} color="white" />
+                            <Text style={styles.actionText}>Passer</Text>
+                        </BattleButton>
                     </View>
                 </View>
             )}
@@ -233,8 +299,8 @@ const styles = StyleSheet.create({
     actionRow: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
     actionBtnTop: { flex: 1, height: 75, position: 'relative' },
     actionBtnBottom: { width: '45%', height: 75, position: 'relative' },
-    borderBeamContainer: { position: 'absolute', top: -3, left: -3, right: -3, bottom: -3, borderRadius: 15, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-    haloLine: { position: 'absolute', width: 280, height: 280, top: '50%', left: '50%', marginTop: -140, marginLeft: -140, opacity: 1 },
+    borderBeamContainer: { position: 'absolute', top: -5, left: -5, right: -5, bottom: -5, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+    haloLine: { position: 'absolute', width: 300, height: 300, top: '50%', left: '50%', marginTop: -150, marginLeft: -150, opacity: 0.3 },
     actionButton: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 5, gap: 4, borderRadius: 12, overflow: 'hidden' },
     actionText: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
     comboContainer: { alignItems: 'center' },
