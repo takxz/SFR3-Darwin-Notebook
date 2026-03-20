@@ -91,10 +91,10 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
               <Text style={styles.sharpnessLabel}>Netteté :</Text>
               <Text style={styles.sharpnessValue}>{result.sharpness_rank || '-'}</Text>
             </View>
+            <Text style={styles.battleStatsTitle}>Statistique de la créature</Text>
             <View style={styles.hrLine} />
             <View style={styles.gap} />
             <View style={styles.mainContainer}>
-              {/*Ici, il faudra placer les stats de l'API */}
               <View style={styles.statItem}>
                 <CardInformationStatAnimal title="PV" color="#D95C5C" stat={result.final_stats?.hp} max={100} icon={<Heart size={16} color="#D95C5C" strokeWidth={2.2} />} />
               </View>
