@@ -93,16 +93,16 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
             <View style={styles.mainContainer}>
               {/*Ici, il faudra placer les stats de l'API */}
               <View style={styles.statItem}>
-                <CardInformationStatAnimal title="PV" color="#D95C5C" stat={"15"} max={100} icon={<Heart size={16} color="#D95C5C" strokeWidth={2.2} />} />
+                <CardInformationStatAnimal title="PV" color="#D95C5C" stat={result.final_stats?.hp} max={100} icon={<Heart size={16} color="#D95C5C" strokeWidth={2.2} />} />
               </View>
               <View style={styles.statItem}>
-                <CardInformationStatAnimal title="ATT" color="#e3902b" stat={"200"} max={100} icon={<Sword size={16} color="#e3902b" strokeWidth={2.2} />} />
+                <CardInformationStatAnimal title="ATT" color="#e3902b" stat={result.final_stats?.atk} max={100} icon={<Sword size={16} color="#e3902b" strokeWidth={2.2} />} />
               </View>
               <View style={styles.statItem}>
-                <CardInformationStatAnimal title="DEF" color="#71a84f" stat={"80"} max={100} icon={<Shield size={16} color="#71a84f" strokeWidth={2.2} />} />
+                <CardInformationStatAnimal title="DEF" color="#71a84f" stat={result.final_stats?.defense} max={100} icon={<Shield size={16} color="#71a84f" strokeWidth={2.2} />} />
               </View>
               <View style={styles.statItem}>
-                <CardInformationStatAnimal title="VIT" color="#44aad2" stat={"40"} max={100} icon={<ChevronsUp size={16} color="#44aad2" strokeWidth={2.2} />} />
+                <CardInformationStatAnimal title="VIT" color="#44aad2" stat={result.final_stats?.speed} max={100} icon={<ChevronsUp size={16} color="#44aad2" strokeWidth={2.2} />} />
               </View>
               <View style={styles.gap} />
             </View>
