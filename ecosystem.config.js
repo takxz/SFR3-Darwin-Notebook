@@ -6,7 +6,8 @@ module.exports = {
       script: 'npm',
       args: 'start',
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
+        PORT: 3001
       }
     },
     {
@@ -22,6 +23,7 @@ module.exports = {
       args: 'expo start --no-dev',
       env: {
         EXPO_PUBLIC_API_URL: 'http://37.59.111.34:5002',
+        EXPO_PUBLIC_USER_API_URL: 'http://37.59.111.34:3001',
         // You can force the host if needed
         // EXPO_PACKAGER_HOSTNAME: 'votre-domaine.com'
       }
@@ -32,7 +34,7 @@ module.exports = {
       script: 'node',
       args: 'server.js',
       env: {
-          PORT: 3001
+          PORT: 3002
       }
     }
   ]
