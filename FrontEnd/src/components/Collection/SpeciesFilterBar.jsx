@@ -29,6 +29,7 @@ const styles = StyleSheet.create({
         paddingTop: 12,
         paddingHorizontal: 16,
         paddingBottom: 8,
+        backgroundColor: 'transparent',
     },
     container: {
         flexDirection: 'row',

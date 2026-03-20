@@ -66,11 +66,13 @@ export default function CollectionPage() {
 
     return (
         <View style={styles.container}>
-            <SpeciesFilterBar
-                options={SPECIES_OPTIONS}
-                selectedKey={selectedSpecies}
-                onSelect={setSelectedSpecies}
-            />
+            <View style={styles.filterOverlay}>
+                <SpeciesFilterBar
+                    options={SPECIES_OPTIONS}
+                    selectedKey={selectedSpecies}
+                    onSelect={setSelectedSpecies}
+                />
+            </View>
             <FlatList
                 data={filteredAnimals}
                 numColumns={2}
@@ -97,11 +99,19 @@ const styles = StyleSheet.create({
     },
     listContent: {
       paddingHorizontal: 16,
-            paddingTop: 8,
+            paddingTop: 82,
       paddingBottom: 24,
     },
     column: {
             justifyContent: 'space-between',
+        },
+        filterOverlay: {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 20,
+            elevation: 20,
         },
         centeredState: {
             justifyContent: 'center',
