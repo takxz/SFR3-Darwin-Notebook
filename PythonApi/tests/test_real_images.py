@@ -12,8 +12,8 @@ def test_classification_with_real_image_file(client):
     r"""
     Exécute /classification avec une image de ton disque (upload multipart/form-data).
     Pour lancer:
-      - PowerShell:  $env:TEST_IMAGE_PATH=r"C:\\path\\to\\image.jpg"; python -m pytest -k real_image -vv
-      - CMD:         set TEST_IMAGE_PATH=C:\\path\\to\\image.jpg && python -m pytest -k real_image -vv
+      - PowerShell:  $env:TEST_IMAGE_PATH=r".\test_images\img.jpg"; python -m pytest -k real_image -vv
+      - CMD:         set TEST_IMAGE_PATH=.\images\img.jpg && python -m pytest -k real_image -vv
 
     Note: par défaut, nos tests mockent le modèle IA + iNaturalist + sharpness
     (objectif: tests rapides et déterministes).
