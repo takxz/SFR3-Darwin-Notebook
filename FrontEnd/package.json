@@ -42,12 +42,13 @@
     "expo-av": "~16.0.8",
     "expo-gl": "~16.0.10",
     "expo-haptics": "~15.0.8",
-    "expo-sensors": "^55.0.9",
+    "expo-sensors": "~15.0.8",
     "expo-three": "^8.0.0",
     "socket.io-client": "^4.8.3",
-    "three": "^0.183.2",
+    "three": "~0.166.1",
     "three-stdlib": "^2.36.1"
   },
+
   "private": true,
   "devDependencies": {
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.18.6",
