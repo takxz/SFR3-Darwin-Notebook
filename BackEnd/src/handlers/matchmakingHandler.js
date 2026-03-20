@@ -60,4 +60,10 @@ module.exports = function(io, socket) {
             console.log(`[Cluster ${process.pid}] User ${socket.id} added to queue.`);
         }
     });
+
+    socket.on('leaveMatchmaking', async () => {
+        await store.removeFromQueue(socket.id);
+        socket.emit('leftMatchmaking');
+        console.log(`[Cluster ${process.pid}] User ${socket.id} left matchmaking queue.`);
+    });
 };

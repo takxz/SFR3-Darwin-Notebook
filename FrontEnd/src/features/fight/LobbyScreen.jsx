@@ -2,39 +2,79 @@ import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { Loader2, X } from "lucide-react-native";
+import io from "socket.io-client";
+
+const socket = io("http://10.0.2.2:3000", { transports: ["websocket"] });
 
 export default function LobbyScreen() {
   const router = useRouter();
   const [seconds, setSeconds] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isWaiting, setIsWaiting] = useState(true);
-  const [players, setPlayers] = useState(["Joueur1", "Joueur2"]);
+  const [players, setPlayers] = useState([]);
+  const [status, setStatus] = useState("Recherche de match...");
+  const [roomId, setRoomId] = useState(null);
 
   useEffect(() => {
-    if (!isWaiting) return;
+    socket.emit("findMatch");
+    setStatus("Recherche de match...");
 
+    socket.on("waitingForMatch", () => {
+      setIsWaiting(true);
+      setStatus("En file d'attente...");
+    });
+
+    socket.on("matchFound", (payload) => {
+      const opponentIds = Object.keys(payload.players).filter(id => id !== socket.id);
+      setPlayers(opponentIds);
+      setIsWaiting(false);
+      setStatus("Match trouvé !");
+      setRoomId(payload.roomId);
+      socket.currentRoomId = payload.roomId;
+
+      // progresser visuel
+      setProgress(100);
+
+      // Envoyer ready => active le handler battleHandler
+      socket.emit("playerReady");
+
+      setTimeout(() => {
+        router.replace('/fight');
+      }, 800);
+    });
+
+    socket.on("playerCount", (count) => {
+      setStatus(`En ligne : ${count} joueurs`);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.warn("Socket connect error", err);
+      setStatus("Erreur de connexion socket");
+      setIsWaiting(false);
+    });
+
+    return () => {
+      socket.off("waitingForMatch");
+      socket.off("matchFound");
+      socket.off("playerCount");
+      socket.off("connect_error");
+      socket.emit("leaveMatchmaking"); // côté serveur : implementer si besoin
+    };
+  }, [router]);
+
+  useEffect(() => {
+    if (!isWaiting || progress >= 100) return;
     const timer = setInterval(() => {
-      setSeconds((s) => s + 1);
-      setProgress((prev) => Math.min(100, prev + 6));
-    }, 800);
-
+      setSeconds(s => s + 1);
+      setProgress(prev => Math.min(100, prev + 4));
+    }, 700);
     return () => clearInterval(timer);
-  }, [isWaiting]);
-
-  useEffect(() => {
-    if (progress < 100) return;
-
-    setIsWaiting(false);
-    const successTimeout = setTimeout(() => {
-      // redirection vers page de combat (1v1)
-      router.replace("/fight");
-    }, 1200);
-
-    return () => clearTimeout(successTimeout);
-  }, [progress, router]);
+  }, [isWaiting, progress]);
 
   const handleCancel = () => {
+    socket.emit("leaveMatchmaking");
     setIsWaiting(false);
+    setStatus("Recherche annulée");
     router.back();
   };
 
@@ -45,7 +85,7 @@ export default function LobbyScreen() {
 
       <View style={styles.content}>
         <Text style={styles.title}>Recherche d'adversaire</Text>
-        <Text style={styles.sub}>Connexion au réseau de combat</Text>
+        <Text style={styles.sub}>{status}</Text>
 
         <View style={styles.progressBackground}>
           <View style={[styles.progressFill, { width: `${progress}%` }]} />
@@ -57,12 +97,12 @@ export default function LobbyScreen() {
           <Text style={styles.timerText}>{seconds}s</Text>
         </View>
 
-        <Text style={styles.playersTitle}>Joueurs en file d’attente</Text>
+        <Text style={styles.playersTitle}>Opposants détectés</Text>
         <View style={styles.playersList}>
+          {players.length === 0 && <Text style={styles.playerItem}>Aucun adversaire encore</Text>}
           {players.map((p) => (
             <Text key={p} style={styles.playerItem}>• {p}</Text>
           ))}
-          {isWaiting && <Text style={styles.playerItem}>• Recherche...</Text>}
         </View>
 
         <Pressable onPress={handleCancel} style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnActive]}>
@@ -70,8 +110,8 @@ export default function LobbyScreen() {
           <Text style={styles.cancelText}>ANNULER</Text>
         </Pressable>
 
-        {!isWaiting && progress >= 100 && (
-          <Text style={styles.readyText}>Match trouvé ! Redirection en cours...</Text>
+        {!isWaiting && roomId && (
+          <Text style={styles.readyText}>Match prêt ({roomId})</Text>
         )}
       </View>
     </View>
