@@ -50,12 +50,9 @@ const FIGHT_MODES = [
     }
 ];
 
-export default function FightScreen() {
-
-    // Ajoute un padding intelligent pour que le contenu ne soit pas caché derrière l'encoche
-    // Ou trop proche du bord sur les petits écrans
+export default function FightScreen() 
+{
     const insets = useSafeAreaInsets();
-
     const router = useRouter();
     return (
         <ScrollView
