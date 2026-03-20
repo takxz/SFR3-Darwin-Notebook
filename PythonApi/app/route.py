@@ -184,8 +184,14 @@ def classification():
             }
         )
 
-    except IOError:
-        return jsonify({'error': 'Erreur lors du traitement de l\'image'}), 500
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': f'Erreur interne (Python): {str(e)}',
+            'details': traceback.format_exc() if current_app.debug else None
+        }), 500
 
 
 def init_routes(app):

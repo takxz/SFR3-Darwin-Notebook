@@ -39,9 +39,15 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
 
         console.log(`[Classification] Statut réponse: ${response.status}`);
 
-        const timer = new Promise((res) => setTimeout(res, 3000));
-        const dataPromise = response.json();
-        const [data] = await Promise.all([dataPromise, timer]);
+        let data;
+        try {
+          data = await response.json();
+          await new Promise((res) => setTimeout(res, 2000)); // Petit délai pour l'UX
+        } catch (jsonErr) {
+          const text = await response.text();
+          console.error('[Classification] Réponse non-JSON reçue:', text.substring(0, 100));
+          throw new Error(`Erreur serveur (${response.status}): Réponse invalide reçue.`);
+        }
 
         if (!response.ok || !data?.success) {
           console.error('[Classification] Erreur API:', data);
