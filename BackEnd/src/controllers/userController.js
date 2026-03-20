@@ -42,19 +42,26 @@ exports.getUserById = async (req, res) => {
     }
 };
 
-// Ajouter un animal à un utilisateur (l'utilisateur connecté ou spécifié par player_id dans le body)
+// Ajouter une créature à un utilisateur (gère aussi l'upload d'image)
 exports.addCreature = async (req, res) => {
     try {
         const { 
             species_id, 
             player_id, 
             gamification_name, 
-            scan_url, 
             scan_quality, 
             gps_location 
         } = req.body;
 
         const userId = player_id || req.user.id;
+        let finalScanUrl = req.body.scan_url || null;
+
+        // Si une image a été envoyée, on génère son URL
+        if (req.file) {
+            const protocol = req.protocol;
+            const host = req.get('host');
+            finalScanUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+        }
 
         // 1. Récupérer les informations de l'espèce pour les stats de base
         const speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE id = $1', [species_id]);
@@ -87,7 +94,7 @@ exports.addCreature = async (req, res) => {
             species_id,
             userId,
             gamification_name || species.name,
-            scan_url || null,
+            finalScanUrl,
             scan_quality || null,
             gps_location || null,
             species.base_stat_atq,
@@ -100,6 +107,29 @@ exports.addCreature = async (req, res) => {
     } catch (err) {
         console.error('Erreur lors de l\'ajout de la créature:', err);
         res.status(500).json({ error: "Erreur lors de l'ajout de la créature." });
+    }
+};
+
+// Gérer l'upload d'image et retourner l'URL publique
+exports.uploadCreatureImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: "Aucun fichier n'a été fourni." });
+        }
+
+        // Construire l'URL de l'image
+        // On récupère le protocole (http/https) et l'hôte (IP ou domaine)
+        const protocol = req.protocol;
+        const host = req.get('host');
+        const imageUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+
+        res.json({
+            imageUrl: imageUrl,
+            filename: req.file.filename
+        });
+    } catch (err) {
+        console.error('Erreur lors de l\'upload de l\'image:', err);
+        res.status(500).json({ error: "Erreur lors de l'upload de l'image." });
     }
 };
 

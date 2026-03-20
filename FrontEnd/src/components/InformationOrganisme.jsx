@@ -1,17 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, StyleSheet, Pressable, ScrollView } from 'react-native';
 import Constants from 'expo-constants';
 import WaitingComponent from './WaitingComponent';
 import CardInformationStatAnimal from './CardInformationStatAnimal';
 import { ChevronsUp, Heart, Shield, Sword } from 'lucide-react-native';
+import fr from '../assets/locales/fr.json';
 
 const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
 const API_URL = process.env.EXPO_PUBLIC_API_URL || (expoHost ? `http://${expoHost}:5002` : 'http://localhost:5002');
 
-export default function InformationOrganisme({ photo, onClose }) {
+export default function InformationOrganisme({ photo, onClose, addToDex }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     if (!photo?.uri) return;
@@ -37,9 +39,15 @@ export default function InformationOrganisme({ photo, onClose }) {
 
         console.log(`[Classification] Statut réponse: ${response.status}`);
 
-        const timer = new Promise((res) => setTimeout(res, 3000));
-        const dataPromise = response.json();
-        const [data] = await Promise.all([dataPromise, timer]);
+        let data;
+        try {
+          data = await response.json();
+          await new Promise((res) => setTimeout(res, 2000)); // Petit délai pour l'UX
+        } catch (jsonErr) {
+          const text = await response.text();
+          console.error('[Classification] Réponse non-JSON reçue:', text.substring(0, 100));
+          throw new Error(`Erreur serveur (${response.status}): Réponse invalide reçue.`);
+        }
 
         if (!response.ok || !data?.success) {
           console.error('[Classification] Erreur API:', data);
@@ -68,10 +76,16 @@ export default function InformationOrganisme({ photo, onClose }) {
 
   return (
     <View style={styles.card}>
-      <Pressable onPress={onClose} style={styles.button}>
-        <Text style={styles.buttonText}>X</Text>
-      </Pressable>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={true}
+        persistentScrollbar={true}
+        indicatorStyle="black"
+        scrollIndicatorInsets={{ right: -5 }}
+        onContentSizeChange={() => scrollRef.current?.flashScrollIndicators()}
+        contentContainerStyle={styles.contentContainer}
+      >
         {loading ? <WaitingComponent /> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
         {result ? (
@@ -79,28 +93,42 @@ export default function InformationOrganisme({ photo, onClose }) {
             {result.image_url ? <Image source={{ uri: result.image_url }} style={styles.image} /> : null}
             <Text style={styles.title}>{result.common_name || 'Nom inconnu'}</Text>
             <Text style={styles.subtitle}>{result.scientific_name || ''}</Text>
+            <View style={styles.sharpnessBadge}>
+              <Text style={styles.sharpnessLabel}>Netteté :</Text>
+              <Text style={styles.sharpnessValue}>{result.sharpness_rank || '-'}</Text>
+            </View>
+            <Text style={styles.battleStatsTitle}>Statistique de la créature</Text>
             <View style={styles.hrLine} />
-            <Text style={styles.battleStatsTitle}>Battle Stats</Text>
             <View style={styles.gap} />
             <View style={styles.mainContainer}>
-              {/*Ici, il faudra placer les stats de l'API */}
               <View style={styles.statItem}>
-                <CardInformationStatAnimal title="PV" color="#D95C5C" stat={"15"} max={100} icon={<Heart size={16} color="#D95C5C" strokeWidth={2.2} />} />
+                <CardInformationStatAnimal title="PV" color="#D95C5C" stat={result.final_stats?.hp} max={100} icon={<Heart size={16} color="#D95C5C" strokeWidth={2.2} />} />
               </View>
               <View style={styles.statItem}>
-                <CardInformationStatAnimal title="ATT" color="#e3902b" stat={"200"} max={100} icon={<Sword size={16} color="#e3902b" strokeWidth={2.2} />} />
+                <CardInformationStatAnimal title="ATT" color="#e3902b" stat={result.final_stats?.atk} max={100} icon={<Sword size={16} color="#e3902b" strokeWidth={2.2} />} />
               </View>
               <View style={styles.statItem}>
-                <CardInformationStatAnimal title="DEF" color="#71a84f" stat={"80"} max={100} icon={<Shield size={16} color="#71a84f" strokeWidth={2.2} />} />
+                <CardInformationStatAnimal title="DEF" color="#71a84f" stat={result.final_stats?.defense} max={100} icon={<Shield size={16} color="#71a84f" strokeWidth={2.2} />} />
               </View>
               <View style={styles.statItem}>
-                <CardInformationStatAnimal title="VIT" color="#44aad2" stat={"40"} max={100} icon={<ChevronsUp size={16} color="#44aad2" strokeWidth={2.2} />} />
+                <CardInformationStatAnimal title="VIT" color="#44aad2" stat={result.final_stats?.speed} max={100} icon={<ChevronsUp size={16} color="#44aad2" strokeWidth={2.2} />} />
               </View>
+              <View style={styles.gap} />
             </View>
           </>
         ) : null}
       </ScrollView>
-    </View>
+      {!loading && !error ?
+        <View style={styles.bottomButtonContainer}>
+          <Pressable onPress={onClose} style={styles.bottomButtonReject}>
+            <Text style={styles.buttonTextDismiss}>{fr.informationAnimalScreen.reject_button}</Text>
+          </Pressable>
+          <Pressable onPress={() => addToDex?.(result)} style={styles.bottomButtonAccept}>
+            <Text style={styles.buttonTextAccept}>{fr.informationAnimalScreen.accept_button}</Text>
+          </Pressable>
+        </View>
+        : null}
+      </View>
   );
 }
 
@@ -119,6 +147,9 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingBottom: 12,
   },
+  scrollView: {
+    marginRight: -4,
+  },
   title: {
     color: '#000',
     fontWeight: '700',
@@ -127,6 +158,27 @@ const styles = StyleSheet.create({
   subtitle: {
     color: '#97572B',
     fontSize: 14,
+  },
+  sharpnessBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: '#f8dcb7',
+  },
+  sharpnessLabel: {
+    color: '#97572B',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  sharpnessValue: {
+    color: '#97572B',
+    fontSize: 12,
+    fontWeight: '700',
   },
   battleStatsTitle: {
     color: '#97572B',
@@ -148,8 +200,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  buttonText: {
-    color: '#000',
+  buttonTextAccept: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  buttonTextDismiss: {
+    color: '#97572B',
     fontWeight: '600',
   },
   hrLine: {
@@ -174,5 +230,26 @@ const styles = StyleSheet.create({
   },
   gap: {
     height: 8,
+  },
+  bottomButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  bottomButtonReject: {
+    flex: 1,
+    backgroundColor: '#f8dcb7',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  bottomButtonAccept: {
+    flex: 1,
+    backgroundColor: '#97572B',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 4,
   },
 });

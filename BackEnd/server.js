@@ -21,6 +21,9 @@ app.use(cors());
 app.use(express.json());
 
 // ======== MONTAGE DES ROUTES DE L'API REST (HTTP) ========
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 
@@ -84,7 +87,7 @@ io.on('connection', async (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`
     🚀  Game Server [Cluster PID: ${process.pid}] running on port ${PORT}
