@@ -55,3 +55,9 @@ from . import route
 
 # Enregistrement des routes après la création de l'app pour éviter un cycle d'import.
 route.init_routes(app)
+
+# Pré-chargement du modèle IA (évite le délai/timeout au premier appel)
+if _should_load_model():
+    print("[AI Model] Pre-loading model...")
+    load_model_detection()
+    print("[AI Model] Ready!")
