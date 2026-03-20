@@ -60,7 +60,7 @@ export default function FightScreen() {
     return (
         <ScrollView
             contentContainerStyle={styles.mainContainer}
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={true}
         >
             {/* Header */}
             <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top + 20, 40) }]}>
