@@ -1,21 +1,84 @@
+<<<<<<< HEAD
 import { View, Text, StyleSheet } from "react-native";
+=======
+import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
+>>>>>>> develop
 import { useRouter } from "expo-router";
 import { Zap, Sword, Map } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ButtonFightMode from "@/features/fight/components/ButtonFightMode";
 import fr from "@/assets/locales/fr.json";
+import globalColors from "@/assets/constants/colors.json";
+
+const COLORS = {
+    background: globalColors.blancJauni,
+    textMain: globalColors.noir,
+    textSub: globalColors.marronCuir,
+    zap: globalColors.rouge,
+    duel: {
+        theme: globalColors.rouge,
+        corner: "rgba(176, 30, 40, 0.1)",
+        gradient: [globalColors.blanc, globalColors.blancJauni],
+    },
+    career: {
+        theme: globalColors.vertSombre,
+        corner: "rgba(46, 111, 64, 0.1)",
+        gradient: [globalColors.vertClair, globalColors.blanc]
+    }
+};
+
+const FIGHT_MODES = [
+    {
+        id: "duel",
+        title: fr.fightScreen.mode_duel,
+        subtitle: fr.fightScreen.duel_desc,
+        Icon: Sword,
+        gradientColors: COLORS.duel.gradient,
+        themeColor: COLORS.duel.theme,
+        cornerColor: COLORS.duel.corner,
+        isTopCorners: true,
+        extraText: "MMR: 500",
+        route: "/choose-beast"
+    },
+    {
+        id: "career",
+        title: fr.fightScreen.mode_career,
+        subtitle: fr.fightScreen.career_desc,
+        Icon: Map,
+        gradientColors: COLORS.career.gradient,
+        themeColor: COLORS.career.theme,
+        cornerColor: COLORS.career.corner,
+        isTopCorners: false,
+        extraText: null,
+        route: null
+    }
+];
 
 export default function FightScreen() {
+<<<<<<< HEAD
     const router = useRouter();
     return (
         <View style={styles.screenContainer}>
             {/* Ambiant Glow */}
             {/* <View style={(styles.glowTop)} /> */}
             {/* <View style={(styles.glowBottom)} /> */}
+=======
+>>>>>>> develop
 
-            {/* Header*/}
-            <View style={styles.headerContainer}>
+    // Ajoute un padding intelligent pour que le contenu ne soit pas caché derrière l'encoche
+    // Ou trop proche du bord sur les petits écrans
+    const insets = useSafeAreaInsets();
+
+    const router = useRouter();
+    return (
+        <ScrollView
+            contentContainerStyle={styles.mainContainer}
+            showsVerticalScrollIndicator={true}
+        >
+            {/* Header */}
+            <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top + 20, 40) }]}>
                 <View style={styles.titleRow}>
-                    <Zap size={24} color="#f59e0b" fill="#f59e0b" />
+                    <Zap size={styles.iconConstants.size} color={COLORS.zap} fill={COLORS.zap} />
                     <Text style={styles.mainTitle}>{fr.fightScreen.header_title}</Text>
                 </View>
                 <Text style={styles.mainSubtitle}>
@@ -25,6 +88,7 @@ export default function FightScreen() {
 
             {/* Main Content */}
             <View style={styles.mainContainer}>
+<<<<<<< HEAD
                 {/* Duel Button */}
                 <ButtonFightMode
                     title={fr.fightScreen.mode_duel}
@@ -51,40 +115,42 @@ export default function FightScreen() {
                     onPress={() => router.push("/campaign")}
                 />
 
+=======
+                {FIGHT_MODES.map((mode) => (
+                    <ButtonFightMode
+                        key={mode.id}
+                        {...mode}
+                        onPress={() => {
+                            if (mode.route) {
+                                router.push(mode.route)
+                            } else {
+                                Alert.alert(fr.fightScreen.coming_soon);
+                            }
+                        }}
+                    />
+                ))}
+>>>>>>> develop
             </View>
-        </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
-    // --- Background Glows ---
-    glowTop: {
-        position: "absolute", top: -100, right: -50,
-        width: 384, height: 384, borderRadius: 192,
-        backgroundColor: "rgba(251,191,36,0.1)",
+    iconConstants: {
+        size: 32
     },
-    glowBottom: {
-        position: "absolute", bottom: -100, left: -100,
-        width: 384, height: 384, borderRadius: 192,
-        backgroundColor: "rgba(16,185,129,0.1)",
-    },
-
-    // --- Layout Global ---
     screenContainer: {
         flex: 1,
-        backgroundColor: "#f2f6f3",
+        backgroundColor: COLORS.background,
     },
     mainContainer: {
-        flex: 1,
+        flexGrow: 1,
         justifyContent: "center",
-        paddingHorizontal: 20,
+        paddingHorizontal: "5%",
         gap: 24,
-        paddingBottom: 100,
+        paddingBottom: "15%",
     },
-
-    // --- Header ---
     headerContainer: {
-        paddingTop: 72,
         paddingBottom: 16,
         alignItems: "center",
     },
@@ -96,13 +162,13 @@ const styles = StyleSheet.create({
     mainTitle: {
         fontSize: 24,
         fontWeight: "900",
-        color: "#022c22",
+        color: COLORS.textMain,
         letterSpacing: -0.5,
     },
     mainSubtitle: {
         fontSize: 14,
         fontWeight: "500",
-        color: "rgba(6, 95, 70, 0.6)",
+        color: COLORS.textSub,
         marginTop: 4,
     }
 });
