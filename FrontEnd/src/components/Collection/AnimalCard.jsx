@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, Dimensions } from "react-native";
+import { View, Text, Image, Pressable, StyleSheet, Dimensions } from "react-native";
 import { Star, Wind, Droplets, Bug, PawPrint, Leaf } from "lucide-react-native";
+import { getAnimalStatsWithPlantEffects } from "../../utils/tempCollectionApi";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_GAP = 16;
@@ -26,12 +27,16 @@ export function AnimalCard({
   animal,
   index = 0,
   cardWidth = DEFAULT_CARD_WIDTH,
+  onPress,
 }) {
-  const hpPercentage = (animal.hp / animal.maxHp) * 100;
+  // Get modified stats based on linked plant effects
+  const modifiedStats = getAnimalStatsWithPlantEffects(animal);
+  const hpPercentage = (modifiedStats.hp / modifiedStats.maxHp) * 100;
   const { Icon: TypeIcon, color: typeColor } = getTypeConfig(animal.type);
 
   return (
-    <View
+    <Pressable
+      onPress={onPress}
       style={[styles.card, { width: cardWidth }]}
     >
       {/* Image */}
@@ -67,35 +72,37 @@ export function AnimalCard({
           ))}
         </View>
 
-        {/* HP Bar */}
-        <View>
-          <View style={styles.hpHeader}>
-            <Text style={styles.hpLabel}>HP</Text>
-            <Text style={styles.hpValue}>
-              {animal.hp}/{animal.maxHp}
-            </Text>
+        {/* HP Bar - Hidden for plants (flora) */}
+        {animal.type !== 'flora' && (
+          <View>
+            <View style={styles.hpHeader}>
+              <Text style={styles.hpLabel}>HP</Text>
+              <Text style={styles.hpValue}>
+                {modifiedStats.hp}/{modifiedStats.maxHp}
+              </Text>
+            </View>
+            <View style={styles.hpTrack}>
+              <View
+                from={{ width: "0%" }}
+                animate={{ width: `${hpPercentage}%` }}
+                transition={{
+                  type: "timing",
+                  duration: 1000,
+                  delay: 500 + index * 100,
+                }}
+                style={[
+                  styles.hpFill,
+                  {
+                    backgroundColor:
+                      hpPercentage > 50 ? "#A8DCAB" : "#f59e0b",
+                  },
+                ]}
+              />
+            </View>
           </View>
-          <View style={styles.hpTrack}>
-            <View
-              from={{ width: "0%" }}
-              animate={{ width: `${hpPercentage}%` }}
-              transition={{
-                type: "timing",
-                duration: 1000,
-                delay: 500 + index * 100,
-              }}
-              style={[
-                styles.hpFill,
-                {
-                  backgroundColor:
-                    hpPercentage > 50 ? "#A8DCAB" : "#f59e0b",
-                },
-              ]}
-            />
-          </View>
-        </View>
+        )}
       </View>
-    </View>
+    </Pressable>
   );
 }
 

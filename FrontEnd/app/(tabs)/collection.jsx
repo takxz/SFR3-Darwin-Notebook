@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, ActivityIndicator, Text } from 'react-native';
+import { useRouter } from 'expo-router';
 import { AnimalCard } from '../../src/components/Collection/AnimalCard';
 import { SpeciesFilterBar } from '../../src/components/Collection/SpeciesFilterBar';
 import { fetchCollectionAnimals } from '../../src/utils/tempCollectionApi';
@@ -11,6 +12,7 @@ const SPECIES_OPTIONS = [
 ];
 
 export default function CollectionPage() {
+    const router = useRouter();
     const [animalData, setAnimalData] = useState([]);
     const [selectedSpecies, setSelectedSpecies] = useState('all');
     const [isLoading, setIsLoading] = useState(true);
@@ -76,11 +78,15 @@ export default function CollectionPage() {
             <FlatList
                 data={filteredAnimals}
                 numColumns={2}
-                keyExtractor={(item, index) => `${item.name}-${index}`}
+                keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.listContent}
                 columnWrapperStyle={styles.column}
                 renderItem={({ item, index }) => (
-                    <AnimalCard animal={item} index={index} />
+                    <AnimalCard
+                        animal={item}
+                        index={index}
+                        onPress={() => router.push(`/creature/${item.id}`)}
+                    />
                 )}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
