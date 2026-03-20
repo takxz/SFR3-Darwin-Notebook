@@ -74,7 +74,7 @@ def level_from_global_score(global_score_0_100: float, *, min_level: int = 1, ma
 
 def final_stats_from_formula(
     *,
-    base: BaseStats,
+    base: BaseStats | dict,
     level: int,
     ivs: dict,
     sharpness_score: float = 0.0,
@@ -89,10 +89,21 @@ def final_stats_from_formula(
     sharpness_score = max(0.0, min(100.0, float(sharpness_score or 0.0)))
     sharpness_factor = 1.0 + (sharpness_score / 100.0) * 0.20
 
-    hp = float(base.hp + (level * (float(ivs.get("hp", 0)) / 10.0)))
-    atk = float(base.atk + (level * (float(ivs.get("atk", 0)) / 10.0)))
-    defense = float(base.defense + (level * (float(ivs.get("defense", 0)) / 10.0)))
-    speed = float(base.speed + (level * (float(ivs.get("speed", 0)) / 10.0)))
+    if isinstance(base, dict):
+        hp_base = float(base.get("hp", 20.0))
+        atk_base = float(base.get("atk", 20.0))
+        defense_base = float(base.get("defense", 20.0))
+        speed_base = float(base.get("speed", 20.0))
+    else:
+        hp_base = float(base.hp)
+        atk_base = float(base.atk)
+        defense_base = float(base.defense)
+        speed_base = float(base.speed)
+
+    hp = float(hp_base + (level * (float(ivs.get("hp", 0)) / 10.0)))
+    atk = float(atk_base + (level * (float(ivs.get("atk", 0)) / 10.0)))
+    defense = float(defense_base + (level * (float(ivs.get("defense", 0)) / 10.0)))
+    speed = float(speed_base + (level * (float(ivs.get("speed", 0)) / 10.0)))
 
     hp = float(hp * sharpness_factor)
     atk = float(atk * sharpness_factor)

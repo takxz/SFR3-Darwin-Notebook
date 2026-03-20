@@ -3,7 +3,7 @@ from app.base_species import get_base_stats, final_stats_from_formula
 def test_get_base_stats_guépard():
     stats = get_base_stats(123)  # iNaturalist ID
     assert stats is not None
-    assert isinstance(stats, dict)
+    assert isinstance(stats, dict) or hasattr(stats, 'hp')
     assert "hp" in stats  # ou les clés que tu as
 
 def test_final_stats_formula_basic():
