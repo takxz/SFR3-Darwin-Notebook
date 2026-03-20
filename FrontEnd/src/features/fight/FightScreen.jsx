@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { Zap, Sword, Map } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -46,7 +46,7 @@ const FIGHT_MODES = [
         cornerColor: COLORS.career.corner,
         isTopCorners: false,
         extraText: null,
-        route: null
+        route: "/campaign"
     }
 ];
 
@@ -76,13 +76,7 @@ export default function FightScreen()
                     <ButtonFightMode
                         key={mode.id}
                         {...mode}
-                        onPress={() => {
-                            if (mode.route) {
-                                router.push(mode.route)
-                            } else {
-                                Alert.alert(fr.fightScreen.coming_soon);
-                            }
-                        }}
+                        onPress={() => router.push(mode.route)}
                     />
                 ))}
             </View>
