@@ -1,36 +1,68 @@
-import { View, StyleSheet, FlatList } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, StyleSheet, FlatList, ActivityIndicator, Text } from 'react-native';
 import { AnimalCard } from '../../src/components/AnimalCard';
+import { fetchCollectionAnimals } from '../../src/utils/tempCollectionApi';
 
 export default function CollectionPage() {
-    const animalData = [
-        { name: "Red Fox", type: "terrestrial", rarity: 2, hp: 68, maxHp: 100,
-            image: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=400&fit=crop" },
-        { name: "Great White Shark", type: "aquatic", rarity: 4, hp: 210, maxHp: 300,
-            image: "https://images.unsplash.com/photo-1560275619-4cc5fa59d3ae?w=400&fit=crop" },
-        { name: "Bald Eagle", type: "aerial", rarity: 3, hp: 90, maxHp: 120,
-            image: "https://images.unsplash.com/photo-1611689342806-0863700ce1e4?w=400&fit=crop" },
-        { name: "Snow Leopard", type: "terrestrial", rarity: 5, hp: 145, maxHp: 180,
-            image: "https://images.unsplash.com/photo-1456926631375-92c8ce872def?w=400&fit=crop" },
-        { name: "Barn Owl", type: "nocturnal", rarity: 3, hp: 55, maxHp: 80,
-            image: "https://images.unsplash.com/photo-1543549049-9fbcc3cd9003?w=400&fit=crop" },
-        { name: "Clownfish", type: "aquatic", rarity: 2, hp: 30, maxHp: 50,
-            image: "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&fit=crop" },
-        { name: "Peregrine Falcon", type: "aerial", rarity: 4, hp: 75, maxHp: 100,
-            image: "https://images.unsplash.com/photo-1570144820100-f5a6fa71f79e?w=400&fit=crop" },
-        { name: "Giant Panda", type: "terrestrial", rarity: 5, hp: 200, maxHp: 200,
-            image: "https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=400&fit=crop" }
-    ];
+    const [animalData, setAnimalData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadAnimals = async () => {
+            try {
+                const data = await fetchCollectionAnimals();
+
+                if (isMounted) {
+                    setAnimalData(data);
+                }
+            } catch (err) {
+                if (isMounted) {
+                    setError('Unable to load animals.');
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadAnimals();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    if (isLoading) {
+        return (
+            <View style={[styles.container, styles.centeredState]}>
+                <ActivityIndicator size="large" color="#90AAA1" />
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={[styles.container, styles.centeredState]}>
+                <Text style={styles.errorText}>{error}</Text>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             <FlatList
-            data={animalData}
-            numColumns={2}
-            keyExtractor={(_, index) => index.toString()}
-            contentContainerStyle={styles.listContent}
-            columnWrapperStyle={styles.column}
-            renderItem={({ item, index }) => (
-                <AnimalCard animal={item} index={index} />
-            )}
+                data={animalData}
+                numColumns={2}
+                keyExtractor={(_, index) => index.toString()}
+                contentContainerStyle={styles.listContent}
+                columnWrapperStyle={styles.column}
+                renderItem={({ item, index }) => (
+                    <AnimalCard animal={item} index={index} />
+                )}
             />
         </View>
     );
@@ -48,5 +80,14 @@ const styles = StyleSheet.create({
     },
     column: {
       justifyContent: 'space-between',
+        },
+        centeredState: {
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        errorText: {
+            color: '#8b3a3a',
+            fontSize: 16,
+            fontWeight: '600',
     }
 });
