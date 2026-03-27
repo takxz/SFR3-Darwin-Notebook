@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: darwin_postgres_dev
+    environment:
+      POSTGRES_USER: darwin_dev_user
+      POSTGRES_PASSWORD: darwin_dev_password
+      POSTGRES_DB: darwin_db_dev
+    ports:
+      - "5435:5432"
+    volumes:
+      # Ce fichier init.sql ne s'exécutera que la toute première fois qu'on monte la base.
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  redis-dev:
+    image: redis:alpine
+    container_name: darwin_redis_dev
+    ports:
+      - "6379:6379"

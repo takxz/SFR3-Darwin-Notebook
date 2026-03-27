@@ -6,7 +6,7 @@ exports.getProfile = async (req, res) => {
         const userId = req.user.id;
 
         const result = await db.query(
-            'SELECT id, email, pseudo, player_level, bio_token FROM "PLAYER" WHERE id = $1',
+            'SELECT id, email, pseudo, player_level, bio_token FROM player WHERE id = $1',
             [userId]
         );
 
@@ -27,7 +27,7 @@ exports.getUserById = async (req, res) => {
         const targetId = req.params.id;
 
         const result = await db.query(
-            'SELECT id, pseudo, player_level, bio_token FROM "PLAYER" WHERE id = $1',
+            'SELECT id, pseudo, player_level, bio_token FROM player WHERE id = $1',
             [targetId]
         );
 
@@ -45,12 +45,12 @@ exports.getUserById = async (req, res) => {
 // Ajouter une créature à un utilisateur (gère aussi l'upload d'image)
 exports.addCreature = async (req, res) => {
     try {
-        const { 
-            species_id, 
-            player_id, 
-            gamification_name, 
-            scan_quality, 
-            gps_location 
+        const {
+            species_id,
+            player_id,
+            gamification_name,
+            scan_quality,
+            gps_location
         } = req.body;
 
         const userId = player_id || req.user.id;

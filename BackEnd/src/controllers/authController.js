@@ -8,7 +8,7 @@ exports.register = async (req, res) => {
         const { email, password, pseudo } = req.body;
 
         // 1. Vérifier si l'utilisateur existe déjà
-        const userCheck = await db.query('SELECT * FROM "PLAYER" WHERE email = $1 OR pseudo = $2', [email, pseudo]);
+        const userCheck = await db.query('SELECT * FROM player WHERE email = $1 OR pseudo = $2', [email, pseudo]);
         if (userCheck.rows.length > 0) {
             return res.status(400).json({ error: errorMessageUserAlreadyExists });
         }
@@ -19,7 +19,7 @@ exports.register = async (req, res) => {
 
         // 3. Insérer le nouvel utilisateur dans la base de données (l'ID UUID est généré automatiquement grâce à gen_random_uuid())
         const newUserQuery = `
-            INSERT INTO "PLAYER" (email, password, pseudo) 
+            INSERT INTO player (email, password, pseudo) 
             VALUES ($1, $2, $3) 
             RETURNING id, email, pseudo, player_level;
         `;

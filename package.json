@@ -1,6 +1,13 @@
 {
-  "dependencies": {
-    "expo-linear-gradient": "^55.0.8",
-    "moti": "^0.30.0"
+  "name": "sfr3-darwin-notebook",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node scripts/start.js",
+    "start:local": "node scripts/start.js --local",
+    "dev": "concurrently -i -c \"magenta,cyan,green\" -n \"FRONT,BACK,PYTHON\" \"npm start --prefix FrontEnd\" \"npm start --prefix BackEnd\" \"cd PythonApi && python darwin.py\"",
+    "dev:local": "concurrently -i -c \"magenta,cyan,green\" -n \"FRONT,BACK,PYTHON\" \"npm start --prefix FrontEnd\" \"npm run start:local --prefix BackEnd\" \"cd PythonApi && python darwin.py\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

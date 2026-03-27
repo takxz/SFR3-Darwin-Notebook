@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node --env-file=.env node server.js",
+    "start:local": "node --env-file=.env.local node server.js",
     "test": "jest src/tests"
   },
   "keywords": [],
@@ -31,4 +32,3 @@
     "jest": "^29.7.0"
   }
 }
-
