@@ -5,16 +5,16 @@ const cors = require('cors');
 require('dotenv').config();
 
 // 0. Importation des routes API
-const authRoutes = require('./src/routes/authRoutes');
-const userRoutes = require('./src/routes/userRoutes');
+const authRoutes = require('./src/main/routes/authRoutes');
+const userRoutes = require('./src/main/routes/userRoutes');
 
 // 1. Importation du Redis-Adapter
 const { createAdapter } = require('@socket.io/redis-adapter');
 
 // 2. Import de notre nouveau RedisStore asynchrone
-const { store, pubClient, subClient } = require('./src/store/redisStore');
-const registerMatchmakingHandlers = require('./src/handlers/matchmakingHandler');
-const registerBattleHandlers = require('./src/handlers/battleHandler');
+const { store, pubClient, subClient } = require('./src/main/store/redisStore');
+const registerMatchmakingHandlers = require('./src/main/handlers/matchmakingHandler');
+const registerBattleHandlers = require('./src/main/handlers/battleHandler');
 
 const app = express();
 app.use(cors());
