@@ -216,7 +216,7 @@ export default function CollectionPage() {
                 )}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <Text style={styles.emptyText}>No species available in this category yet.</Text>
+                        <Text style={styles.emptyText}>Aucune créature disponible dans cette catégorie pour le moment.</Text>
                     </View>
                 }
             />
@@ -253,6 +253,7 @@ const styles = StyleSheet.create({
         color: '#8b3a3a',
         fontSize: 16,
         fontWeight: '600',
+        textAlign: 'center',
     },
     emptyState: {
         alignItems: 'center',
@@ -262,5 +263,7 @@ const styles = StyleSheet.create({
         color: '#8a7558',
         fontSize: 14,
         fontWeight: '500',
+        textAlign: 'center',
+        width: '100%',
     },
 });
