@@ -210,7 +210,15 @@ export default function CollectionPage() {
                 renderItem={({ item }) => (
                     <AnimalCard
                         animal={item}
-                        onPress={() => router.push(`/creature/${item.id}`)}
+                        onPress={() =>
+                            router.push({
+                                pathname: '/creature/[id]',
+                                params: {
+                                    id: String(item.id),
+                                    animal: encodeURIComponent(JSON.stringify(item)),
+                                },
+                            })
+                        }
                     />
                 )}
                 ListEmptyComponent={
