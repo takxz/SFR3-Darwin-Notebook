@@ -11,12 +11,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
-      - name: Install dependencies
-        run: |
-          npm install
       - name: Move in backend directory
         run: |
           cd BackEnd
+      - name: Install dependencies
+        run: |
+          npm install
       - name: Run tests
         run: |
           npm test
