@@ -3,7 +3,7 @@ import { View, StyleSheet, FlatList, ActivityIndicator, Text } from 'react-nativ
 import { useRouter } from 'expo-router';
 import { AnimalCard } from '../../src/components/Collection/AnimalCard';
 import { SpeciesFilterBar } from '../../src/components/Collection/SpeciesFilterBar';
-import { fetchCollectionAnimals } from '../../src/utils/tempCollectionApi';
+import { fetchCollection } from '../../src/utils/tempCollectionApi';
 
 const SPECIES_OPTIONS = [
     { key: 'all', label: 'Tous' },
@@ -27,7 +27,7 @@ export default function CollectionPage() {
 
         const loadAnimals = async () => {
             try {
-                const data = await fetchCollectionAnimals();
+                const data = await fetchCollection();
 
                 if (isMounted) {
                     setAnimalData(data);

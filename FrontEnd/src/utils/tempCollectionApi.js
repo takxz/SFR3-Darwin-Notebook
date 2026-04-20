@@ -164,12 +164,12 @@ const mockAnimals = [
   },
 ];
 
-export async function fetchCollectionAnimals() {
+export async function fetchCollection() {
   await new Promise((resolve) => setTimeout(resolve, 350));
   return mockAnimals;
 }
 
-export function getCollectionAnimalById(id) {
+export function getCollectionAnimalDetailsById(id) {
   return mockAnimals.find((animal) => animal.id === id);
 }
 
@@ -178,8 +178,8 @@ export function getCollectionPlants() {
 }
 
 export function linkPlantToAnimal(animalId, plantId) {
-  const animal = getCollectionAnimalById(animalId);
-  const plant = getCollectionAnimalById(plantId);
+  const animal = getCollectionAnimalDetailsById(animalId);
+  const plant = getCollectionAnimalDetailsById(plantId);
 
   if (!animal || !plant || plant.category !== 'flora') {
     return false;
@@ -190,7 +190,7 @@ export function linkPlantToAnimal(animalId, plantId) {
 }
 
 export function unlinkPlantFromAnimal(animalId) {
-  const animal = getCollectionAnimalById(animalId);
+  const animal = getCollectionAnimalDetailsById(animalId);
 
   if (!animal) {
     return false;
@@ -257,7 +257,7 @@ export function getAnimalStatsWithPlantEffects(animal) {
     };
   }
 
-  const plant = getCollectionAnimalById(animal.plantLinkId);
+  const plant = getCollectionAnimalDetailsById(animal.plantLinkId);
   if (!plant) {
     return {
       hp: animal.hp,

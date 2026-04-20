@@ -4,7 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Heart, Leaf, Scale, Shield, Star, Timer, Zap, X } from 'lucide-react-native';
 import {
-  getCollectionAnimalById,
+  getCollectionAnimalDetailsById,
   getCollectionPlants,
   linkPlantToAnimal,
   unlinkPlantFromAnimal,
@@ -39,7 +39,7 @@ export default function CreatureDetailsPage() {
 
   const animal = useMemo(() => {
     if (!id || Array.isArray(id)) return null;
-    const foundAnimal = getCollectionAnimalById(id);
+    const foundAnimal = getCollectionAnimalDetailsById(id);
     return foundAnimal ? { ...foundAnimal } : null;
   }, [id, refreshKey]);
 
@@ -48,7 +48,7 @@ export default function CreatureDetailsPage() {
   const meta = useMemo(() => {
     if (!animal) return null;
     const linkedPlantName = animal.plantLinkId
-      ? getCollectionAnimalById(animal.plantLinkId)?.name
+      ? getCollectionAnimalDetailsById(animal.plantLinkId)?.name
       : null;
 
     // Get modified stats based on plant effects
@@ -112,7 +112,7 @@ export default function CreatureDetailsPage() {
       <View style={[styles.fixedTopBar, { top: insets.top + 6 }]}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={16} color="#99613a" strokeWidth={2.5} />
-          <Text style={styles.backButtonText}>Retour au Dex</Text>
+          <Text style={styles.backButtonText}>Retour à la Collection</Text>
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent} style={styles.container}>
