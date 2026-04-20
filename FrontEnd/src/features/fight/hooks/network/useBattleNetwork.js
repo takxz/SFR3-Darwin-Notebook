@@ -74,20 +74,27 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
         // 3. Gestion des déconnexions
         socketService.on('playerDisconnected', () => {
             console.log('[BattleNetwork] Opponent disconnected');
-            // Gérer l'UI de victoire par forfait par exemple
+            // Gérer l'UI de victoire par forfait
+        });
+
+        // 4. Recevoir les récompenses
+        socketService.on('REWARD_GRANTED', (rewardData) => {
+            console.log('[BattleNetwork] 🎁 REWARD RECEIVED: ', rewardData);
+            // Utilisé potentiellement plus tard pour l'UI avec un Alert()
         });
 
         return () => {
             socketService.off('battleStart');
             socketService.off('gameUpdate');
             socketService.off('playerDisconnected');
+            socketService.off('REWARD_GRANTED');
         };
     }, []);
 
     // ACTIONS À ENVOYER AU SERVEUR
     const findMatch = () => {
         console.log('[BattleNetwork] Looking for a match...');
-        socketService.emit('findMatch');
+        socketService.emit('findMatch', { creatureId: 1 }); // Ticket 1: Hardcoded for now
     };
 
     const sendReady = () => {

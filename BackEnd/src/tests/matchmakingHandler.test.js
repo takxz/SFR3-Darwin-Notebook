@@ -8,7 +8,12 @@ jest.mock('../store/redisStore', () => ({
         dequeue: jest.fn(),
         addToQueue: jest.fn(),
         createBattle: jest.fn(),
-        updatePlayerBattle: jest.fn()
+        updatePlayerBattle: jest.fn(),
+        getPlayer: jest.fn(),
+        PREFIX: 'game:',
+        client: {
+            hset: jest.fn()
+        }
     }
 }));
 

@@ -95,6 +95,28 @@ module.exports = function(io, socket) {
         });
 
         if (result) {
+            // ============================
+            // LOGIQUE DE RETRIBUTION D'XP
+            // ============================
+            const winnerCreatureId = battle.players[result.winner].creatureId;
+            if (winnerCreatureId) {
+                try {
+                    const db = require('../config/db');
+                    const xpRawGain = 50; 
+                    const goldGain = 10;
+                    
+                    // MàJ Base de données
+                    await db.query('UPDATE "CREATURE" SET experience = experience + $1 WHERE id = $2', [xpRawGain, winnerCreatureId]);
+                    
+                    // Informer le FrontEnd
+                    io.to(result.winner).emit('REWARD_GRANTED', { xp: xpRawGain, gold: goldGain });
+                    
+                    console.log(`[BattleHandler] Recompense XP accordee a la Creature ${winnerCreatureId}`);
+                } catch (e) {
+                    console.error("[BattleHandler] ERREUR LORS DE L'UPDATE XP DB:", e);
+                }
+            }
+
             await store.deleteBattle(roomId); // End game
             await store.updatePlayerBattle(socket.id, 'false');
             await store.updatePlayerBattle(opponentId, 'false');
