@@ -211,7 +211,7 @@ export default function CollectionPage() {
                     <AnimalCard
                         animal={item}
                         index={index}
-                        // onPress={() => router.push(`/creature/${item.id}`)}
+                        onPress={() => router.push(`/creature/${item.id}`)}
                     />
                 )}
                 ListEmptyComponent={
