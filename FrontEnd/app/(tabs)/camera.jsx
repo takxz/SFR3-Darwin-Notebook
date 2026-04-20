@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { View, Text, Button, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Alert, StyleSheet, Pressable } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { Aperture } from 'lucide-react-native';
 import { useCamera } from '../../src/hooks/useCamera.jsx';
+import * as Location from 'expo-location';
 import InformationOrganisme from '../../src/components/InformationOrganisme.jsx';
 import fr from '../../src/assets/locales/fr.json';
+import { getToken } from '../../src/utils/auth.js';
+
+const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || 'http://ikdeksmp.fr:12000';
 
 export default function CameraScreen() {
   const { permission, requestPermission, cameraRef, takePicture } = useCamera();
@@ -13,6 +17,112 @@ export default function CameraScreen() {
   const handleCapture = async () => {
     const captured = await takePicture();
     if (captured) setPhoto(captured);
+  };
+
+  const addToDex = async (result) => {
+    try {
+      const token = await getToken();
+
+      if (!token) {
+        Alert.alert('Erreur', 'Token manquant. Connecte-toi avant d\'ajouter une créature.');
+        return;
+      }
+
+      const formData = new FormData();
+      // Forçage de l'ID de l'espèce à 1 de manière temporaire car la base de données distante n'a que ça pour le moment
+      formData.append('species_id', '1');
+      formData.append('gamification_name', result?.common_name || result?.scientific_name || 'Créature inconnue');
+      
+      // On s'assure que la qualité du scan est aussi un entier
+      const rawQuality = result?.sharpness_score ?? 95;
+      const safeQuality = !isNaN(Number(rawQuality)) ? String(Math.round(Number(rawQuality))) : '95';
+      formData.append('scan_quality', safeQuality);
+
+      // Récupération dynamique de la position GPS
+      let currentGpsLocation = 'Position inconnue';
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          currentGpsLocation = `${loc.coords.latitude}, ${loc.coords.longitude}`;
+        }
+      } catch (locErr) {
+        console.warn('Erreur GPS:', locErr);
+      }
+      formData.append('gps_location', currentGpsLocation);
+      
+      // Envoi des stats dynamiques générées par le Python API en évitant le mot "undefined" et en Forçant un entier pour Postgres
+      if (result?.final_stats) {
+          if (result.final_stats.atk != null) formData.append('stat_atq', String(Math.round(result.final_stats.atk)));
+          if (result.final_stats.defense != null) formData.append('stat_def', String(Math.round(result.final_stats.defense)));
+          if (result.final_stats.hp != null) formData.append('stat_pv', String(Math.round(result.final_stats.hp)));
+          if (result.final_stats.speed != null) formData.append('stat_speed', String(Math.round(result.final_stats.speed)));
+      }
+
+      // Ajout du fichier photo si présent pour l'héberger sur le serveur
+      if (photo?.uri) {
+        const filename = photo.uri.split('/').pop() || 'scan.jpg';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+        formData.append('image', {
+          uri: photo.uri,
+          name: filename,
+          type: type,
+        });
+      } else if (result?.image_url) {
+        formData.append('scan_url', result.image_url);
+      }
+
+      const debugPayload = {
+        species_id: '1',
+        gamification_name: result?.common_name || result?.scientific_name || 'Créature inconnue',
+        scan_quality: safeQuality,
+        gps_location: currentGpsLocation,
+        hasPhoto: !!photo?.uri
+      };
+
+      if (result?.final_stats) {
+          if (result.final_stats.atk != null) debugPayload.stat_atq = String(Math.round(result.final_stats.atk));
+          if (result.final_stats.defense != null) debugPayload.stat_def = String(Math.round(result.final_stats.defense));
+          if (result.final_stats.hp != null) debugPayload.stat_pv = String(Math.round(result.final_stats.hp));
+          if (result.final_stats.speed != null) debugPayload.stat_speed = String(Math.round(result.final_stats.speed));
+      }
+
+      console.log('[addToDex] ---- RÉSUMÉ DES DONNÉES ENVOYÉES ----', JSON.stringify(debugPayload, null, 2));
+
+      console.log('[addToDex] Envoi requête add creature avec FormData', {
+        url: `${USER_API_URL}/api/user/creatures/add`,
+        hasImage: !!photo?.uri,
+      });
+
+      const response = await fetch(`${USER_API_URL}/api/user/creatures/add`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Surtout PAS de Content-Type ici, fetch va rajouter le boundary form-data tout seul
+        },
+        body: formData,
+      });
+
+      const data = await response.json().catch(() => ({}));
+      console.log('[addToDex] Réponse API add creature', {
+        status: response.status,
+        ok: response.ok,
+        data,
+      });
+
+      if (!response.ok) {
+        Alert.alert('Erreur', data?.message || data?.error || 'Impossible d\'ajouter la créature.');
+        return;
+      }
+
+      Alert.alert('Succès', 'Créature ajoutée avec succès.');
+      setPhoto(null);
+    } catch (error) {
+      console.error('[addToDex] Erreur réseau add creature', error);
+      Alert.alert('Erreur', 'Erreur réseau lors de l\'ajout de la créature.');
+    }
   };
 
   if (!permission) return <View />;
@@ -37,7 +147,7 @@ export default function CameraScreen() {
           </View>
         </Pressable>
 
-        <InformationOrganisme photo={photo} onClose={() => setPhoto(null)} />
+        <InformationOrganisme photo={photo} onClose={() => setPhoto(null)} addToDex={addToDex} />
       </CameraView>
     </View>
   );

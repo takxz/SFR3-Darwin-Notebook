@@ -2,16 +2,43 @@
 
 # ==========================================================
 # SFR3-Darwin-Notebook : Script d'Installation (Linux)
-# =0=========================================================
+# ==========================================================
 
-# Couleurs pour une meilleure lisibilité
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+# Vérification de l'argument -ci (Clean Install)
+CLEAN_INSTALL=false
+if [[ "$1" == "-ci" ]]; then
+    CLEAN_INSTALL=true
+    echo -e "${RED}>>> MODE CLEAN INSTALL ACTIVÉ : Suppression sécurisée des dépendances... <<<${NC}"
+fi
+
 echo -e "${BLUE}>>> Début de l'installation du projet SFR3-Darwin-Notebook <<<${NC}"
+
+# 0. Nettoyage des processus et des ports (Nouveau)
+echo -e "\n${YELLOW}[Step 0/5] Nettoyage des processus et libération des ports...${NC}"
+
+# Liste des ports utilisés par votre projet (à ajuster si besoin)
+PORTS=(3000 3001 3002 8000)
+
+for port in "${PORTS[@]}"; do
+    if sudo lsof -t -i:"$port" > /dev/null; then
+        echo -e "${YELLOW}Libération du port $port...${NC}"
+        sudo fuser -k "$port/tcp" 2>/dev/null
+    fi
+done
+
+# Kill radical des anciens processus Node et PM2
+echo -e "${YELLOW}Arrêt global de PM2 et des processus Node/Python résiduels...${NC}"
+sudo pm2 kill 2>/dev/null
+sudo pkill -9 node 2>/dev/null
+sudo pkill -9 python3 2>/dev/null
+
+echo -e "${GREEN}Système nettoyé !${NC}"
 
 # 1. Vérification / Installation de l'environnement système
 echo -e "\n${YELLOW}[Step 1/5] Vérification de l'environnement système...${NC}"
@@ -45,6 +72,10 @@ fi
 echo -e "\n${YELLOW}[Step 2/5] Installation des dépendances BackEnd...${NC}"
 if [ -d "BackEnd" ]; then
     cd BackEnd
+    if [ "$CLEAN_INSTALL" = true ]; then
+        echo -e "${YELLOW}Nettoyage forcé de BackEnd/node_modules (SUDO)...${NC}"
+        sudo rm -rf node_modules package-lock.json
+    fi
     npm install
     cd ..
     echo -e "${GREEN}BackEnd prêt !${NC}"
@@ -56,6 +87,10 @@ fi
 echo -e "\n${YELLOW}[Step 3/5] Installation des dépendances FrontEnd...${NC}"
 if [ -d "FrontEnd" ]; then
     cd FrontEnd
+    if [ "$CLEAN_INSTALL" = true ]; then
+        echo -e "${YELLOW}Nettoyage forcé de FrontEnd/node_modules (SUDO)...${NC}"
+        sudo rm -rf node_modules package-lock.json
+    fi
     npm install
     cd ..
     echo -e "${GREEN}FrontEnd prêt !${NC}"
@@ -67,10 +102,15 @@ fi
 echo -e "\n${YELLOW}[Step 4/5] Installation des dépendances PythonApi...${NC}"
 if [ -d "PythonApi" ]; then
     cd PythonApi
-    # On crée/active l'environnement virtuel pour éviter les conflits systèmes
+    if [ "$CLEAN_INSTALL" = true ] && [ -d "venv" ]; then
+        echo -e "${YELLOW}Suppression forcée de l'ancien venv (SUDO)...${NC}"
+        sudo rm -rf venv
+    fi
+    
     if [ ! -d "venv" ]; then
         python3 -m venv venv
     fi
+    
     source venv/bin/activate
     pip install --upgrade pip
     if [ -f "requirements.txt" ]; then
@@ -86,13 +126,9 @@ fi
 # 5. Lancement des services avec PM2
 echo -e "\n${YELLOW}[Step 5/5] Lancement des services via ecosystem.config.js...${NC}"
 if [ -f "ecosystem.config.js" ]; then
-    # On vérifie si pm2 tourne déjà, sinon on le "reset" pour éviter les doublons
+    # On s'assure d'être en root pour PM2 si nécessaire, ou on utilise l'user courant
     pm2 delete all 2>/dev/null
-    
-    # On lance l'orchestration PM2
     pm2 start ecosystem.config.js
-    
-    # Optionnel : On sauvegarde pour redémarrer automatiquement après un reboot
     pm2 save
     
     echo -e "\n${GREEN}==============================================${NC}"

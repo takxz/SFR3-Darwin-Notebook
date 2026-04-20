@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 30,
         fontWeight: 'bold',
-        color: 'white',
+        color: '#000000',
         letterSpacing: -0.5,
         marginBottom: 8,
     },
@@ -60,6 +60,6 @@ const styles = StyleSheet.create({
     },
     scanLine: {
         size: 48,
-        color: "white",
+        color: "#000000",
     },
 });

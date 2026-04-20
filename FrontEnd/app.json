@@ -28,8 +28,8 @@
         {
           "cameraPermission": "L'application a besoin d'accéder à la caméra pour prendre des photos."
         }
-      ]
-      
+      ],
+      "expo-secure-store"
     ]
   }
 }

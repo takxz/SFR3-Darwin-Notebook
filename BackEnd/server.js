@@ -5,22 +5,25 @@ const cors = require('cors');
 require('dotenv').config();
 
 // 0. Importation des routes API
-const authRoutes = require('./src/routes/authRoutes');
-const userRoutes = require('./src/routes/userRoutes');
+const authRoutes = require('./src/main/routes/authRoutes');
+const userRoutes = require('./src/main/routes/userRoutes');
 
 // 1. Importation du Redis-Adapter
 const { createAdapter } = require('@socket.io/redis-adapter');
 
 // 2. Import de notre nouveau RedisStore asynchrone
-const { store, pubClient, subClient } = require('./src/store/redisStore');
-const registerMatchmakingHandlers = require('./src/handlers/matchmakingHandler');
-const registerBattleHandlers = require('./src/handlers/battleHandler');
+const { store, pubClient, subClient } = require('./src/main/store/redisStore');
+const registerMatchmakingHandlers = require('./src/main/handlers/matchmakingHandler');
+const registerBattleHandlers = require('./src/main/handlers/battleHandler');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // ======== MONTAGE DES ROUTES DE L'API REST (HTTP) ========
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 
@@ -84,7 +87,7 @@ io.on('connection', async (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`
     🚀  Game Server [Cluster PID: ${process.pid}] running on port ${PORT}

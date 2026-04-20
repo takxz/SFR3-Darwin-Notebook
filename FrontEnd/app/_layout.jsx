@@ -1,6 +1,13 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { LogBox } from 'react-native';
 import { getToken } from '@/utils/auth';
+
+LogBox.ignoreAllLogs(true);
+if (typeof global !== 'undefined' && global.console) {
+    global.console.warn = () => {};
+    global.console.error = () => {};
+}
 
 export default function RootLayout() {
     const router = useRouter();
