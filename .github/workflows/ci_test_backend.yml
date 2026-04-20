@@ -16,7 +16,7 @@ jobs:
           npm install
       - name: Move in backend directory
         run: |
-          cd .\BackEnd\
+          cd BackEnd
       - name: Run tests
         run: |
           npm test
