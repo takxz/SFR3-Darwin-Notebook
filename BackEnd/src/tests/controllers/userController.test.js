@@ -11,6 +11,12 @@ describe('userController', () => {
 
     // Setup : Initialisation des objets Express factices avant chaque test
     beforeEach(() => {
+        // 1. Reset global pour éviter les pollutions (doit être au début)
+        jest.resetAllMocks();
+
+        // 2. Re-déclenchement des mocks de console car resetAllMocks les a effacés
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+
         req = {
             user: {},
             params: {},
@@ -23,12 +29,6 @@ describe('userController', () => {
             status: jest.fn().mockReturnThis(),
             json: jest.fn()
         };
-
-        // Reset des compteurs d'appels pour éviter les fuites entre les tests
-        jest.clearAllMocks();
-
-        // Silence les console.error pour garder le rapport de test lisible
-        jest.spyOn(console, 'error').mockImplementation(() => {});
     });
 
     // Teardown : Restauration du comportement natif après la suite de tests
