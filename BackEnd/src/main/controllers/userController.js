@@ -50,7 +50,11 @@ exports.addCreature = async (req, res) => {
             player_id, 
             gamification_name, 
             scan_quality, 
-            gps_location 
+            gps_location,
+            stat_atq,
+            stat_def,
+            stat_pv,
+            stat_speed
         } = req.body;
 
         const userId = player_id || req.user.id;
