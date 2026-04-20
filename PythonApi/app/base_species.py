@@ -105,10 +105,10 @@ def final_stats_from_formula(
     defense = float(defense_base + (level * (float(ivs.get("defense", 0)) / 10.0)))
     speed = float(speed_base + (level * (float(ivs.get("speed", 0)) / 10.0)))
 
-    hp = float(hp * sharpness_factor)
-    atk = float(atk * sharpness_factor)
-    defense = float(defense * sharpness_factor)
-    speed = float(speed * sharpness_factor)
+    hp = int(hp * sharpness_factor)
+    atk = int(atk * sharpness_factor)
+    defense = int(defense * sharpness_factor)
+    speed = int(speed * sharpness_factor)
 
     return {
         "hp": hp,

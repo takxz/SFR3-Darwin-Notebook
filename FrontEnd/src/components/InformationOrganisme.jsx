@@ -51,7 +51,7 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
 
         if (!response.ok || !data?.success) {
           console.error('[Classification] Erreur API:', data);
-          throw new Error(data?.error || 'Erreur API');
+          throw new Error(data?.message || data?.error || 'Erreur API');
         }
 
         console.log('[Classification] Succès:', data.common_name);
