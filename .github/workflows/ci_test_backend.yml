@@ -11,12 +11,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
-      - name: Move in backend directory
-        run: |
-          cd BackEnd
       - name: Install dependencies
-        run: |
-          npm install
+        run: npm install
+        working-directory: ./Backend
       - name: Run tests
-        run: |
-          npm test
+        run: npm test
+        working-directory: ./Backend
