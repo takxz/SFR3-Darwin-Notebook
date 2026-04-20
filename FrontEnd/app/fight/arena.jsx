@@ -31,7 +31,7 @@ export default function ArenaScreen() {
     } = useBattleManager(setSceneReady);
 
     // ⚔️ NETWORK ORCHESTRATION (CONNEXION VPS)
-    const { stats, turn, isMyTurn, findMatch, sendAction } = useBattleNetwork(
+    const { stats, turn, isMyTurn, findMatch, sendAction, abandon } = useBattleNetwork(
         // On Battle Start (Le serveur dit que les 2 joueurs sont là !)
         () => {
             console.log("[Arena] MATCH READY! OPENING ARENA...");
@@ -131,7 +131,11 @@ export default function ArenaScreen() {
                     turn={turn}
                     isMyTurn={isMyTurn}
                     sendAction={sendAction}
-                    onQuit={() => router.replace('/fight')}
+                    onFlee={abandon}
+                    onQuit={() => {
+                        socketService.disconnect();
+                        router.replace('/fight');
+                    }}
                 />
 
             </View>

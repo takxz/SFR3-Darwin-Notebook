@@ -71,10 +71,11 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
             }
         });
 
-        // 3. Gestion des déconnexions
+        // 3. Gestion des déconnexions (Si l'adversaire fuit/crash)
         socketService.on('playerDisconnected', () => {
             console.log('[BattleNetwork] Opponent disconnected');
-            // Gérer l'UI de victoire par forfait par exemple
+            // Si l'adversaire part, on considère qu'on a gagné par forfait
+            setStats(prev => ({ ...prev, opHp: 0 }));
         });
 
         return () => {
@@ -101,6 +102,12 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
         socketService.emit('playerAction', { action });
     };
 
+    const abandon = () => {
+        console.log('[BattleNetwork] Abandoning match...');
+        setStats(prev => ({ ...prev, hp: 0 })); // Défaite locale immédiate
+        socketService.disconnect(); // Le serveur préviendra l'autre joueur via playerDisconnected
+    };
+
     return {
         stats,
         turn,
@@ -108,6 +115,7 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
         isMyTurn: turn === socketService.socket?.id,
         findMatch, // Ajout du retour
         sendReady,
-        sendAction
+        sendAction,
+        abandon
     };
 };

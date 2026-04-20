@@ -1,8 +1,8 @@
-const matchmakingHandler = require('../handlers/matchmakingHandler');
-const { store } = require('../store/redisStore');
+const matchmakingHandler = require('../../main/handlers/matchmakingHandler');
+const { store } = require('../../main/store/redisStore');
 
 // Mocks
-jest.mock('../store/redisStore', () => ({
+jest.mock('../../main/store/redisStore', () => ({
     store: {
         getQueueLength: jest.fn(),
         dequeue: jest.fn(),

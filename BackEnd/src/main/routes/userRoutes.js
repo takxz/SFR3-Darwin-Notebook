@@ -19,6 +19,12 @@ router.post('/creatures/upload', authMiddleware, upload.single('image'), userCon
 // Route pour obtenir toutes les créatures d'un joueur par son ID
 router.get('/:id/creatures', authMiddleware, userController.getUserCreatures);
 
+<<<<<<< HEAD:BackEnd/src/routes/userRoutes.js
+=======
+// Route pour obtenir une créature d'un joueur par leur ID respectif
+router.get('/:id/creatures/:creatureid', authMiddleware, userController.getUserCreatureDetails);
+
+>>>>>>> 82281342a2bc5784ab10e1016cfdf0768cf1ff57:BackEnd/src/main/routes/userRoutes.js
 //Route pour avoir les dernières captures des joueurs
 router.get('/created/last-captured', authMiddleware, userController.getLastCapturedCreatures)
 
