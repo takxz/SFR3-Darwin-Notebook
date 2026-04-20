@@ -1,0 +1,22 @@
+name: CI_Test_Backend
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  test_backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JavaScript environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: |
+          npm install
+      - name: Move in backend directory
+        run: |
+          cd .\BackEnd\
+      - name: Run tests
+        run: |
+          npm test
