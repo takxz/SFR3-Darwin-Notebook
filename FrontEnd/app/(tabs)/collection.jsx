@@ -4,12 +4,17 @@ import { useRouter } from 'expo-router';
 import { AnimalCard } from '../../src/components/Collection/AnimalCard';
 import { SpeciesFilterBar } from '../../src/components/Collection/SpeciesFilterBar';
 import { fetchCollection } from '../../src/utils/tempCollectionApi';
+import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
+import { getToken } from '../../src/utils/auth.js';
+
+const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || 'http://localhost:3001';
 
 const SPECIES_OPTIONS = [
     { key: 'all', label: 'Tous' },
     { key: 'fauna', label: 'Faune' },
     { key: 'flora', label: 'Flore' },
 ];
+
 
 export default function CollectionPage() {
     const router = useRouter();
@@ -19,8 +24,36 @@ export default function CollectionPage() {
     const [error, setError] = useState(null);
 
     const filteredAnimals = selectedSpecies === 'all'
-        ? animalData
-        : animalData.filter((animal) => animal.category === selectedSpecies);
+    ? animalData
+    : animalData.filter((animal) => animal.category === selectedSpecies);
+    
+    const getCollection = async () => {
+        try {
+            const token = await getToken();
+
+            const response = await fetch(
+                `${USER_API_URL}/api/user/creatures/add`, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    }
+                }
+            );
+            
+            if (!response.ok) {
+                Alert.alert('Erreur', data?.message || data?.error || 'Impossible de récupérer la collection.');
+                return;
+            }
+
+            const data = await response.json();
+            console.log('Collection API response', { status: response.status, data });
+
+            Alert.alert('Succès', 'Collection récupérée avec succès.');
+        } catch (error) {
+            console.error('Error fetching collection:', error);
+        }
+    };
+
 
     useEffect(() => {
         let isMounted = true;
@@ -67,6 +100,7 @@ export default function CollectionPage() {
     }
 
     return (
+        getCollection(),
         <View style={styles.container}>
             <View style={styles.filterOverlay}>
                 <SpeciesFilterBar
