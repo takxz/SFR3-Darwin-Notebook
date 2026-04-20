@@ -8,15 +8,14 @@ const CARD_GAP = 16;
 const DEFAULT_CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - CARD_GAP) / 2;
 
 const getTypeConfig = (type) => {
-  switch (type) {
-    case 'flying': return { Icon: Wind, color: '#ABDDF1' };
-    case 'marine': return { Icon: Droplets, color: '#006994' };
-    case 'insect': return { Icon: Bug, color: '#00CEC8' };
-    case 'flora': return { Icon: Leaf, color: '#2E6F40' };
-    case 'terrestrial': 
-    default:
-      return { Icon: PawPrint, color: '#90AAA1' };
-  }
+  if (type === 'fauna')
+    return { Icon: PawPrint, color: '#90AAA1' };
+  else if (type === 'flora')
+    return { Icon: Leaf, color: '#2E6F40' };
+  else if (!type)
+    return { Icon: Bug, color: '#ff0000' };
+  else
+    return { Icon: Star, color: '#cab93c' };
 };
 
 /**
@@ -25,13 +24,11 @@ const getTypeConfig = (type) => {
  */
 export function AnimalCard({
   animal,
-  index = 0,
   cardWidth = DEFAULT_CARD_WIDTH,
   onPress,
 }) {
   // Get modified stats based on linked plant effects
   const modifiedStats = getAnimalStatsWithPlantEffects(animal);
-  const hpPercentage = (modifiedStats.hp / modifiedStats.maxHp) * 100;
   const { Icon: TypeIcon, color: typeColor } = getTypeConfig(animal.type);
 
   return (
@@ -72,32 +69,12 @@ export function AnimalCard({
           ))}
         </View>
 
-        {/* HP Bar - Hidden for plants (flora) */}
+        {/* Max HP - Hidden for plants (flora) */}
         {animal.type !== 'flora' && (
-          <View>
-            <View style={styles.hpHeader}>
-              <Text style={styles.hpLabel}>HP</Text>
-              <Text style={styles.hpValue}>
-                {modifiedStats.hp}/{modifiedStats.maxHp}
-              </Text>
-            </View>
-            <View style={styles.hpTrack}>
-              <View
-                from={{ width: "0%" }}
-                animate={{ width: `${hpPercentage}%` }}
-                transition={{
-                  type: "timing",
-                  duration: 1000,
-                  delay: 500 + index * 100,
-                }}
-                style={[
-                  styles.hpFill,
-                  {
-                    backgroundColor:
-                      hpPercentage > 50 ? "#A8DCAB" : "#f59e0b",
-                  },
-                ]}
-              />
+          <View style={styles.hpContainer}>
+            <Text style={styles.hpLabel}>Max HP</Text>
+            <View style={styles.hpPill}>
+              <Text style={styles.hpValue}>{modifiedStats.maxHp}</Text>
             </View>
           </View>
         )}
@@ -164,17 +141,35 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     marginBottom: 4,
   },
+  hpContainer: {
+    marginTop: 2,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "transparent",
+    borderRadius: 12,
+    paddingHorizontal: 0,
+    paddingVertical: 2,
+  },
   hpLabel: {
     fontSize: 10,
     fontWeight: "bold",
-    color: "rgba(151,87,43,0.5)",
+    color: "rgba(151,87,43,0.7)",
     textTransform: "uppercase",
     letterSpacing: 1,
   },
   hpValue: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "rgba(151,87,43,0.7)",
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#97572B",
+  },
+  hpPill: {
+    minWidth: 46,
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.55)",
+    borderRadius: 9999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
   },
   hpTrack: {
     height: 6,

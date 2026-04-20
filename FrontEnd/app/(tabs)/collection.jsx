@@ -207,10 +207,9 @@ export default function CollectionPage() {
                 keyExtractor={(item) => String(item.id)}
                 contentContainerStyle={styles.listContent}
                 columnWrapperStyle={styles.column}
-                renderItem={({ item, index }) => (
+                renderItem={({ item }) => (
                     <AnimalCard
                         animal={item}
-                        index={index}
                         onPress={() => router.push(`/creature/${item.id}`)}
                     />
                 )}
