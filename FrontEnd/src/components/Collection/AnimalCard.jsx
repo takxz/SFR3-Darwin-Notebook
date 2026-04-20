@@ -8,14 +8,10 @@ const CARD_GAP = 16;
 const DEFAULT_CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - CARD_GAP) / 2;
 
 const getTypeConfig = (type) => {
-  if (type === 'fauna')
-    return { Icon: PawPrint, color: '#90AAA1' };
-  else if (type === 'flora')
-    return { Icon: Leaf, color: '#2E6F40' };
-  else if (!type)
-    return { Icon: Bug, color: '#ff0000' };
-  else
-    return { Icon: Star, color: '#cab93c' };
+  if (type === 'fauna') return { Icon: PawPrint, color: '#90AAA1' };
+  if (type === 'flora') return { Icon: Leaf, color: '#2E6F40' };
+  if (!type) return { Icon: Bug, color: '#ff0000' };
+  return { Icon: Star, color: '#cab93c' };
 };
 
 /**
@@ -63,7 +59,7 @@ export function AnimalCard({
             <Star
               key={i}
               size={12}
-              color={i < animal.rarity ? "#fbbf24" : "rgba(151,87,43,0.1)"}
+              color={i < animal.rarity ? "#fbbf24" : "rgba(151,87,43,0.35)"}
               fill={i < animal.rarity ? "#fbbf24" : "transparent"}
             />
           ))}

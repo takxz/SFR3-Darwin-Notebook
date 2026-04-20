@@ -58,14 +58,9 @@ exports.addCreature = async (req, res) => {
         } = req.body;
 
         const userId = player_id || req.user.id;
-        let finalScanUrl = req.body.scan_url || null;
-
-        // Si une image a été envoyée, on génère son URL
-        if (req.file) {
-            const protocol = req.protocol;
-            const host = req.get('host');
-            finalScanUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
-        }
+        const finalScanUrl = req.file 
+            ? `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
+            : req.body.scan_url || null;
 
         // 1. Récupérer les informations de l'espèce pour les stats de base
         const speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE id = $1', [species_id]);
@@ -121,16 +116,9 @@ exports.uploadCreatureImage = async (req, res) => {
             return res.status(400).json({ error: "Aucun fichier n'a été fourni." });
         }
 
-        // Construire l'URL de l'image
-        // On récupère le protocole (http/https) et l'hôte (IP ou domaine)
-        const protocol = req.protocol;
-        const host = req.get('host');
-        const imageUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+        const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
 
-        res.json({
-            imageUrl: imageUrl,
-            filename: req.file.filename
-        });
+        res.json({ imageUrl, filename: req.file.filename });
     } catch (err) {
         console.error('Erreur lors de l\'upload de l\'image:', err);
         res.status(500).json({ error: "Erreur lors de l'upload de l'image." });
@@ -146,13 +134,18 @@ exports.getUserCreatures = async (req, res) => {
         // On sélectionne toutes les colonnes de la créature (c.*)
         // et on y ajoute les infos de l'espèce associée (s.name, s.model_path)
         const query = `
-            SELECT c.*,
-                   s.name as species_name,
-                   s.type as species_type,
-                   s.rarity as species_rarity,
-                   s.model_path as species_model_path
+            SELECT
+                c.*,
+                s.name AS species_name,
+                s.type AS species_type,
+                s.rarity AS species_rarity,
+                s.average_weight AS species_average_weight,
+                s.average_life_expectancy AS species_average_life_expectancy,
+                s.average_weight AS weight,
+                s.average_life_expectancy AS lifespan,
+                s.model_path AS species_model_path
             FROM public."CREATURE" c
-                     JOIN public."SPECIES" s ON c.species_id = s.id
+            JOIN public."SPECIES" s ON c.species_id = s.id
             WHERE c.player_id = $1;
         `;
 
@@ -188,13 +181,18 @@ exports.getUserCreatureDetails = async (req, res) => {
         const creatureId = req.params.creatureid;
 
         const query = `
-            SELECT c.*,
-                   s.name as species_name,
-                   s.type as species_type,
-                   s.rarity as species_rarity,
-                   s.model_path as species_model_path
+            SELECT
+                c.*,
+                s.name AS species_name,
+                s.type AS species_type,
+                s.rarity AS species_rarity,
+                s.average_weight AS species_average_weight,
+                s.average_life_expectancy AS species_average_life_expectancy,
+                s.average_weight AS weight,
+                s.average_life_expectancy AS lifespan,
+                s.model_path AS species_model_path
             FROM public."CREATURE" c
-                     JOIN public."SPECIES" s ON c.species_id = s.id
+            JOIN public."SPECIES" s ON c.species_id = s.id
             WHERE c.player_id = $1 AND c.id = $2;
         `;
 

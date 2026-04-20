@@ -17,18 +17,33 @@ const SPECIES_OPTIONS = [
 
 async function parseResponseBody(response) {
     const raw = await response.text();
-
     try {
-        return {
-            parsed: raw ? JSON.parse(raw) : null,
-            raw,
-        };
+        return { parsed: raw ? JSON.parse(raw) : null, raw };
     } catch {
-        return {
-            parsed: null,
-            raw,
-        };
+        return { parsed: null, raw };
     }
+}
+
+function normalizeRarity(value) {
+    const parsed = Number(value);
+
+    if (!Number.isFinite(parsed)) {
+        return 1;
+    }
+
+    return Math.max(1, Math.min(5, Math.round(parsed)));
+}
+
+function normalizeWeight(value) {
+    if (value === null || value === undefined || value === '') return 'Inconnu';
+    const asNumber = Number(value);
+    return Number.isFinite(asNumber) ? `${asNumber} kg` : String(value);
+}
+
+function normalizeLifespan(value) {
+    if (value === null || value === undefined || value === '') return 'Inconnu';
+    const asNumber = Number(value);
+    return Number.isFinite(asNumber) ? `${asNumber} ans` : String(value);
 }
 
 function normalizeCreature(creature) {
@@ -45,7 +60,20 @@ function normalizeCreature(creature) {
         image: creature?.scan_url || creature?.image_url || creature?.image || FALLBACK_IMAGE,
         type,
         category: type === 'flora' ? 'flora' : 'fauna',
-        rarity: Number(creature?.species_rarity ?? creature?.rarity ?? 1),
+        rarity: normalizeRarity(creature?.species_rarity ?? creature?.rarity),
+        weight: normalizeWeight(
+            creature?.weight
+            ?? creature?.species_average_weight
+            ?? creature?.average_weight
+            ?? creature?.average_weigt
+        ),
+        lifespan: normalizeLifespan(
+            creature?.lifespan
+            ?? creature?.species_average_life_expectancy
+            ?? creature?.average_life_expectancy
+            ?? creature?.average_life_expentancy
+            ?? creature?.life_expectancy
+        ),
         hp,
         maxHp: Number(creature?.maxHp ?? creature?.stat_pv ?? hp),
         atk: Number(creature?.stat_atq ?? creature?.atk ?? 0),

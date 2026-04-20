@@ -1,14 +1,28 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, Pressable } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Constants from 'expo-constants';
 import { ArrowLeft, Heart, Leaf, Scale, Shield, Star, Timer, Zap, X } from 'lucide-react-native';
+import { getToken } from '../../src/utils/auth';
 import {
   getCollectionPlants,
   linkPlantToAnimal,
   unlinkPlantFromAnimal,
   getAnimalStatsWithPlantEffects,
 } from '../../src/utils/tempCollectionApi';
+
+const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http://${expoHost}:3001` : 'http://localhost:3001');
+
+async function parseResponseBody(response) {
+  const raw = await response.text();
+  try {
+    return { parsed: raw ? JSON.parse(raw) : null, raw };
+  } catch {
+    return { parsed: null, raw };
+  }
+}
 
 function StatCard({ label, value, max = 100, color, Icon }) {
   const percent = Math.min(100, Math.round((value / max) * 100));
@@ -29,12 +43,25 @@ function StatCard({ label, value, max = 100, color, Icon }) {
   );
 }
 
+function formatWeight(value) {
+  if (value === null || value === undefined || value === '') return 'Inconnu';
+  const asNumber = Number(value);
+  return Number.isFinite(asNumber) ? `${asNumber} kg` : String(value);
+}
+
+function formatLifespan(value) {
+  if (value === null || value === undefined || value === '') return value;
+  const asNumber = Number(value);
+  return Number.isFinite(asNumber) ? `${asNumber} ans` : String(value);
+}
+
 export default function CreatureDetailsPage() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id, animal: animalParam } = useLocalSearchParams();
   const [refreshKey, setRefreshKey] = useState(0);
   const [isPlantPickerOpen, setIsPlantPickerOpen] = useState(false);
+  const [remoteMeasures, setRemoteMeasures] = useState(null);
 
   const baseAnimal = useMemo(() => {
     if (!animalParam || Array.isArray(animalParam)) return null;
@@ -54,6 +81,66 @@ export default function CreatureDetailsPage() {
 
   const plants = useMemo(() => getCollectionPlants(), []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadRemoteMeasures = async () => {
+      if (!id || Array.isArray(id)) return;
+
+      try {
+        const token = await getToken();
+        if (!token) return;
+
+        const profileResponse = await fetch(`${USER_API_URL}/api/user/profile`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const { parsed: profile } = await parseResponseBody(profileResponse);
+        const userId = profile?.id;
+        if (!userId) return;
+
+        const detailResponse = await fetch(`${USER_API_URL}/api/user/${userId}/creatures/${id}`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const { parsed: details } = await parseResponseBody(detailResponse);
+        if (!detailResponse.ok || !details) return;
+
+        const weightRaw = details?.weight
+          ?? details?.species_average_weight
+          ?? details?.average_weight
+          ?? details?.average_weigt;
+
+        const lifespanRaw = details?.lifespan
+          ?? details?.species_average_life_expectancy
+          ?? details?.average_life_expectancy
+          ?? details?.average_life_expentancy
+          ?? details?.life_expectancy;
+
+        if (isMounted) {
+          setRemoteMeasures({
+            weight: formatWeight(weightRaw),
+            lifespan: formatLifespan(lifespanRaw),
+          });
+        }
+      } catch (error) {
+        console.warn('Unable to hydrate remote creature measures:', error?.message || error);
+      }
+    };
+
+    loadRemoteMeasures();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
   const meta = useMemo(() => {
     if (!animal) return null;
     const linkedPlantName = animal.plantLinkId
@@ -66,8 +153,19 @@ export default function CreatureDetailsPage() {
     return {
       scientificName: animal.name,
       ...animal,
-      weight: animal.weight ?? 'Inconnu',
-      lifespan: animal.lifespan ?? 'Inconnu',
+      weight: remoteMeasures?.weight ?? formatWeight(
+        animal.weight
+        ?? animal.species_average_weight
+        ?? animal.average_weight
+        ?? animal.average_weigt
+      ),
+      lifespan: remoteMeasures?.lifespan ?? formatLifespan(
+        animal.lifespan
+        ?? animal.species_average_life_expectancy
+        ?? animal.average_life_expectancy
+        ?? animal.average_life_expentancy
+        ?? animal.life_expectancy
+      ),
       linkLabel: 'Lien vegetal',
       linkValue: linkedPlantName ?? animal.plantLink ?? 'Habitat inconnu',
       effects: Array.isArray(animal.effects) ? animal.effects : [],
@@ -77,7 +175,7 @@ export default function CreatureDetailsPage() {
       def: modifiedStats.def,
       spd: modifiedStats.spd,
     };
-  }, [animal, plants, refreshKey]);
+  }, [animal, plants, refreshKey, remoteMeasures]);
 
   const canPickPlant = Boolean(animal) && animal.category === 'fauna' && !animal.plantLinkId;
   const isFlora = animal?.category === 'flora';
