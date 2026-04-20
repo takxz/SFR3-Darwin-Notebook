@@ -1,8 +1,8 @@
-const battleHandler = require('../handlers/battleHandler');
-const { store } = require('../store/redisStore');
+const battleHandler = require('../../main/handlers/battleHandler');
+const { store } = require('../../main/store/redisStore');
 
 // Mocks
-jest.mock('../store/redisStore', () => ({
+jest.mock('../../main/store/redisStore', () => ({
     store: {
         getPlayer: jest.fn(),
         getBattle: jest.fn(),
