@@ -13,7 +13,7 @@ jobs:
           node-version: 18
       - name: Install dependencies
         run: npm install
-        working-directory: Backend
+        working-directory: Backend/
       - name: Run tests
         run: npm test
-        working-directory: Backend
+        working-directory: Backend/
