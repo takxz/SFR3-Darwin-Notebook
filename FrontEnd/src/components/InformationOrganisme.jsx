@@ -7,7 +7,7 @@ import { ChevronsUp, Heart, Shield, Sword } from 'lucide-react-native';
 import fr from '../assets/locales/fr.json';
 
 const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
-const API_URL = process.env.EXPO_PUBLIC_API_URL || (expoHost ? `http://${expoHost}:5002` : 'http://localhost:5002');
+const API_URL = process.env.EXPO_PUBLIC_API_URL || (expoHost ? `http://${expoHost}:5001` : 'http://localhost:5001');
 
 export default function InformationOrganisme({ photo, onClose, addToDex }) {
   const [result, setResult] = useState(null);

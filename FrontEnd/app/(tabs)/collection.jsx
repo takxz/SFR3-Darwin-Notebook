@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, ActivityIndicator, Text } from 'react-native';
 import { useRouter } from 'expo-router';
+import Constants from 'expo-constants';
 import { AnimalCard } from '../../src/components/Collection/AnimalCard';
 import { SpeciesFilterBar } from '../../src/components/Collection/SpeciesFilterBar';
 import { getToken } from '../../src/utils/auth.js';
 
-const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || 'http://localhost:3001';
+const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http://${expoHost}:3001` : 'http://localhost:3001');
 
 const SPECIES_OPTIONS = [
     { key: 'all', label: 'Tous' },
