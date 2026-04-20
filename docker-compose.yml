@@ -1,0 +1,45 @@
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./BackEnd
+    ports:
+      - "3001:3001"
+    environment:
+      - REDIS_HOST=redis
+      - PORT=3001
+    depends_on:
+      - redis
+
+  python-api:
+    build:
+      context: ./PythonApi
+    ports:
+      - "5002:5002"
+
+  landing-page:
+    build:
+      context: ./LandingPage
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+
+  frontend:
+    build:
+      context: ./FrontEnd
+    ports:
+      - "8081:8081"
+      - "19000:19000"
+      - "19001:19001"
+    environment:
+      - EXPO_PUBLIC_API_URL=http://37.59.111.34:5002
+      - EXPO_PUBLIC_USER_API_URL=http://37.59.111.34:3001
+      - REACT_NATIVE_PACKAGER_HOSTNAME=${HOST_IP}
+    depends_on:
+      - backend
+      - python-api

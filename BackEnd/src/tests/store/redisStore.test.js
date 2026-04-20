@@ -1,4 +1,4 @@
-const { store } = require('../store/redisStore');
+const { store } = require('../../main/store/redisStore');
 const Redis = require('ioredis');
 
 // On mock ioredis pour ne pas avoir besoin d'un vrai serveur Redis qui tourne pendant les tests
