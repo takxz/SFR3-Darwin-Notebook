@@ -65,7 +65,7 @@
     },
     "informationAnimalScreen": {
         "reject_button": "Rejeter",
-        "accept_button": "Ajouter au Dex"
+        "accept_button": "Ajouter à la Collection"
     },
     "chooseBeastScreen": {
         "back": "Retour",
