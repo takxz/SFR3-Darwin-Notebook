@@ -15,7 +15,7 @@ jest.mock('../../main/store/redisStore', () => ({
     }
 }));
 
-jest.mock('../config/db', () => ({
+jest.mock('../../main/config/db', () => ({
     query: jest.fn()
 }));
 
