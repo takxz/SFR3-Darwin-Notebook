@@ -1,19 +1,8 @@
-import { View, Text, StyleSheet } from 'react-native';
+import IndexScreen from '@/features/index/IndexScreen';
 import fr from '@/assets/locales/fr.json';
 
 export default function HomePage() {
     return (
-        <View style={styles.container}>
-            <Text>{fr.homeScreen.header_title}</Text>
-        </View>
+        <IndexScreen />
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f2f6f3'
-    }
-});
