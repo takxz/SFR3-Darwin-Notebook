@@ -153,3 +153,31 @@ exports.getUserCreatures = async (req, res) => {
         res.status(500).json({ error: "Erreur lors de la récupération des créatures." });
     }
 };
+
+// Récupérer les détails d'un seul animal du joueur
+exports.getUserCreatureDetails = async(req, res) => {
+    try {
+        const userId = req.params.id;
+        const creatureId = req.params.creatureid;
+
+        const query = `
+            SELECT c.*, s.name as species_name, s.type as species_type, s.rarity as species_rarity
+            FROM "CREATURE" c
+                     JOIN "SPECIES" s ON c.species_id = s.id
+            WHERE c.player_id = $1 AND c.id = $2;
+        `;
+
+        const result = await db.query(query, [userId, creatureId]);
+
+        // Vérification vitale : la créature existe-t-elle ?
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Créature introuvable pour ce joueur." });
+        }
+
+        res.json(result.rows[0])
+
+    } catch (err) {
+        console.error('Erreur lors de la récupération des détails de la créature', err);
+        res.status(500).json({error: "Erreur lors de la récupération des détails de la créature."});
+    }
+};
