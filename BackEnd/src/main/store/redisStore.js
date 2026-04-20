@@ -1,12 +1,10 @@
 const Redis = require('ioredis');
 
-// Initialisation des clients Redis
-// Un client pour lire/écrire les données, un autre pour le système de publication/souscription (Pub/Sub)
-const pubClient = new Redis();
+const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1';
+const pubClient = new Redis({ host: REDIS_HOST });
 const subClient = pubClient.duplicate();
 
-// Un client principal pour gérer notre "Store" de jeu
-const redisClient = new Redis(); 
+const redisClient = new Redis({ host: REDIS_HOST }); 
 
 redisClient.on('error', (err) => console.log('Erreur Redis Client', err));
 pubClient.on('error', (err) => console.log('Erreur Redis Pub Client', err));
