@@ -5,6 +5,7 @@ import * as THREE from 'three';
 export const SlashMaterial = shaderMaterial(
     { time: 0, opacity: 0 },
     `
+    precision mediump float;
     varying vec2 vUv;
     void main() {
       vUv = uv; 
@@ -12,6 +13,7 @@ export const SlashMaterial = shaderMaterial(
     }
     `,
     `
+    precision mediump float;
     uniform float time;
     uniform float opacity;
     varying vec2 vUv;

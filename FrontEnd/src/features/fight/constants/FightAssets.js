@@ -1,7 +1,7 @@
 
-export const FBX_ASSETS = {
-    HERO: require('@/assets/fight/models/Pig.fbx'),
-    ENEMY: require('@/assets/fight/models/Pig.fbx')
+export const GLB_ASSETS = {
+    HERO: require('@/assets/fight/models/Pig.glb'),
+    ENEMY: require('@/assets/fight/models/Pig.glb')
 };
 
 export const TEXTURE_ASSETS = {

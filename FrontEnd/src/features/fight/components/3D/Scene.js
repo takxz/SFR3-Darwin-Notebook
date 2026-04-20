@@ -39,19 +39,19 @@ export default function Scene({
             parallax.current.x = THREE.MathUtils.lerp(parallax.current.x, rotation.beta * 0.8, 0.1);
             parallax.current.y = THREE.MathUtils.lerp(parallax.current.y, rotation.gamma * 0.8, 0.1);
         });
-        DeviceMotion.setUpdateInterval(10); // Faster updates for 60fps feel
+        DeviceMotion.setUpdateInterval(16); // 60fps for battery saving
         return () => sub.remove();
     }, []);
 
 
-    useFrame((state) => {
+    useFrame((state, delta) => {
         // 1. HIT LOGIC (Correction du cumul de FOV)
         if (hitTrigger) {
             shake.current = isSpecialAttack ? 12.0 : 4.0;
         }
 
         // Lerp du FOV pour éviter le cumul infini
-        state.camera.fov = THREE.MathUtils.lerp(state.camera.fov, hitTrigger ? 68 : (isSpecialAttack ? 65 : 55), 0.2);
+        state.camera.fov = THREE.MathUtils.lerp(state.camera.fov, hitTrigger ? 68 : (isSpecialAttack ? 65 : 55), 0.2 * delta * 60);
 
         // 2. CAMERA OSCILLATION & PARALLAX
         const clock = state.clock.elapsedTime;
@@ -74,7 +74,7 @@ export default function Scene({
         const targetZ = baseZ + Math.abs(parallax.current.y) * 4.0; // Zoom dynamique léger sur les côtés
 
         // ON LERP TOUJOURS VERS LA CIBLE (Assure la fluidité)
-        state.camera.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), isSpecialAttack ? 0.05 : 0.1);
+        state.camera.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), (isSpecialAttack ? 0.05 : 0.1) * delta * 60);
 
         // ON AJOUTE LE SHAKE COMME UN DÉCALAGE ADDITIF
         if (shake.current > 0.05) {

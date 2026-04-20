@@ -1,17 +1,19 @@
 
 import React, { forwardRef, useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber/native';
-import { useFBX } from '@react-three/drei/native';
+import { useGLTF } from '@react-three/drei/native';
 import * as THREE from 'three';
-import { FBX_ASSETS } from '../../constants/FightAssets';
+import { SkeletonUtils } from 'three-stdlib';
+import { GLB_ASSETS } from '../../constants/FightAssets';
 
 
 const TargetGolem = forwardRef(({ attackTrigger, damageTrigger, color, isSpecialAttack }, ref) => {
-    const model = useFBX(FBX_ASSETS.ENEMY);
+    const { scene } = useGLTF(GLB_ASSETS.ENEMY);
+    const model = React.useMemo(() => SkeletonUtils.clone(scene), [scene]);
 
     const matRefs = useRef([]);
 
-    useFrame((state) => {
+    useFrame((state, delta) => {
         if (!ref.current) return;
         
         let targetRotZ = 0;
@@ -31,10 +33,10 @@ const TargetGolem = forwardRef(({ attackTrigger, damageTrigger, color, isSpecial
             targetY = 2.5; // S'élève en attaquant
         }
         
-        ref.current.rotation.z = THREE.MathUtils.lerp(ref.current.rotation.z, targetRotZ, attackTrigger || damageTrigger ? 0.3 : 0.1);
-        ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, targetX, attackTrigger || damageTrigger ? 0.3 : 0.1);
-        ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, -1.8 + targetY, attackTrigger || damageTrigger ? 0.3 : 0.1);
-        ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, targetZ, attackTrigger || damageTrigger ? 0.4 : 0.08);
+        ref.current.rotation.z = THREE.MathUtils.lerp(ref.current.rotation.z, targetRotZ, (attackTrigger || damageTrigger ? 0.3 : 0.1) * delta * 60);
+        ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, targetX, (attackTrigger || damageTrigger ? 0.3 : 0.1) * delta * 60);
+        ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, -1.8 + targetY, (attackTrigger || damageTrigger ? 0.3 : 0.1) * delta * 60);
+        ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, targetZ, (attackTrigger || damageTrigger ? 0.4 : 0.08) * delta * 60);
 
         // GESTION DU FLASH COLORÉ (Orange/Rouge)
         matRefs.current.forEach(mat => {
@@ -44,7 +46,7 @@ const TargetGolem = forwardRef(({ attackTrigger, damageTrigger, color, isSpecial
                 mat.emissiveIntensity = 8.0; // Intensité boostée
             } else {
                 // Retour au noir progressif (Dégagement de chaleur)
-                mat.emissiveIntensity = THREE.MathUtils.lerp(mat.emissiveIntensity, 0, 0.15);
+                mat.emissiveIntensity = THREE.MathUtils.lerp(mat.emissiveIntensity, 0, 0.15 * delta * 60);
             }
         });
     });

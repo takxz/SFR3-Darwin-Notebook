@@ -1,18 +1,20 @@
 
 import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber/native';
-import { useFBX } from '@react-three/drei/native';
+import { useGLTF } from '@react-three/drei/native';
 import * as THREE from 'three';
-import { FBX_ASSETS } from '../../constants/FightAssets';
+import { SkeletonUtils } from 'three-stdlib';
+import { GLB_ASSETS } from '../../constants/FightAssets';
 
 
 const PlayerCharacter = ({ attackTrigger, damageTrigger, isSpecialAttack, isFinisher }) => {
     const groupRef = useRef();
     const hitStop = useRef(0);
 
+    const { scene } = useGLTF(GLB_ASSETS.HERO);
     const model = useMemo(() => {
-        return useFBX(FBX_ASSETS.HERO).clone();
-    }, []);
+        return SkeletonUtils.clone(scene);
+    }, [scene]);
 
     useEffect(() => {
         if (model) {
@@ -30,7 +32,7 @@ const PlayerCharacter = ({ attackTrigger, damageTrigger, isSpecialAttack, isFini
     const lastHitRef = useRef(false);
     const targetPos = useRef(new THREE.Vector3(0, -1.8, 10));
 
-    useFrame(() => {
+    useFrame((state, delta) => {
         if (!groupRef.current) return;
 
         // PRIORITÉ AU FINISHER SI ACTIF
@@ -40,7 +42,7 @@ const PlayerCharacter = ({ attackTrigger, damageTrigger, isSpecialAttack, isFini
                 targetPos.current.set(0, 8, -5); 
             }
             lastHitRef.current = attackTrigger;
-            groupRef.current.position.lerp(targetPos.current, 0.9);
+            groupRef.current.position.lerp(targetPos.current, 0.9 * delta * 60);
             groupRef.current.lookAt(0, 0, -15);
             return;
         }
@@ -63,7 +65,7 @@ const PlayerCharacter = ({ attackTrigger, damageTrigger, isSpecialAttack, isFini
             lastHitRef.current = attackTrigger;
 
             // Suivi fluide
-            groupRef.current.position.lerp(targetPos.current, 0.75);
+            groupRef.current.position.lerp(targetPos.current, 0.75 * delta * 60);
             
             // Regard fixe et propre vers le centre du Golem (z = -15)
             groupRef.current.lookAt(0, 1.5, -15);
@@ -91,11 +93,11 @@ const PlayerCharacter = ({ attackTrigger, damageTrigger, isSpecialAttack, isFini
             }
             
             const baseIdle = new THREE.Vector3(idleX, idleY, idleZ);
-            groupRef.current.position.lerp(baseIdle, attackTrigger || damageTrigger ? 0.4 : 0.08);
+            groupRef.current.position.lerp(baseIdle, (attackTrigger || damageTrigger ? 0.4 : 0.08) * delta * 60);
 
             // Rotation douce
-            groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, rotX, 0.1);
-            groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, Math.PI, 0.1);
+            groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, rotX, 0.1 * delta * 60);
+            groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, Math.PI, 0.1 * delta * 60);
             groupRef.current.rotation.z = 0;
         }
     });
