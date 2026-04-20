@@ -4,7 +4,6 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Heart, Leaf, Scale, Shield, Star, Timer, Zap, X } from 'lucide-react-native';
 import {
-  getCollectionAnimalDetailsById,
   getCollectionPlants,
   linkPlantToAnimal,
   unlinkPlantFromAnimal,
@@ -33,22 +32,32 @@ function StatCard({ label, value, max = 100, color, Icon }) {
 export default function CreatureDetailsPage() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { id } = useLocalSearchParams();
+  const { id, animal: animalParam } = useLocalSearchParams();
   const [refreshKey, setRefreshKey] = useState(0);
   const [isPlantPickerOpen, setIsPlantPickerOpen] = useState(false);
 
+  const baseAnimal = useMemo(() => {
+    if (!animalParam || Array.isArray(animalParam)) return null;
+
+    try {
+      return JSON.parse(decodeURIComponent(animalParam));
+    } catch {
+      return null;
+    }
+  }, [animalParam]);
+
   const animal = useMemo(() => {
-    if (!id || Array.isArray(id)) return null;
-    const foundAnimal = getCollectionAnimalDetailsById(id);
-    return foundAnimal ? { ...foundAnimal } : null;
-  }, [id, refreshKey]);
+    if (!id || Array.isArray(id) || !baseAnimal) return null;
+    if (String(baseAnimal.id) !== String(id)) return null;
+    return { ...baseAnimal };
+  }, [id, baseAnimal, refreshKey]);
 
   const plants = useMemo(() => getCollectionPlants(), []);
 
   const meta = useMemo(() => {
     if (!animal) return null;
     const linkedPlantName = animal.plantLinkId
-      ? getCollectionAnimalDetailsById(animal.plantLinkId)?.name
+      ? plants.find((plant) => plant.id === animal.plantLinkId)?.name
       : null;
 
     // Get modified stats based on plant effects
@@ -68,7 +77,7 @@ export default function CreatureDetailsPage() {
       def: modifiedStats.def,
       spd: modifiedStats.spd,
     };
-  }, [animal, refreshKey]);
+  }, [animal, plants, refreshKey]);
 
   const canPickPlant = Boolean(animal) && animal.category === 'fauna' && !animal.plantLinkId;
   const isFlora = animal?.category === 'flora';
