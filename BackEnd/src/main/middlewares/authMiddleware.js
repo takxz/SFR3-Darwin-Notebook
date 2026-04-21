@@ -17,7 +17,7 @@ module.exports = function(req, res, next) {
 
     try {
         // 2. Vérifier le token
-        const verified = jwt.verify(token, process.env.JWT_SECRET);
+        const verified = jwt.verify(token, process.env.JWT_SECRET_KEY);
         
         // 3. Ajouter les infos de l'utilisateur à la requête (req)
         // Comme ça, les contrôleurs suivants pourront utiliser req.user.id
