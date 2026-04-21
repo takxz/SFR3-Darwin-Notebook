@@ -8,7 +8,7 @@ export default function HomeFeedComponent() {
     const [details, setDetails] = useState(null);
 
   useEffect(() => {
-    fetch("http://ikdeksmp.fr:12000/api/user/creatures/last-captured")
+    fetch("http://ikdeksmp.fr:3001/api/user/creatures/last-captured")
       .then((response) => response.json())
       .then((data) => {
         console.log("Données reçues du backend :", data);
