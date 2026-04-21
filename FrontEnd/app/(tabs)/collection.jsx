@@ -26,6 +26,14 @@ async function parseResponseBody(response) {
 }
 
 function normalizeRarity(value) {
+    if (typeof value === 'string') {
+        const lower = value.toLowerCase();
+        if (lower.includes('leg') || lower.includes('lég')) return 4;
+        if (lower.includes('epic') || lower.includes('épi')) return 3;
+        if (lower.includes('rare')) return 2;
+        if (lower.includes('commun')) return 1;
+    }
+
     const parsed = Number(value);
 
     if (!Number.isFinite(parsed)) {
