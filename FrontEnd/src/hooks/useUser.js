@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { clearToken, getToken } from '../utils/auth';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://ikdeksmp.fr:12000';
+// Mettre base URL en variable à l'avenir
+const API_BASE_URL = 'http://ikdeksmp.fr:3001';
 
 export function useUser() {
   const [user, setUser] = useState(null);
