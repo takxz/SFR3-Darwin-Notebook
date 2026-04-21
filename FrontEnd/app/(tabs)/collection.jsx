@@ -81,6 +81,7 @@ export default function CollectionPage() {
     const [selectedSpecies, setSelectedSpecies] = useState('all');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     const filteredAnimals = selectedSpecies === 'all'
         ? animalData
@@ -168,6 +169,23 @@ export default function CollectionPage() {
         }
     };
 
+    const loadAnimalsData = async () => {
+        try {
+            const data = await getCollection();
+            setAnimalData(Array.isArray(data) ? data : []);
+            setError(null);
+        } catch (err) {
+            setAnimalData([]);
+            setError(err?.message || 'Unable to load animals.');
+        }
+    };
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await loadAnimalsData();
+        setRefreshing(false);
+    };
+
     useEffect(() => {
         let isMounted = true;
 
@@ -177,6 +195,7 @@ export default function CollectionPage() {
 
                 if (isMounted) {
                     setAnimalData(Array.isArray(data) ? data : []);
+                    setError(null);
                 }
             } catch (err) {
                 if (isMounted) {
@@ -228,6 +247,8 @@ export default function CollectionPage() {
                 keyExtractor={(item) => String(item.id)}
                 contentContainerStyle={styles.listContent}
                 columnWrapperStyle={styles.column}
+                refreshing={refreshing}
+                onRefresh={onRefresh}
                 renderItem={({ item }) => (
                     <AnimalCard
                         animal={item}
