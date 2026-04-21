@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, Text } from 'react-native';
+import { View, StyleSheet, FlatList, ActivityIndicator, Text, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { AnimalCard } from '../../src/components/Collection/AnimalCard';
@@ -247,8 +247,13 @@ export default function CollectionPage() {
                 keyExtractor={(item) => String(item.id)}
                 contentContainerStyle={styles.listContent}
                 columnWrapperStyle={styles.column}
-                refreshing={refreshing}
-                onRefresh={onRefresh}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        progressViewOffset={82}
+                    />
+                }
                 renderItem={({ item }) => (
                     <AnimalCard
                         animal={item}
