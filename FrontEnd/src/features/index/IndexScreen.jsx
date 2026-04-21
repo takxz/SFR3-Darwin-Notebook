@@ -13,7 +13,7 @@ export default function IndexScreen() {
                 </View>
                 <MapButton />
             </View>
-            <View style={styles.body}>
+            <View style={styles.feedContainer}>
                 <HomeFeedComponent />
             </View>
         </View>
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
-    body: {
-        
+    feedContainer: {
+        flex: 1,
     },
 })
