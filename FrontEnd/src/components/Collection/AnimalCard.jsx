@@ -88,7 +88,7 @@ export function AnimalCard({
 
         {/* Rarity Stars */}
         <View style={styles.stars}>
-          {[...Array(5)].map((_, i) => (
+          {[...Array(4)].map((_, i) => (
             <Star
               key={i}
               size={12}
