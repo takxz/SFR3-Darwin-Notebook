@@ -38,7 +38,20 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.noir + '80',
         borderRadius: 15,
-        boxShadow: '0 0px 4px ' + colors.noir + 'A0',
+        ...Platform.select({
+            ios: {
+                shadowColor: colors.noir,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.6,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 4,
+            },
+            web: {
+                boxShadow: '0 0px 4px ' + colors.noir + 'A0',
+            }
+        })
         padding: 10,
         fontSize: 16,
         marginBottom: 15,

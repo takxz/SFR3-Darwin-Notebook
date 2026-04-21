@@ -292,7 +292,6 @@ const styles = StyleSheet.create({
     infoSection: {
         padding: 16,
         backgroundColor: "rgba(255,255,255,0.8)",
-        backdropFilter: "blur(16px)",
     },
     beastName: {
         fontSize: 16,

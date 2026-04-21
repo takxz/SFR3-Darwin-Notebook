@@ -67,7 +67,20 @@ const styles = StyleSheet.create({
         borderColor: UI_CONFIG.borderOpacity,
         alignItems: "center",
         justifyContent: "center",
-        shadowOffset: { width: 0, height: 8 },
+        ...Platform.select({
+            ios: {
+                shadowColor: UI_CONFIG.borderOpacity,
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.5,
+                shadowRadius: 10,
+            },
+            android: {
+                elevation: 8,
+            },
+            web: {
+                shadowOffset: { width: 0, height: 8 },
+            }
+        }),
         padding: "5%",
     },
     iconCircle: {

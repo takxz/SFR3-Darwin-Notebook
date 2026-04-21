@@ -106,7 +106,20 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         borderWidth: 1,
         borderColor: colors.marronCuir + '80',
-        boxShadow: '0 4px 8px ' + colors.marronCuir + 'BB',
+        ...Platform.select({
+            ios: {
+                shadowColor: colors.marronCuir,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.7,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 8,
+            },
+            web: {
+                boxShadow: '0 4px 8px ' + colors.marronCuir + 'BB',
+            }
+        })
     },
     title: {
         fontSize: 32,

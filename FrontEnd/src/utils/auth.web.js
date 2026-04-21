@@ -1,19 +1,16 @@
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
-
 const TOKEN_KEY = 'userToken';
 const DEBUG_BYPASS_TOKEN = 'debug-bypass-token';
 
 export function isAuthBypassEnabled() {
-  return __DEV__ && process.env.EXPO_PUBLIC_SKIP_AUTH === 'true';
+  return __DEV__ && typeof process !== 'undefined' && process.env.EXPO_PUBLIC_SKIP_AUTH === 'true';
 }
 
 export async function saveToken(token) {
   if (!token) return;
-  if (Platform.OS === 'web') {
+  try {
     localStorage.setItem(TOKEN_KEY, token);
-  } else {
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
+  } catch (e) {
+    console.warn('LocalStorage not available:', e);
   }
 }
 
@@ -22,16 +19,18 @@ export async function getToken() {
     return DEBUG_BYPASS_TOKEN;
   }
 
-  if (Platform.OS === 'web') {
+  try {
     return localStorage.getItem(TOKEN_KEY);
+  } catch (e) {
+    console.warn('LocalStorage access error:', e);
+    return null;
   }
-  return await SecureStore.getItemAsync(TOKEN_KEY);
 }
 
 export async function clearToken() {
-  if (Platform.OS === 'web') {
+  try {
     localStorage.removeItem(TOKEN_KEY);
-  } else {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+  } catch (e) {
+    console.warn('LocalStorage clear error:', e);
   }
 }

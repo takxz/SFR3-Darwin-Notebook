@@ -1,4 +1,5 @@
 const { store } = require('../store/redisStore');
+const db = require('../config/db');
 
 module.exports = function(io, socket) {
     // 2. Ready Check
@@ -95,26 +96,57 @@ module.exports = function(io, socket) {
         });
 
         if (result) {
-            // ============================
-            // LOGIQUE DE RETRIBUTION D'XP
-            // ============================
-            const winnerCreatureId = battle.players[result.winner].creatureId;
+            // ==========================================
+            // RÉCOMPENSES POST-COMBAT (Ticket XP/Gold)
+            // ==========================================
+            const winnerCreatureId = battle.players[result.winner]?.creatureId;
+            
             if (winnerCreatureId) {
                 try {
-                    const db = require('../config/db');
-                    const xpRawGain = 50; 
-                    const goldGain = 10;
+                    const xpGain = 50;       // XP ajoutée à la créature ET au joueur
+                    const bioTokenGain = 10;  // BioTokens ajoutés au joueur
                     
-                    // MàJ Base de données
-                    await db.query('UPDATE "CREATURE" SET experience = experience + $1 WHERE id = $2', [xpRawGain, winnerCreatureId]);
+                    // 1. Mettre à jour l'XP de la CREATURE et récupérer le player_id
+                    const creatureResult = await db.query(
+                        `UPDATE "CREATURE" 
+                         SET experience = experience + $1 
+                         WHERE id = $2 
+                         RETURNING player_id`,
+                        [xpGain, winnerCreatureId]
+                    );
                     
-                    // Informer le FrontEnd
-                    io.to(result.winner).emit('REWARD_GRANTED', { xp: xpRawGain, gold: goldGain });
+                    if (creatureResult.rows.length > 0) {
+                        const playerId = creatureResult.rows[0].player_id;
+                        
+                        // 2. Mettre à jour le XP et les BioTokens du PLAYER
+                        //    bio_token est un VARCHAR → on le caste en int, on ajoute, on reconvertit
+                        await db.query(
+                            `UPDATE "PLAYER" 
+                             SET xp = xp + $1,
+                                 bio_token = CAST(
+                                     COALESCE(NULLIF(bio_token, ''), '0')::int + $2 
+                                     AS varchar
+                                 )
+                             WHERE id = $3`,
+                            [xpGain, bioTokenGain, playerId]
+                        );
+                        
+                        console.log(`[BattleHandler] ✅ Récompenses accordées : Creature ${winnerCreatureId} (+${xpGain} XP), Player ${playerId} (+${xpGain} XP, +${bioTokenGain} BioTokens)`);
+                    } else {
+                        console.warn(`[BattleHandler] ⚠️ Creature ${winnerCreatureId} introuvable en BDD`);
+                    }
                     
-                    console.log(`[BattleHandler] Recompense XP accordee a la Creature ${winnerCreatureId}`);
-                } catch (e) {
-                    console.error("[BattleHandler] ERREUR LORS DE L'UPDATE XP DB:", e);
+                    // 3. Informer le FrontEnd des gains
+                    io.to(result.winner).emit('REWARD_GRANTED', { 
+                        xp: xpGain, 
+                        bioTokens: bioTokenGain
+                    });
+                    
+                } catch (err) {
+                    console.error("[BattleHandler] ❌ Erreur SQL lors de l'attribution des récompenses:", err.message);
                 }
+            } else {
+                console.warn(`[BattleHandler] ⚠️ Pas de creatureId pour le vainqueur, pas de récompenses`);
             }
 
             await store.deleteBattle(roomId); // End game
