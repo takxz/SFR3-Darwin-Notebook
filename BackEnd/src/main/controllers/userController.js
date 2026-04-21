@@ -146,13 +146,16 @@ exports.getUserCreatures = async (req, res) => {
         // On sélectionne toutes les colonnes de la créature (c.*)
         // et on y ajoute les infos de l'espèce associée (s.name, s.model_path)
         const query = `
-            SELECT c.*,
-                   s.name as species_name,
-                   s.type as species_type,
-                   s.rarity as species_rarity,
-                   s.model_path as species_model_path
+            SELECT
+                c.*,
+                s.name AS species_name,
+                s.type AS species_type,
+                s.rarity AS species_rarity,
+                s.average_weight AS weight,
+                s.average_life_expectancy AS lifespan,
+                s.model_path AS species_model_path
             FROM public."CREATURE" c
-                     JOIN public."SPECIES" s ON c.species_id = s.id
+            JOIN public."SPECIES" s ON c.species_id = s.id
             WHERE c.player_id = $1;
         `;
 
@@ -181,20 +184,51 @@ exports.getUserCreatures = async (req, res) => {
     }
 };
 
+// Récupérer toutes les plantes d'un joueur
+exports.getUserPlants = async (req, res) => {
+    try {
+        const userId = req.params.id;
+
+        const query = `
+            SELECT
+                c.*,
+                s.name AS species_name,
+                s.type AS species_type,
+                s.rarity AS species_rarity,
+                s.average_weight AS weight,
+                s.average_life_expectancy AS lifespan
+            FROM "CREATURE" c
+            JOIN "SPECIES" s ON c.species_id = s.id
+            WHERE c.player_id = $1 AND LOWER(s.type) IN ('plante', 'plant', 'flora');
+        `;
+
+        const result = await db.query(query, [userId]);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Erreur lors de la récupération des plantes:', err);
+        res.status(500).json({ error: "Erreur lors de la récupération des plantes." });
+    }
+};
+
 // Récupérer les détails d'un seul animal du joueur + le modèle 3D
-exports.getUserCreatureDetails = async (req, res) => {
+exports.getUserCreatureDetails = async(req, res) => {
     try {
         const userId = req.params.id;
         const creatureId = req.params.creatureid;
 
         const query = `
-            SELECT c.*,
-                   s.name as species_name,
-                   s.type as species_type,
-                   s.rarity as species_rarity,
-                   s.model_path as species_model_path
+            SELECT
+                c.*,
+                c.plant_link_id AS "plantLinkId",
+                s.name AS species_name,
+                s.type AS species_type,
+                s.rarity AS species_rarity,
+                s.average_weight AS weight,
+                s.average_life_expectancy AS lifespan,
+                s.model_path AS species_model_path
             FROM public."CREATURE" c
-                     JOIN public."SPECIES" s ON c.species_id = s.id
+            JOIN public."SPECIES" s ON c.species_id = s.id
             WHERE c.player_id = $1 AND c.id = $2;
         `;
 
@@ -221,6 +255,142 @@ exports.getUserCreatureDetails = async (req, res) => {
     }
 };
 
+exports.getLastCapturedCreatures = async (req, res) => {
+    try {
+    const query = `select p.pseudo,  c.id, c.player_id, c.gamification_name, 
+            c.scan_url, c.scan_quality, c.gps_location, c.scan_date
+            FROM public."CREATURE" c
+            left join public."PLAYER" p
+            on p.id = c.player_id
+            order by scan_date desc
+            fetch first 5 rows only;`
+
+    const result = await db.query(query)
+
+    res.json(result.rows)
+    } catch (err) {
+        console.error('Erreur lors de la récupération des 5 dernières créatures capturées:', err);
+        res.status(500).json({ error: "Erreur lors de la récupération des 5 dernières créatures capturées"})
+    }
+}
+// Lier une plante à une créature
+exports.linkPlantToCreature = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const creatureId = req.params.creatureid;
+        const { plantLinkId } = req.body;
+
+        if (!plantLinkId) {
+            return res.status(400).json({ error: "L'ID de la plante (plantLinkId) est requis." });
+        }
+
+        // 1. Récupérer les stats de la plante
+        const plantQuery = await db.query(
+            `SELECT stat_pv, stat_atq, stat_def, stat_speed FROM "CREATURE" WHERE id = $1`,
+            [plantLinkId]
+        );
+
+        if (plantQuery.rows.length === 0) {
+            return res.status(404).json({ error: "Plante introuvable." });
+        }
+
+        const plant = plantQuery.rows[0];
+
+        // 2. Mettre à jour l'animal en liant la plante ET en ajoutant ses stats
+        const query = `
+            UPDATE "CREATURE"
+            SET 
+                plant_link_id = $1,
+                stat_pv = stat_pv + $2,
+                stat_atq = stat_atq + $3,
+                stat_def = stat_def + $4,
+                stat_speed = stat_speed + $5
+            WHERE id = $6 AND player_id = $7
+            RETURNING *;
+        `;
+
+        const result = await db.query(query, [
+            plantLinkId,
+            plant.stat_pv || 0,
+            plant.stat_atq || 0,
+            plant.stat_def || 0,
+            plant.stat_speed || 0,
+            creatureId, 
+            userId
+        ]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Créature introuvable pour ce joueur." });
+        }
+
+        res.json({ message: "Plante liée avec succès.", creature: result.rows[0] });
+    } catch (err) {
+        console.error("Erreur lors de la liaison de la plante:", err);
+        res.status(500).json({ error: "Erreur serveur lors de la mise à jour." });
+    }
+};
+
+// Retirer la plante d'une créature
+exports.unlinkPlantFromCreature = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const creatureId = req.params.creatureid;
+
+        // 1. Check if the creature has a linked plant
+        const creatureQuery = await db.query(
+            `SELECT plant_link_id, species_id FROM "CREATURE" WHERE id = $1 AND player_id = $2`,
+            [creatureId, userId]
+        );
+
+        if (creatureQuery.rows.length === 0) {
+            return res.status(404).json({ error: "Créature introuvable pour ce joueur." });
+        }
+
+        // 2. Fetch animal base stats
+        const specieId = creatureQuery.rows[0].species_id;
+        if (creatureQuery.rows.length > 0) {
+            const baseStatsQuery = await db.query(
+                `SELECT base_stat_pv, base_stat_atq, base_stat_def, base_stat_speed FROM "SPECIES" WHERE id = $1`,
+                [specieId]
+            );
+
+            if (baseStatsQuery.rows.length > 0) {
+                const baseStats = baseStatsQuery.rows[0];
+                baseStatPv = baseStats.base_stat_pv || 0;
+                baseStatAtq = baseStats.base_stat_atq || 0;
+                baseStatDef = baseStats.base_stat_def || 0;
+                baseStatSpeed = baseStats.base_stat_speed || 0;
+            }
+        }
+
+        // 3. Remove the link and rollback the stats 
+        const query = `
+            UPDATE "CREATURE"
+            SET 
+                plant_link_id = NULL,
+                stat_pv = $1,
+                stat_atq = $2,
+                stat_def = $3,
+                stat_speed = $4
+            WHERE id = $5 AND player_id = $6
+            RETURNING *;
+        `;
+
+        const result = await db.query(query, [
+            baseStatPv,
+            baseStatAtq,
+            baseStatDef,
+            baseStatSpeed,
+            creatureId, 
+            userId
+        ]);
+
+        res.json({ message: "Plante retirée avec succès.", creature: result.rows[0] });
+    } catch (err) {
+        console.error("Erreur lors du retrait de la plante:", err);
+        res.status(500).json({ error: "Erreur serveur lors de la mise à jour." });
+    }
+};
 exports.getLastCapturedCreatures = async (req, res) => {
     try {
     const query = `select p.pseudo,  c.id, c.player_id, c.gamification_name, 

@@ -2,5 +2,9 @@
   "dependencies": {
     "expo-linear-gradient": "^55.0.8",
     "moti": "^0.30.0"
+  },
+  "scripts": {
+    "start": "NO_COLOR=1 node server.js",
+    "dev": "NO_COLOR=1 nodemon server.js"
   }
 }

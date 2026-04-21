@@ -166,8 +166,7 @@ describe('userController', () => {
     });
 
 
-    // 5. getUserCreatures
-// ==========================================
+    // ==========================================
     // 5. getUserCreatures
     // ==========================================
     describe('getUserCreatures', () => {
@@ -204,9 +203,38 @@ describe('userController', () => {
         });
     });
 
+    // ==========================================
+    // 6. getUserPlants
+    // ==========================================
+    describe('getUserPlants', () => {
+        it('doit renvoyer la collection enrichie (200)', async () => {
+            req.params.id = 'uuid-123';
 
-// ==========================================
-    // 6. getUserCreatureDetails
+            // Mock du retour SQL brut (ce qui sort du JOIN)
+            const mockDbRows = [
+                { id: 'c-2', species_name: 'Fougère', species_model_path: null }
+            ];
+            db.query.mockResolvedValue({ rows: mockDbRows });
+
+            await userController.getUserPlants(req, res);
+
+            // Le payload final attendu après le traitement du contrôleur
+            const expectedPayload = [
+                {
+                    id: 'c-2',
+                    species_name: 'Fougère',
+                    species_model_path: null
+                }
+            ];
+
+            expect(db.query).toHaveBeenCalledTimes(1);
+            expect(res.json).toHaveBeenCalledWith(expectedPayload);
+        });
+    });
+
+
+    // ==========================================
+    // 7. getUserCreatureDetails
     // ==========================================
     describe('getUserCreatureDetails', () => {
         it('doit renvoyer un objet unique enrichi avec le modèle 3D via JOIN (200)', async () => {

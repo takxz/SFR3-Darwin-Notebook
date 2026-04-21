@@ -65,7 +65,7 @@
     },
     "informationAnimalScreen": {
         "reject_button": "Rejeter",
-        "accept_button": "Ajouter au Dex"
+        "accept_button": "Ajouter à la Collection"
     },
     "chooseBeastScreen": {
         "back": "Retour",
@@ -80,5 +80,8 @@
         "mapNotYetImplemented": "La fonction de carte n'est pas encore disponible dans cette version",
         "hasCatch": " a capturé ",
         "unknown": "Inconnue"
+    },
+    "emptyCollectionScreen": {
+        "text": "Aucune créature disponible dans cette catégorie pour le moment."
     }
 }

@@ -1,23 +1,51 @@
 import React from "react";
 import { View, Text, Image, Pressable, StyleSheet, Dimensions } from "react-native";
 import { Star, Wind, Droplets, Bug, PawPrint, Leaf } from "lucide-react-native";
-import { getAnimalStatsWithPlantEffects } from "../../utils/tempCollectionApi";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_GAP = 16;
 const DEFAULT_CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - CARD_GAP) / 2;
 
 const getTypeConfig = (type) => {
-  switch (type) {
-    case 'flying': return { Icon: Wind, color: '#ABDDF1' };
-    case 'marine': return { Icon: Droplets, color: '#006994' };
-    case 'insect': return { Icon: Bug, color: '#00CEC8' };
-    case 'flora': return { Icon: Leaf, color: '#2E6F40' };
-    case 'terrestrial': 
-    default:
-      return { Icon: PawPrint, color: '#90AAA1' };
-  }
+  const t = String(type || '').toLowerCase().trim();
+  
+  if (t === 'reptile' || t === 'mammifère' || t === 'mammifere') return { Icon: PawPrint, color: '#90AAA1' };
+  if (t === 'poisson' || t === 'amphibien') return { Icon: Droplets, color: '#5e9bc2' };
+  if (t === 'plante' || t === 'flora') return { Icon: Leaf, color: '#2E6F40' };
+  if (t === 'insecte') return { Icon: Bug, color: '#aa7e58' };
+  if (t === 'oiseau') return { Icon: Wind, color: '#8bb9ad' };
+  
+  // Fallbacks
+  if (t === 'fauna') return { Icon: PawPrint, color: '#90AAA1' };
+  return { Icon: Star, color: '#cab93c' };
 };
+
+/**
+ * Calculates the modified stats of an animal after applying plant effects
+ * Returns a new object with the calculated stats
+ */
+function getAnimalStatsWithPlantEffects(animal) {
+  const baseStats = {
+    hp: animal.hp,
+    maxHp: animal.maxHp,
+    atk: animal.atk,
+    def: animal.def,
+    spd: animal.spd,
+  };
+
+  const plant = animal.plantLinkId ? getCollectionAnimalDetailsById(animal.plantLinkId) : null;
+  if (!plant) return baseStats;
+
+  const modifiers = parsePlantEffects(plant);
+  
+  return {
+    hp: baseStats.hp + Math.floor(baseStats.hp * (modifiers.hp || 0) / 100),
+    maxHp: baseStats.maxHp + Math.floor(baseStats.maxHp * (modifiers.hp || 0) / 100),
+    atk: baseStats.atk + Math.floor(baseStats.atk * (modifiers.atk || 0) / 100),
+    def: baseStats.def + Math.floor(baseStats.def * (modifiers.def || 0) / 100),
+    spd: baseStats.spd + Math.floor(baseStats.spd * (modifiers.spd || 0) / 100),
+  };
+}
 
 /**
  * Dex grid card showing animal image, rarity stars, and animated HP bar.
@@ -25,13 +53,11 @@ const getTypeConfig = (type) => {
  */
 export function AnimalCard({
   animal,
-  index = 0,
   cardWidth = DEFAULT_CARD_WIDTH,
   onPress,
 }) {
   // Get modified stats based on linked plant effects
   const modifiedStats = getAnimalStatsWithPlantEffects(animal);
-  const hpPercentage = (modifiedStats.hp / modifiedStats.maxHp) * 100;
   const { Icon: TypeIcon, color: typeColor } = getTypeConfig(animal.type);
 
   return (
@@ -66,38 +92,18 @@ export function AnimalCard({
             <Star
               key={i}
               size={12}
-              color={i < animal.rarity ? "#fbbf24" : "rgba(151,87,43,0.1)"}
+              color={i < animal.rarity ? "#fbbf24" : "rgba(151,87,43,0.35)"}
               fill={i < animal.rarity ? "#fbbf24" : "transparent"}
             />
           ))}
         </View>
 
-        {/* HP Bar - Hidden for plants (flora) */}
-        {animal.type !== 'flora' && (
-          <View>
-            <View style={styles.hpHeader}>
-              <Text style={styles.hpLabel}>HP</Text>
-              <Text style={styles.hpValue}>
-                {modifiedStats.hp}/{modifiedStats.maxHp}
-              </Text>
-            </View>
-            <View style={styles.hpTrack}>
-              <View
-                from={{ width: "0%" }}
-                animate={{ width: `${hpPercentage}%` }}
-                transition={{
-                  type: "timing",
-                  duration: 1000,
-                  delay: 500 + index * 100,
-                }}
-                style={[
-                  styles.hpFill,
-                  {
-                    backgroundColor:
-                      hpPercentage > 50 ? "#A8DCAB" : "#f59e0b",
-                  },
-                ]}
-              />
+        {/* Max HP - Hidden for plants (Plante) */}
+        {animal.category !== 'flora' && String(animal.type).toLowerCase() !== 'plante' && (
+          <View style={styles.hpContainer}>
+            <Text style={styles.hpLabel}>Max HP</Text>
+            <View style={styles.hpPill}>
+              <Text style={styles.hpValue}>{modifiedStats.maxHp}</Text>
             </View>
           </View>
         )}
@@ -137,11 +143,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: "rgba(255,255,255,0.85)",
     padding: 6,
     borderRadius: 9999,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(0,0,0,0.1)",
   },
   info: {
     padding: 12,
@@ -164,17 +170,35 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     marginBottom: 4,
   },
+  hpContainer: {
+    marginTop: 2,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "transparent",
+    borderRadius: 12,
+    paddingHorizontal: 0,
+    paddingVertical: 2,
+  },
   hpLabel: {
     fontSize: 10,
     fontWeight: "bold",
-    color: "rgba(151,87,43,0.5)",
+    color: "rgba(151,87,43,0.7)",
     textTransform: "uppercase",
     letterSpacing: 1,
   },
   hpValue: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "rgba(151,87,43,0.7)",
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#97572B",
+  },
+  hpPill: {
+    minWidth: 46,
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.55)",
+    borderRadius: 9999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
   },
   hpTrack: {
     height: 6,
