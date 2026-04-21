@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import fr from "@/assets/locales/fr.json";
 import colors from "@/assets/constants/colors.json";
 import { getToken } from "@/utils/auth";
+import * as Location from 'expo-location';
 
 export default function HomeFeedComponent() {
   const [details, setDetails] = useState([]);
@@ -11,6 +12,19 @@ export default function HomeFeedComponent() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
+  const reverseGeocode = async (gpsLocation) => {
+    if (!gpsLocation) return null;
+    const [latitude, longitude] = gpsLocation.split(',').map((v) => Number(v.trim()));
+
+    try {
+      const address = (await Location.reverseGeocodeAsync({ latitude, longitude }))?.[0];
+      return [address?.city, address?.country].filter(Boolean).join(', ') || null;
+    } catch (e) {
+      console.warn('Reverse geocode failed:', e);
+      return null;
+    }
+  };
+  
   const loadDetails = useCallback(async ({ showLoading = false } = {}) => {
     try {
       if (showLoading) {
@@ -37,7 +51,11 @@ export default function HomeFeedComponent() {
         throw new Error(data?.error || "Impossible de charger les dernières captures.");
       }
 
-      setDetails(Array.isArray(data) ? data : []);
+      const rows = Array.isArray(data) ? data : [];
+      setDetails(await Promise.all(rows.map(async (item) => ({
+        ...item,
+        display_location: await reverseGeocode(item.gps_location),
+      }))));
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Impossible de charger les dernières captures.");
@@ -87,10 +105,10 @@ export default function HomeFeedComponent() {
               pseudo={item.pseudo}
               animal_name={item.gamification_name}
               scan_url={item.scan_url}
-            gps_location={item.gps_location}
-            scan_quality={item.scan_quality}
-            scan_date={formatDate(item.scan_date)}
-          />
+              gps_location={item.display_location || fr.indexScreen.unknown}
+              scan_quality={item.scan_quality}
+              scan_date={formatDate(item.scan_date)}
+            />
           ))
         ) : (
           <Text>{fr.indexScreen.dataLoading}</Text>
