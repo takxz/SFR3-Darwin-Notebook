@@ -156,7 +156,8 @@ exports.getUserCreatures = async (req, res) => {
                 s.model_path AS species_model_path
             FROM public."CREATURE" c
             JOIN public."SPECIES" s ON c.species_id = s.id
-            WHERE c.player_id = $1;
+            WHERE c.player_id = $1
+            ORDER BY c.scan_date DESC;
         `;
 
         const result = await db.query(query, [userId]);
