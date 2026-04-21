@@ -158,8 +158,6 @@ exports.getUserCreatures = async (req, res) => {
     }
 };
 
-<<<<<<< HEAD:BackEnd/src/controllers/userController.js
-=======
 // Récupérer les détails d'un seul animal du joueur
 exports.getUserCreatureDetails = async(req, res) => {
     try {
@@ -188,7 +186,6 @@ exports.getUserCreatureDetails = async(req, res) => {
     }
 };
 
->>>>>>> 82281342a2bc5784ab10e1016cfdf0768cf1ff57:BackEnd/src/main/controllers/userController.js
 exports.getLastCapturedCreatures = async (req, res) => {
     try {
     const query = `select p.pseudo,  c.id, c.player_id, c.gamification_name, 
