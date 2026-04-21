@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useRouter } from 'expo-router';
-import { View, Text, Alert, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, Text, Alert, StyleSheet, Pressable } from 'react-native';
 import Input from '@/components/inputs/Inputs';
 import colors from '@/assets/constants/colors';
 import { getToken, saveToken } from '@/utils/auth';
@@ -106,20 +106,7 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         borderWidth: 1,
         borderColor: colors.marronCuir + '80',
-        ...Platform.select({
-            ios: {
-                shadowColor: colors.marronCuir,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.7,
-                shadowRadius: 8,
-            },
-            android: {
-                elevation: 8,
-            },
-            web: {
-                boxShadow: '0 4px 8px ' + colors.marronCuir + 'BB',
-            }
-        })
+        boxShadow: '0 4px 8px ' + colors.marronCuir + 'BB',
     },
     title: {
         fontSize: 32,

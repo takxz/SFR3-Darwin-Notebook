@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScanLine } from 'lucide-react-native';
 import fr from '../assets/locales/fr.json';
@@ -40,17 +40,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 24,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#2E6F40',
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.5,
-                shadowRadius: 50,
-            },
-            android: {
-                elevation: 10,
-            }
-        }),
+        shadowColor: '#2E6F40',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 50,
         borderWidth: 4,
         borderColor: 'rgba(255,255,255,0.2)',
     },
