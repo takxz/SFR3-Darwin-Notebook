@@ -58,9 +58,14 @@ exports.addCreature = async (req, res) => {
         } = req.body;
 
         const userId = player_id || req.user.id;
-        const finalScanUrl = req.file 
-            ? `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
-            : req.body.scan_url || null;
+        let finalScanUrl = req.body.scan_url || null;
+
+        // Si une image a été envoyée, on génère son URL
+        if (req.file) {
+            const protocol = req.protocol;
+            const host = req.get('host');
+            finalScanUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+        }
 
         // 1. Récupérer les informations de l'espèce pour les stats de base
         const speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE id = $1', [species_id]);
@@ -116,9 +121,16 @@ exports.uploadCreatureImage = async (req, res) => {
             return res.status(400).json({ error: "Aucun fichier n'a été fourni." });
         }
 
-        const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+        // Construire l'URL de l'image
+        // On récupère le protocole (http/https) et l'hôte (IP ou domaine)
+        const protocol = req.protocol;
+        const host = req.get('host');
+        const imageUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
 
-        res.json({ imageUrl, filename: req.file.filename });
+        res.json({
+            imageUrl: imageUrl,
+            filename: req.file.filename
+        });
     } catch (err) {
         console.error('Erreur lors de l\'upload de l\'image:', err);
         res.status(500).json({ error: "Erreur lors de l'upload de l'image." });
@@ -174,8 +186,37 @@ exports.getUserCreatures = async (req, res) => {
     }
 };
 
+// Récupérer toutes les plantes d'un joueur
+exports.getUserPlants = async (req, res) => {
+    try {
+        const userId = req.params.id;
+
+        const query = `
+            SELECT
+                c.*,
+                s.name AS species_name,
+                s.type AS species_type,
+                s.rarity AS species_rarity,
+                s.average_weight AS species_average_weight,
+                s.average_life_expectancy AS species_average_life_expectancy,
+                s.average_weight AS weight,
+                s.average_life_expectancy AS lifespan
+            FROM "CREATURE" c
+            JOIN "SPECIES" s ON c.species_id = s.id
+            WHERE c.player_id = $1 AND LOWER(s.type) IN ('plante', 'plant', 'flora');
+        `;
+
+        const result = await db.query(query, [userId]);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Erreur lors de la récupération des plantes:', err);
+        res.status(500).json({ error: "Erreur lors de la récupération des plantes." });
+    }
+};
+
 // Récupérer les détails d'un seul animal du joueur + le modèle 3D
-exports.getUserCreatureDetails = async (req, res) => {
+exports.getUserCreatureDetails = async(req, res) => {
     try {
         const userId = req.params.id;
         const creatureId = req.params.creatureid;
@@ -183,6 +224,7 @@ exports.getUserCreatureDetails = async (req, res) => {
         const query = `
             SELECT
                 c.*,
+                c.plant_link_id AS "plantLinkId",
                 s.name AS species_name,
                 s.type AS species_type,
                 s.rarity AS species_rarity,
@@ -237,3 +279,123 @@ exports.getLastCapturedCreatures = async (req, res) => {
         res.status(500).json({ error: "Erreur lors de la récupération des 5 dernières créatures capturées"})
     }
 }
+// Lier une plante à une créature
+exports.linkPlantToCreature = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const creatureId = req.params.creatureid;
+        const { plantLinkId } = req.body;
+
+        if (!plantLinkId) {
+            return res.status(400).json({ error: "L'ID de la plante (plantLinkId) est requis." });
+        }
+
+        // 1. Récupérer les stats de la plante
+        const plantQuery = await db.query(
+            `SELECT stat_pv, stat_atq, stat_def, stat_speed FROM "CREATURE" WHERE id = $1`,
+            [plantLinkId]
+        );
+
+        if (plantQuery.rows.length === 0) {
+            return res.status(404).json({ error: "Plante introuvable." });
+        }
+
+        const plant = plantQuery.rows[0];
+
+        // 2. Mettre à jour l'animal en liant la plante ET en ajoutant ses stats
+        const query = `
+            UPDATE "CREATURE"
+            SET 
+                plant_link_id = $1,
+                stat_pv = stat_pv + $2,
+                stat_atq = stat_atq + $3,
+                stat_def = stat_def + $4,
+                stat_speed = stat_speed + $5
+            WHERE id = $6 AND player_id = $7
+            RETURNING *;
+        `;
+
+        const result = await db.query(query, [
+            plantLinkId,
+            plant.stat_pv || 0,
+            plant.stat_atq || 0,
+            plant.stat_def || 0,
+            plant.stat_speed || 0,
+            creatureId, 
+            userId
+        ]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Créature introuvable pour ce joueur." });
+        }
+
+        res.json({ message: "Plante liée avec succès.", creature: result.rows[0] });
+    } catch (err) {
+        console.error("Erreur lors de la liaison de la plante:", err);
+        res.status(500).json({ error: "Erreur serveur lors de la mise à jour." });
+    }
+};
+
+// Retirer la plante d'une créature
+exports.unlinkPlantFromCreature = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const creatureId = req.params.creatureid;
+
+        // 1. Check if the creature has a linked plant
+        const creatureQuery = await db.query(
+            `SELECT plant_link_id FROM "CREATURE" WHERE id = $1 AND player_id = $2`,
+            [creatureId, userId]
+        );
+
+        if (creatureQuery.rows.length === 0) {
+            return res.status(404).json({ error: "Créature introuvable pour ce joueur." });
+        }
+
+        const plantLinkId = creatureQuery.rows[0].plant_link_id;
+        let plantStatPv = 0, plantStatAtq = 0, plantStatDef = 0, plantStatSpeed = 0;
+
+        // 2. Fetch its stats to subtract them later
+        if (plantLinkId) {
+            const plantQuery = await db.query(
+                `SELECT stat_pv, stat_atq, stat_def, stat_speed FROM "CREATURE" WHERE id = $1`,
+                [plantLinkId]
+            );
+
+            if (plantQuery.rows.length > 0) {
+                const plant = plantQuery.rows[0];
+                plantStatPv = plant.stat_pv || 0;
+                plantStatAtq = plant.stat_atq || 0;
+                plantStatDef = plant.stat_def || 0;
+                plantStatSpeed = plant.stat_speed || 0;
+            }
+        }
+
+        // 3. Remove the link and rollback the stats 
+        const query = `
+            UPDATE "CREATURE"
+            SET 
+                plant_link_id = NULL,
+                stat_pv = stat_pv - $1,
+                stat_atq = stat_atq - $2,
+                stat_def = stat_def - $3,
+                stat_speed = stat_speed - $4
+            WHERE id = $5 AND player_id = $6
+            RETURNING *;
+        `;
+
+        const result = await db.query(query, [
+            plantStatPv,
+            plantStatAtq,
+            plantStatDef,
+            plantStatSpeed,
+            creatureId, 
+            userId
+        ]);
+
+        res.json({ message: "Plante retirée avec succès.", creature: result.rows[0] });
+    } catch (err) {
+        console.error("Erreur lors du retrait de la plante:", err);
+        res.status(500).json({ error: "Erreur serveur lors de la mise à jour." });
+    }
+};

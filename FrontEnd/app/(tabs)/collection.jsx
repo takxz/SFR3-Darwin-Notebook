@@ -48,9 +48,8 @@ function normalizeLifespan(value) {
 
 function normalizeCreature(creature) {
     const rawType = String(creature?.species_type || '').toLowerCase();
-    const type = ['flora', 'fauna'].includes(rawType)
-        ? rawType
-        : 'fauna';
+    const isFlora = ['plante'].includes(rawType);
+    const type = isFlora ? 'flora' : 'fauna';
     const hp = Number(creature?.stat_pv ?? creature?.hp ?? 1);
 
     return {
@@ -59,7 +58,7 @@ function normalizeCreature(creature) {
         scientificName: creature?.species_name || creature?.scientific_name || '',
         image: creature?.scan_url || creature?.image_url || creature?.image || FALLBACK_IMAGE,
         type,
-        category: type === 'flora' ? 'flora' : 'fauna',
+        category: type,
         rarity: normalizeRarity(creature?.species_rarity ?? creature?.rarity),
         weight: normalizeWeight(
             creature?.weight

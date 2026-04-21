@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, Image, Pressable, StyleSheet, Dimensions } from "react-native";
 import { Star, Wind, Droplets, Bug, PawPrint, Leaf } from "lucide-react-native";
-import { getAnimalStatsWithPlantEffects } from "../../utils/tempCollectionApi";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_GAP = 16;
@@ -9,10 +8,37 @@ const DEFAULT_CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - CARD_GAP) / 2;
 
 const getTypeConfig = (type) => {
   if (type === 'fauna') return { Icon: PawPrint, color: '#90AAA1' };
-  if (type === 'flora') return { Icon: Leaf, color: '#2E6F40' };
+  if (type === 'flora' || type === 'Plante') return { Icon: Leaf, color: '#2E6F40' };
   if (!type) return { Icon: Bug, color: '#ff0000' };
   return { Icon: Star, color: '#cab93c' };
 };
+
+/**
+ * Calculates the modified stats of an animal after applying plant effects
+ * Returns a new object with the calculated stats
+ */
+function getAnimalStatsWithPlantEffects(animal) {
+  const baseStats = {
+    hp: animal.hp,
+    maxHp: animal.maxHp,
+    atk: animal.atk,
+    def: animal.def,
+    spd: animal.spd,
+  };
+
+  const plant = animal.plantLinkId ? getCollectionAnimalDetailsById(animal.plantLinkId) : null;
+  if (!plant) return baseStats;
+
+  const modifiers = parsePlantEffects(plant);
+  
+  return {
+    hp: baseStats.hp + Math.floor(baseStats.hp * (modifiers.hp || 0) / 100),
+    maxHp: baseStats.maxHp + Math.floor(baseStats.maxHp * (modifiers.hp || 0) / 100),
+    atk: baseStats.atk + Math.floor(baseStats.atk * (modifiers.atk || 0) / 100),
+    def: baseStats.def + Math.floor(baseStats.def * (modifiers.def || 0) / 100),
+    spd: baseStats.spd + Math.floor(baseStats.spd * (modifiers.spd || 0) / 100),
+  };
+}
 
 /**
  * Dex grid card showing animal image, rarity stars, and animated HP bar.
@@ -65,8 +91,8 @@ export function AnimalCard({
           ))}
         </View>
 
-        {/* Max HP - Hidden for plants (flora) */}
-        {animal.type !== 'flora' && (
+        {/* Max HP - Hidden for plants (Plante) */}
+        {animal.type !== 'flora' && animal.type !== 'Plante' && (
           <View style={styles.hpContainer}>
             <Text style={styles.hpLabel}>Max HP</Text>
             <View style={styles.hpPill}>
