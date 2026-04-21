@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import CardFeedComponent from "./CardFeedComponent";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import fr from "@/assets/locales/fr.json";
 import colors from "@/assets/constants/colors.json";
 import { getToken } from "@/utils/auth";
@@ -8,52 +8,49 @@ import { getToken } from "@/utils/auth";
 export default function HomeFeedComponent() {
   const [details, setDetails] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadDetails = async () => {
-      try {
-        const token = await getToken();
-
-        if (!token) {
-          throw new Error("Token manquant. Veuillez vous reconnecter.");
-        }
-
-        const response = await fetch("http://ikdeksmp.fr:3001/api/user/creatures/last-captured", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data?.error || "Impossible de charger les dernières captures.");
-        }
-
-        if (isMounted) {
-          setDetails(Array.isArray(data) ? data : []);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : "Impossible de charger les dernières captures.");
-          setDetails([]);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+  const loadDetails = useCallback(async ({ showLoading = false } = {}) => {
+    try {
+      if (showLoading) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
       }
-    };
 
-    loadDetails();
+      const token = await getToken();
 
-    return () => {
-      isMounted = false;
-    };
+      if (!token) {
+        throw new Error("Token manquant. Veuillez vous reconnecter.");
+      }
+
+      const response = await fetch("http://ikdeksmp.fr:3001/api/user/creatures/last-captured", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Impossible de charger les dernières captures.");
+      }
+
+      setDetails(Array.isArray(data) ? data : []);
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Impossible de charger les dernières captures.");
+      setDetails([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadDetails({ showLoading: true });
+  }, [loadDetails]);
 
   const formatDate = (isoDate) =>
     new Intl.DateTimeFormat("fr-FR", {
@@ -67,6 +64,13 @@ export default function HomeFeedComponent() {
 
   return (
     <ScrollView
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => loadDetails()}
+        />
+
+      }
       style={styles.scrollview}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
