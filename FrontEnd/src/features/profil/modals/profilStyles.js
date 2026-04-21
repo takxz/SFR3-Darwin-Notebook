@@ -416,4 +416,14 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  versionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  versionText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#97572B',
+  },
 });
