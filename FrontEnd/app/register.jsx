@@ -25,11 +25,29 @@ export default function Register() {
     }, [router]);
 
     const sendRegister = async () => {
-        if (password !== confirmPassword) {
-            Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
-
+        // Validation des champs vides
+        if (!email.trim()) {
+            Alert.alert('Erreur', 'Veuillez entrer votre email');
             return;
         }
+        if (!pseudo.trim()) {
+            Alert.alert('Erreur', 'Veuillez entrer un pseudo');
+            return;
+        }
+        if (!password.trim()) {
+            Alert.alert('Erreur', 'Veuillez entrer un mot de passe');
+            return;
+        }
+        if (!confirmPassword.trim()) {
+            Alert.alert('Erreur', 'Veuillez confirmer votre mot de passe');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
+            return;
+        }
+
         try {
             const response = await fetch('http://ikdeksmp.fr:12000/api/auth/register', {
                 method: 'POST',
@@ -51,15 +69,30 @@ export default function Register() {
                 const token = data?.token ?? data?.accessToken ?? data?.access_token;
                 if (token) {
                     await saveToken(token);
-                    router.replace('/cinematic');
+                    Alert.alert('Succès', fr.registerScreen.success_message);
+                    router.replace('/');
+                } else {
+                    Alert.alert('Erreur', 'Token non reçu du serveur');
                 }
-
-                Alert.alert('Succès', fr.registerScreen.success_message);
+            } else if (response.status === 409) {
+                Alert.alert('Erreur', 'Cet email est déjà utilisé');
+            } else if (response.status === 410) {
+                Alert.alert('Erreur', 'Ce pseudo est déjà utilisé');
+            } else if (response.status === 429) {
+                Alert.alert('Erreur', 'Trop de tentatives. Veuillez réessayer plus tard');
+            } else if (response.status >= 500) {
+                Alert.alert('Erreur', 'Erreur serveur. Veuillez réessayer plus tard');
             } else {
-                Alert.alert('Erreur', data.message || fr.registerScreen.error_message);
+                Alert.alert('Erreur', data.message || fr.registerScreen.error_message + ' (Code: ' + response.status + ')');
             }
         } catch (error) {
-            Alert.alert('Erreur', fr.registerScreen.server_error_message);
+            if (error.message.includes('Network') || error.message.includes('Failed')) {
+                Alert.alert('Erreur', 'Erreur de connexion réseau. Vérifiez votre connexion internet');
+            } else if (error.message.includes('timeout')) {
+                Alert.alert('Erreur', 'La requête a expiré. Veuillez réessayer');
+            } else {
+                Alert.alert('Erreur', fr.registerScreen.server_error_message);
+            }
         }
     };
 
