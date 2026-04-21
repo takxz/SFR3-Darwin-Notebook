@@ -5,10 +5,10 @@ import * as SecureStore from 'expo-secure-store';
 import { Settings, Award, Camera } from 'lucide-react-native';
 import { clearToken } from '@/utils/auth';
 import { useUser } from '@/hooks/useUser';
-import { SettingsModal } from './modals/SettingsModal';
-import { DeleteConfirmModal } from './modals/DeleteConfirmModal';
-import { DescriptionEditModal } from './modals/DescriptionEditModal';
-import { styles } from './profile.styles';
+import { SettingsModal } from '../../src/features/profil/modals/SettingsModal';
+import { DeleteConfirmModal } from '../../src/features/profil/modals/DeleteConfirmModal';
+import { DescriptionEditModal } from '../../src/features/profil/modals/DescriptionEditModal';
+import { styles } from '../../src/features/profil/modals/profilStyles';
 
 export default function ProfilePage() {
   const router = useRouter();

@@ -1,6 +1,6 @@
 import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
 import { Settings, LogOut, Trash2, User, Bell, Lock, HelpCircle, Shield, X } from 'lucide-react-native';
-import { styles } from '../profile.styles';
+import { styles } from './profilStyles';
 import SettingsItem from '@/components/SettingsItem';
 
 export function SettingsModal({ visible, onClose, onLogout, onDeleteAccount }) {

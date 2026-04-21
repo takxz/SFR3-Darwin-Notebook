@@ -1,6 +1,6 @@
 import { View, Text, Pressable, Modal } from 'react-native';
 import { Trash2 } from 'lucide-react-native';
-import { styles } from '../profile.styles';
+import { styles } from './profilStyles';
 
 export function DeleteConfirmModal({ visible, onClose, onConfirm }) {
   return (

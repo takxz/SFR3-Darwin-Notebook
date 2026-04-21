@@ -1,6 +1,6 @@
 import { View, Text, TextInput, Pressable, Modal } from 'react-native';
 import { X } from 'lucide-react-native';
-import { styles } from '../profile.styles';
+import { styles } from './profilStyles';
 
 export function DescriptionEditModal({
   visible,
