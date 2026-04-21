@@ -9,6 +9,7 @@ import fr from "@/assets/locales/fr.json";
 
 const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
 const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http://${expoHost}:3001` : 'http://localhost:3001');
+const FALLBACK_IMAGE = null;
 
 const SPECIES_OPTIONS = [
     { key: 'all', label: 'Tous' },

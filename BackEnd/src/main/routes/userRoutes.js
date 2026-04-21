@@ -33,7 +33,4 @@ router.post('/:id/creatures/:creatureid/link_plant', authMiddleware, userControl
 // Route pour retirer le lien de plante
 router.post('/:id/creatures/:creatureid/unlink_plant', authMiddleware, userController.unlinkPlantFromCreature);
 
-//Route pour avoir les dernières captures des joueurs
-router.get('/creatures/last-captured', authMiddleware, userController.getLastCapturedCreatures);
-
 module.exports = router;
