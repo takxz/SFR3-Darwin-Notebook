@@ -198,7 +198,7 @@ exports.getLastCapturedCreatures = async (req, res) => {
 
     const result = await db.query(query)
 
-    res.json(result.rows[5])
+    res.json(result.rows)
     } catch (err) {
         console.error('Erreur lors de la récupération des 5 dernières créatures capturées:', err);
         res.status(500).json({ error: "Erreur lors de la récupération des 5 dernières créatures capturées"})
