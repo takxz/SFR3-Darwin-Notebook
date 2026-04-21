@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, StyleSheet, FlatList, ActivityIndicator, Text, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
 import { AnimalCard } from '../../src/components/Collection/AnimalCard';
 import { SpeciesFilterBar } from '../../src/components/Collection/SpeciesFilterBar';
@@ -195,35 +195,37 @@ export default function CollectionPage() {
         setRefreshing(false);
     };
 
-    useEffect(() => {
-        let isMounted = true;
+    useFocusEffect(
+        useCallback(() => {
+            let isMounted = true;
 
-        const loadAnimals = async () => {
-            try {
-                const data = await getCollection();
+            const loadAnimals = async () => {
+                try {
+                    const data = await getCollection();
 
-                if (isMounted) {
-                    setAnimalData(Array.isArray(data) ? data : []);
-                    setError(null);
+                    if (isMounted) {
+                        setAnimalData(Array.isArray(data) ? data : []);
+                        setError(null);
+                    }
+                } catch (err) {
+                    if (isMounted) {
+                        setAnimalData([]);
+                        setError(err?.message || 'Unable to load animals.');
+                    }
+                } finally {
+                    if (isMounted) {
+                        setIsLoading(false);
+                    }
                 }
-            } catch (err) {
-                if (isMounted) {
-                    setAnimalData([]);
-                    setError(err?.message || 'Unable to load animals.');
-                }
-            } finally {
-                if (isMounted) {
-                    setIsLoading(false);
-                }
-            }
-        };
+            };
 
-        loadAnimals();
+            loadAnimals();
 
-        return () => {
-            isMounted = false;
-        };
-    }, []);
+            return () => {
+                isMounted = false;
+            };
+        }, [])
+    );
 
     if (isLoading) {
         return (
