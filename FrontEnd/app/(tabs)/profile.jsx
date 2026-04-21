@@ -1,13 +1,14 @@
-import { View, Text, TextInput, StyleSheet, Pressable, Image, ScrollView, Modal, Alert } from 'react-native';
+import { View, Text, Image, ScrollView, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { MotiView } from 'moti';
-import { Settings, Award, Camera, LogOut, Trash2, User, Bell, Lock, HelpCircle, Shield, ChevronRight, X } from 'lucide-react-native';
+import { Settings, Award, Camera } from 'lucide-react-native';
 import { clearToken } from '@/utils/auth';
 import { useUser } from '@/hooks/useUser';
-import colors from '@/assets/constants/colors';
-import fr from '@/assets/locales/fr.json';
+import { SettingsModal } from './modals/SettingsModal';
+import { DeleteConfirmModal } from './modals/DeleteConfirmModal';
+import { DescriptionEditModal } from './modals/DescriptionEditModal';
+import { styles } from './profile.styles';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -32,7 +33,6 @@ export default function ProfilePage() {
         setDescription(stored);
       }
     };
-
     loadDescription();
   }, [user]);
 
@@ -40,10 +40,6 @@ export default function ProfilePage() {
     await clearToken();
     setShowSettings(false);
     router.replace('/login');
-  };
-
-  const handleDeleteAccount = () => {
-    setShowDeleteConfirm(true);
   };
 
   const saveDescription = async () => {
@@ -56,11 +52,157 @@ export default function ProfilePage() {
   };
 
   const confirmDeleteAccount = () => {
-    console.log('Suppression du compte en cours...');
     setShowDeleteConfirm(false);
     setShowSettings(false);
     router.replace('/login');
   };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text>Chargement...</Text>
+      </View>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>{error ?? 'Erreur lors du chargement du profil.'}</Text>
+        {error?.toLowerCase().includes('token') && (
+          <Pressable
+            style={styles.reconnectButton}
+            onPress={() => router.replace('/login')}
+          >
+            <Text style={styles.reconnectButtonText}>Se reconnecter</Text>
+          </Pressable>
+        )}
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Profil</Text>
+        <Pressable
+          style={styles.settingsButton}
+          onPress={() => setShowSettings(true)}
+        >
+          <Settings size={20} color="#97572B" />
+        </Pressable>
+      </View>
+
+      <View style={styles.content}>
+        {/* User Stats Card */}
+        <View style={styles.userCard}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatarGradient}>
+              <View style={styles.avatarInner}>
+                <Image
+                  source={{ uri: avatarUri }}
+                  style={styles.avatarImage}
+                />
+              </View>
+            </View>
+            <View style={styles.levelBadge}>
+              <Text style={styles.levelText}>{playerLevel}</Text>
+            </View>
+          </View>
+
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{displayName}</Text>
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>0</Text>
+                <Text style={styles.statLabel}>Capturés</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>0</Text>
+                <Text style={styles.statLabel}>Abonnés</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>0</Text>
+                <Text style={styles.statLabel}>Abonnements</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Badges & Tags */}
+        <View style={styles.badgesContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.badgesScroll}>
+            <View style={styles.badge}>
+              <View style={styles.badgeIcon}>
+                <Award size={24} color="#97572B" />
+              </View>
+              <Text style={styles.badgeText}>Expert{'\n'}Chasseur</Text>
+            </View>
+
+            <View style={styles.badge}>
+              <View style={styles.badgeIcon}>
+                <Camera size={24} color="#97572B" />
+              </View>
+              <Text style={styles.badgeText}>Tireur{'\n'}d'élite</Text>
+            </View>
+          </ScrollView>
+
+          <Text style={styles.bioText}>{description}</Text>
+          <Pressable
+            style={styles.changeDescButton}
+            onPress={() => setShowDescriptionModal(true)}
+          >
+            <Text style={styles.changeDescButtonText}>Changer la description</Text>
+          </Pressable>
+        </View>
+
+        {/* Best Captures */}
+        <View style={styles.capturesContainer}>
+          <View style={styles.capturesHeader}>
+            <Text style={styles.capturesTitle}>Mes meilleures captures</Text>
+            <Text style={styles.capturesCount}>0 publications</Text>
+          </View>
+
+          <View style={styles.captureCard}>
+            <View style={styles.captureHeader}>
+              <Image
+                source={{ uri: avatarUri }}
+                style={styles.captureAvatar}
+              />
+              <Text style={styles.captureText}>
+                Vous n'avez encore aucune capture.
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Modals */}
+      <SettingsModal
+        visible={showSettings}
+        onClose={() => setShowSettings(false)}
+        onLogout={handleLogout}
+        onDeleteAccount={() => setShowDeleteConfirm(true)}
+      />
+
+      <DeleteConfirmModal
+        visible={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDeleteAccount}
+      />
+
+      <DescriptionEditModal
+        visible={showDescriptionModal}
+        onClose={() => setShowDescriptionModal(false)}
+        description={description}
+        onDescriptionChange={setDescription}
+        onSave={saveDescription}
+        isSaving={savingDescription}
+      />
+    </ScrollView>
+  );
+}
 
   if (loading) {
     return (
@@ -98,11 +240,7 @@ export default function ProfilePage() {
 
       <View style={styles.content}>
         {/* User Stats Card */}
-        <MotiView 
-          from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          style={styles.userCard}
-        >
+        <View style={styles.userCard}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatarGradient}>
               <View style={styles.avatarInner}>
@@ -135,15 +273,10 @@ export default function ProfilePage() {
               </View>
             </View>
           </View>
-        </MotiView>
+        </View>
 
         {/* Badges & Tags */}
-        <MotiView 
-          from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ delay: 100 }}
-          style={styles.badgesContainer}
-        >
+        <View style={styles.badgesContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.badgesScroll}>
             <View style={styles.badge}>
               <View style={styles.badgeIcon}>
@@ -166,15 +299,10 @@ export default function ProfilePage() {
           <Pressable style={styles.changeDescButton} onPress={() => setShowDescriptionModal(true)}>
             <Text style={styles.changeDescButtonText}>Changer la description</Text>
           </Pressable>
-        </MotiView>
+        </View>
 
         {/* Best Captures */}
-        <MotiView
-          from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ delay: 200 }}
-          style={styles.capturesContainer}
-        >
+        <View style={styles.capturesContainer}>
           <View style={styles.capturesHeader}>
             <Text style={styles.capturesTitle}>Mes meilleures captures</Text>
             <Text style={styles.capturesCount}>0 publications</Text>
@@ -191,7 +319,7 @@ export default function ProfilePage() {
               </Text>
             </View>
           </View>
-        </MotiView>
+        </View>
       </View>
 
       {/* Settings Modal */}
@@ -202,11 +330,7 @@ export default function ProfilePage() {
         onRequestClose={() => setShowSettings(false)}
       >
         <View style={styles.modalOverlay}>
-          <MotiView
-            from={{ translateY: '100%' }}
-            animate={{ translateY: 0 }}
-            style={styles.settingsModal}
-          >
+          <View style={styles.settingsModal}>
             {/* Settings Header */}
             <View style={styles.settingsHeader}>
               <View style={styles.settingsTitleContainer}>
@@ -283,11 +407,11 @@ export default function ProfilePage() {
                 </View>
               </View>
             </ScrollView>
-          </MotiView>
+          </View>
         </View>
       </Modal>
 
-      {/* Delete Account Confirmation Modal */}
+      {/* Delete Account Confirmation Modal */
       <Modal
         visible={showDeleteConfirm}
         animationType="fade"
@@ -295,11 +419,7 @@ export default function ProfilePage() {
         onRequestClose={() => setShowDeleteConfirm(false)}
       >
         <View style={styles.modalOverlay}>
-          <MotiView
-            from={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            style={styles.deleteModal}
-          >
+          <View style={styles.deleteModal}>
             <View style={styles.deleteContent}>
               <View style={styles.deleteIcon}>
                 <Trash2 size={32} color="#B01E28" />
@@ -323,11 +443,11 @@ export default function ProfilePage() {
                 </Pressable>
               </View>
             </View>
-          </MotiView>
+          </View>
         </View>
       </Modal>
 
-      {/* Description Edit Modal */}
+      {/* Description Edit Modal */
       <Modal
         visible={showDescriptionModal}
         animationType="slide"
@@ -335,11 +455,7 @@ export default function ProfilePage() {
         onRequestClose={() => setShowDescriptionModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <MotiView
-            from={{ translateY: '100%' }}
-            animate={{ translateY: 0 }}
-            style={styles.descriptionModal}
-          >
+          <View style={styles.descriptionModal}>
             {/* Modal Header */}
             <View style={styles.descriptionModalHeader}>
               <Text style={styles.descriptionModalTitle}>Modifier la description</Text>
@@ -375,7 +491,7 @@ export default function ProfilePage() {
                 </Text>
               </Pressable>
             </View>
-          </MotiView>
+          </View>
         </View>
       </Modal>
     </ScrollView>
