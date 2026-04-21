@@ -275,15 +275,8 @@ export default function CreatureDetailsPage() {
         if (!detailResponse.ok || !details) return;
 
         const weightRaw = details?.weight
-          ?? details?.species_average_weight
-          ?? details?.average_weight
-          ?? details?.average_weigt;
 
         const lifespanRaw = details?.lifespan
-          ?? details?.species_average_life_expectancy
-          ?? details?.average_life_expectancy
-          ?? details?.average_life_expentancy
-          ?? details?.life_expectancy;
 
         if (isMounted) {
           setRemoteMeasures({
@@ -341,16 +334,9 @@ export default function CreatureDetailsPage() {
       ...animal,
       weight: remoteMeasures?.weight ?? formatWeight(
         animal.weight
-        ?? animal.species_average_weight
-        ?? animal.average_weight
-        ?? animal.average_weigt
       ),
       lifespan: remoteMeasures?.lifespan ?? formatLifespan(
         animal.lifespan
-        ?? animal.species_average_life_expectancy
-        ?? animal.average_life_expectancy
-        ?? animal.average_life_expentancy
-        ?? animal.life_expectancy
       ),
       linkLabel: 'Lien vegetal',
       linkValue: linkedPlantName ?? animal.plantLink ?? 'Habitat inconnu',

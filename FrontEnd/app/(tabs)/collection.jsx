@@ -62,16 +62,9 @@ function normalizeCreature(creature) {
         rarity: normalizeRarity(creature?.species_rarity ?? creature?.rarity),
         weight: normalizeWeight(
             creature?.weight
-            ?? creature?.species_average_weight
-            ?? creature?.average_weight
-            ?? creature?.average_weigt
         ),
         lifespan: normalizeLifespan(
             creature?.lifespan
-            ?? creature?.species_average_life_expectancy
-            ?? creature?.average_life_expectancy
-            ?? creature?.average_life_expentancy
-            ?? creature?.life_expectancy
         ),
         hp,
         maxHp: Number(creature?.maxHp ?? creature?.stat_pv ?? hp),

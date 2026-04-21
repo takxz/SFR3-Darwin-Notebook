@@ -151,8 +151,6 @@ exports.getUserCreatures = async (req, res) => {
                 s.name AS species_name,
                 s.type AS species_type,
                 s.rarity AS species_rarity,
-                s.average_weight AS species_average_weight,
-                s.average_life_expectancy AS species_average_life_expectancy,
                 s.average_weight AS weight,
                 s.average_life_expectancy AS lifespan,
                 s.model_path AS species_model_path
@@ -197,8 +195,6 @@ exports.getUserPlants = async (req, res) => {
                 s.name AS species_name,
                 s.type AS species_type,
                 s.rarity AS species_rarity,
-                s.average_weight AS species_average_weight,
-                s.average_life_expectancy AS species_average_life_expectancy,
                 s.average_weight AS weight,
                 s.average_life_expectancy AS lifespan
             FROM "CREATURE" c
@@ -228,8 +224,6 @@ exports.getUserCreatureDetails = async(req, res) => {
                 s.name AS species_name,
                 s.type AS species_type,
                 s.rarity AS species_rarity,
-                s.average_weight AS species_average_weight,
-                s.average_life_expectancy AS species_average_life_expectancy,
                 s.average_weight AS weight,
                 s.average_life_expectancy AS lifespan,
                 s.model_path AS species_model_path
