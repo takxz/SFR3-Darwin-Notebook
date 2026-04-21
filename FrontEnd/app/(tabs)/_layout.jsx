@@ -66,6 +66,7 @@ export default function TabLayout() {
                     options={{
                         title: tab.title,
                         tabBarIcon: ({ color }) => <tab.icon size={styles.tabs.size} color={color} />,
+                        headerShown: tab.headerShown
                     }}
                 />
             ))}

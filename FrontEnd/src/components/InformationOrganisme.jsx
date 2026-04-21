@@ -7,7 +7,23 @@ import { ChevronsUp, Heart, Shield, Sword } from 'lucide-react-native';
 import fr from '../assets/locales/fr.json';
 
 const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
-const API_URL = process.env.EXPO_PUBLIC_API_URL || (expoHost ? `http://${expoHost}:5002` : 'http://localhost:5002');
+const API_URL = process.env.EXPO_PUBLIC_API_URL || (expoHost ? `http://${expoHost}:5001` : 'http://localhost:5001');
+
+async function parseResponseBody(response) {
+  const raw = await response.text();
+
+  try {
+    return {
+      parsed: raw ? JSON.parse(raw) : null,
+      raw,
+    };
+  } catch {
+    return {
+      parsed: null,
+      raw,
+    };
+  }
+}
 
 export default function InformationOrganisme({ photo, onClose, addToDex }) {
   const [result, setResult] = useState(null);
@@ -39,18 +55,17 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
 
         console.log(`[Classification] Statut réponse: ${response.status}`);
 
-        let data;
-        try {
-          data = await response.json();
-          await new Promise((res) => setTimeout(res, 2000)); // Petit délai pour l'UX
-        } catch (jsonErr) {
-          const text = await response.text();
-          console.error('[Classification] Réponse non-JSON reçue:', text.substring(0, 100));
+        const { parsed: data, raw } = await parseResponseBody(response);
+
+        if (!data) {
+          console.error('[Classification] Réponse non-JSON reçue:', raw.substring(0, 200));
           throw new Error(`Erreur serveur (${response.status}): Réponse invalide reçue.`);
         }
 
+        await new Promise((res) => setTimeout(res, 2000)); // Petit délai pour l'UX
+
         if (!response.ok || !data?.success) {
-          console.error('[Classification] Erreur API:', data);
+          console.error('[Classification] Erreur API:', { status: response.status, data, raw });
           throw new Error(data?.message || data?.error || 'Erreur API');
         }
 

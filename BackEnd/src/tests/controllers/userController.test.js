@@ -166,40 +166,110 @@ describe('userController', () => {
     });
 
 
+    // ==========================================
     // 5. getUserCreatures
+    // ==========================================
     describe('getUserCreatures', () => {
-        it('doit renvoyer un tableau JSON contenant la collection du joueur (200)', async () => {
+        it('doit renvoyer la collection enrichie avec les URLs des modèles 3D (200)', async () => {
             req.params.id = 'uuid-123';
-            const mockCollection = [{ id: 1, name: 'A' }, { id: 2, name: 'B' }];
-            db.query.mockResolvedValue({ rows: mockCollection });
+
+            // Mock du retour SQL brut (ce qui sort du JOIN)
+            const mockDbRows = [
+                { id: 'c-1', species_name: 'Alpaca', species_model_path: 'alpaca' },
+                { id: 'c-2', species_name: 'Fougère', species_model_path: null } // Le fameux edge case
+            ];
+            db.query.mockResolvedValue({ rows: mockDbRows });
 
             await userController.getUserCreatures(req, res);
 
-            expect(res.json).toHaveBeenCalledWith(mockCollection);
+            // Le payload final attendu après le traitement du contrôleur
+            const expectedPayload = [
+                {
+                    id: 'c-1',
+                    species_name: 'Alpaca',
+                    species_model_path: 'alpaca',
+                    model_3d_url: 'http://localhost:3001/models/alpaca'
+                },
+                {
+                    id: 'c-2',
+                    species_name: 'Fougère',
+                    species_model_path: null,
+                    model_3d_url: null
+                }
+            ];
+
+            expect(db.query).toHaveBeenCalledTimes(1);
+            expect(res.json).toHaveBeenCalledWith(expectedPayload);
+        });
+    });
+
+    // ==========================================
+    // 6. getUserPlants
+    // ==========================================
+    describe('getUserPlants', () => {
+        it('doit renvoyer la collection enrichie (200)', async () => {
+            req.params.id = 'uuid-123';
+
+            // Mock du retour SQL brut (ce qui sort du JOIN)
+            const mockDbRows = [
+                { id: 'c-2', species_name: 'Fougère', species_model_path: null }
+            ];
+            db.query.mockResolvedValue({ rows: mockDbRows });
+
+            await userController.getUserPlants(req, res);
+
+            // Le payload final attendu après le traitement du contrôleur
+            const expectedPayload = [
+                {
+                    id: 'c-2',
+                    species_name: 'Fougère',
+                    species_model_path: null
+                }
+            ];
+
+            expect(db.query).toHaveBeenCalledTimes(1);
+            expect(res.json).toHaveBeenCalledWith(expectedPayload);
         });
     });
 
 
-    // 6. getUserCreatureDetails
+    // ==========================================
+    // 7. getUserCreatureDetails
+    // ==========================================
     describe('getUserCreatureDetails', () => {
-        it('doit renvoyer un objet unique avec les métadonnées de l\'espèce via JOIN (200)', async () => {
-            // Note : Attention à la casse de 'creatureid' selon ton routeur
-            req.params = { id: 'uuid-123', creatureid: '99' };
-            const mockCreature = { id: 99, species_name: 'Lion' };
-            db.query.mockResolvedValue({ rows: [mockCreature] });
+        it('doit renvoyer un objet unique enrichi avec le modèle 3D via JOIN (200)', async () => {
+            req.params = { id: 'uuid-123', creatureid: 'c-99' };
+
+            // Mock de la ligne renvoyée par le JOIN
+            const mockDbRow = {
+                id: 'c-99',
+                species_name: 'Lion',
+                species_model_path: 'lion'
+            };
+            db.query.mockResolvedValue({ rows: [mockDbRow] });
 
             await userController.getUserCreatureDetails(req, res);
 
-            expect(res.json).toHaveBeenCalledWith(mockCreature);
+            // Vérification du formatage par le contrôleur
+            const expectedPayload = {
+                id: 'c-99',
+                species_name: 'Lion',
+                species_model_path: 'lion',
+                model_3d_url: 'http://localhost:3001/models/lion'
+            };
+
+            expect(db.query).toHaveBeenCalledTimes(1);
+            expect(res.json).toHaveBeenCalledWith(expectedPayload);
         });
 
-        it('doit renvoyer 404 si la clause WHERE (player_id AND id) ne match aucun tuple', async () => {
-            req.params = { id: 'uuid-123', creatureid: '99' };
+        it('doit renvoyer 404 si la créature n\'existe pas (ou n\'appartient pas au joueur)', async () => {
+            req.params = { id: 'uuid-123', creatureid: 'ghost-99' };
             db.query.mockResolvedValue({ rows: [] });
 
             await userController.getUserCreatureDetails(req, res);
 
             expect(res.status).toHaveBeenCalledWith(404);
+            expect(res.json).toHaveBeenCalledWith({ error: "Créature non trouvée ou n'appartenant pas à ce joueur." });
         });
     });
 });
