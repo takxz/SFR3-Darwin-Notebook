@@ -3,17 +3,56 @@ import CardFeedComponent from "./CardFeedComponent";
 import { useState, useEffect } from "react";
 import fr from "@/assets/locales/fr.json";
 import colors from "@/assets/constants/colors.json";
+import { getToken } from "@/utils/auth";
 
 export default function HomeFeedComponent() {
-    const [details, setDetails] = useState(null);
+  const [details, setDetails] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("http://ikdeksmp.fr:12000/api/user/creatures/last-captured")
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Données reçues du backend :", data);
-        setDetails(data);
-      });
+    let isMounted = true;
+
+    const loadDetails = async () => {
+      try {
+        const token = await getToken();
+
+        if (!token) {
+          throw new Error("Token manquant. Veuillez vous reconnecter.");
+        }
+
+        const response = await fetch("http://ikdeksmp.fr:3001/api/user/creatures/last-captured", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data?.error || "Impossible de charger les dernières captures.");
+        }
+
+        if (isMounted) {
+          setDetails(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : "Impossible de charger les dernières captures.");
+          setDetails([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDetails();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const formatDate = (isoDate) =>
@@ -33,7 +72,11 @@ export default function HomeFeedComponent() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.card}>
-        {details ? (
+        {loading ? (
+          <Text>{fr.indexScreen.dataLoading}</Text>
+        ) : error ? (
+          <Text>{error}</Text>
+        ) : details.length > 0 ? (
           details.map((item) => (
             <CardFeedComponent
               key={item.id}
@@ -44,10 +87,10 @@ export default function HomeFeedComponent() {
             scan_quality={item.scan_quality}
             scan_date={formatDate(item.scan_date)}
           />
-        ))
-      ) : (
-        <Text>{fr.indexScreen.dataLoading}</Text>
-      )}
+          ))
+        ) : (
+          <Text>{fr.indexScreen.dataLoading}</Text>
+        )}
       </View>
     </ScrollView>
   );
@@ -56,7 +99,7 @@ export default function HomeFeedComponent() {
 const styles = StyleSheet.create({
     card: {
         backgroundColor: colors.blancJauni,
-        borderColor: colros.marronCuir + '80',
+        borderColor: colors.marronCuir + '80',
         borderWidth: 1,
         borderRadius: 16,
         paddingHorizontal: 14,

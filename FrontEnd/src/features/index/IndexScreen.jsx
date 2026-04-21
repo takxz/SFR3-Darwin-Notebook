@@ -3,7 +3,6 @@ import MapButton from "@/features/index/MapButton";
 import HomeFeedComponent from "@/features/index/HomeFeedComponent";
 import colors from "@/assets/constants/colors";
 import fr from "@/assets/locales/fr.json";
-import colors from "@/assets/constants/colors.json";
 
 export default function IndexScreen() {
     return (
@@ -14,7 +13,7 @@ export default function IndexScreen() {
                 </View>
                 <MapButton />
             </View>
-            <View style={styles.body}>
+            <View style={styles.feedContainer}>
                 <HomeFeedComponent />
             </View>
         </View>
@@ -45,7 +44,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
-    body: {
-        
+    feedContainer: {
+        flex: 1,
     },
 })

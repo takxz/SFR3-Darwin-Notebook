@@ -2,6 +2,7 @@ import { Map, MapPin, X } from "lucide-react-native";
 import { Pressable, Modal, View, Text, StyleSheet } from "react-native";
 import { useState } from "react";
 import colors from "@/assets/constants/colors";
+import fr from "@/assets/locales/fr.json";
 
 export default function MapButton() {
     const [modalVisible, setModalVisible] = useState(false);
