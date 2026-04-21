@@ -80,5 +80,8 @@
         "mapNotYetImplemented": "La fonction de carte n'est pas encore disponible dans cette version",
         "hasCatch": " a capturé ",
         "unknown": "Inconnue"
+    },
+    "emptyCollectionScreen": {
+        "text": "Aucune créature disponible dans cette catégorie pour le moment."
     }
 }

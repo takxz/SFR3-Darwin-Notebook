@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import { AnimalCard } from '../../src/components/Collection/AnimalCard';
 import { SpeciesFilterBar } from '../../src/components/Collection/SpeciesFilterBar';
 import { getToken } from '../../src/utils/auth.js';
+import fr from "@/assets/locales/fr.json";
 
 const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
 const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http://${expoHost}:3001` : 'http://localhost:3001');
@@ -243,7 +244,7 @@ export default function CollectionPage() {
                 )}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <Text style={styles.emptyText}>Aucune créature disponible dans cette catégorie pour le moment.</Text>
+                        <Text style={styles.emptyText}>{fr.emptyCollectionScreen.text}</Text>
                     </View>
                 }
             />
