@@ -50,7 +50,7 @@ export default function LogIn() {
                 } else {
                     Alert.alert('Erreur', 'Token non reçu du serveur');
                 }
-            } else if (response.status === 401) {
+            } else if (response.status === 400) {
                 Alert.alert('Erreur', 'Email ou mot de passe incorrect');
             } else if (response.status === 429) {
                 Alert.alert('Erreur', 'Trop de tentatives. Veuillez réessayer plus tard');
