@@ -7,9 +7,16 @@ const CARD_GAP = 16;
 const DEFAULT_CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - CARD_GAP) / 2;
 
 const getTypeConfig = (type) => {
-  if (type === 'fauna') return { Icon: PawPrint, color: '#90AAA1' };
-  if (type === 'flora' || type === 'Plante') return { Icon: Leaf, color: '#2E6F40' };
-  if (!type) return { Icon: Bug, color: '#ff0000' };
+  const t = String(type || '').toLowerCase().trim();
+  
+  if (t === 'reptile' || t === 'mammifère' || t === 'mammifere') return { Icon: PawPrint, color: '#90AAA1' };
+  if (t === 'poisson' || t === 'amphibien') return { Icon: Droplets, color: '#5e9bc2' };
+  if (t === 'plante' || t === 'flora') return { Icon: Leaf, color: '#2E6F40' };
+  if (t === 'insecte') return { Icon: Bug, color: '#aa7e58' };
+  if (t === 'oiseau') return { Icon: Wind, color: '#8bb9ad' };
+  
+  // Fallbacks
+  if (t === 'fauna') return { Icon: PawPrint, color: '#90AAA1' };
   return { Icon: Star, color: '#cab93c' };
 };
 
@@ -92,7 +99,7 @@ export function AnimalCard({
         </View>
 
         {/* Max HP - Hidden for plants (Plante) */}
-        {animal.type !== 'flora' && animal.type !== 'Plante' && (
+        {animal.category !== 'flora' && String(animal.type).toLowerCase() !== 'plante' && (
           <View style={styles.hpContainer}>
             <Text style={styles.hpLabel}>Max HP</Text>
             <View style={styles.hpPill}>
@@ -136,11 +143,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: "rgba(255,255,255,0.85)",
     padding: 6,
     borderRadius: 9999,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(0,0,0,0.1)",
   },
   info: {
     padding: 12,

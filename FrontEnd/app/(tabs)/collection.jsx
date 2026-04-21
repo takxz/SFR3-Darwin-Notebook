@@ -57,7 +57,7 @@ function normalizeCreature(creature) {
         name: creature?.gamification_name || creature?.species_name || creature?.name || 'Creature inconnue',
         scientificName: creature?.species_name || creature?.scientific_name || '',
         image: creature?.scan_url || creature?.image_url || creature?.image || FALLBACK_IMAGE,
-        type,
+        type: creature?.species_type || (isFlora ? 'Plante' : type),
         category: type,
         rarity: normalizeRarity(creature?.species_rarity ?? creature?.rarity),
         weight: normalizeWeight(
