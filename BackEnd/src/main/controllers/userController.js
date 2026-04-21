@@ -338,7 +338,7 @@ exports.unlinkPlantFromCreature = async (req, res) => {
 
         // 1. Check if the creature has a linked plant
         const creatureQuery = await db.query(
-            `SELECT plant_link_id FROM "CREATURE" WHERE id = $1 AND player_id = $2`,
+            `SELECT plant_link_id, species_id FROM "CREATURE" WHERE id = $1 AND player_id = $2`,
             [creatureId, userId]
         );
 
@@ -346,22 +346,20 @@ exports.unlinkPlantFromCreature = async (req, res) => {
             return res.status(404).json({ error: "Créature introuvable pour ce joueur." });
         }
 
-        const plantLinkId = creatureQuery.rows[0].plant_link_id;
-        let plantStatPv = 0, plantStatAtq = 0, plantStatDef = 0, plantStatSpeed = 0;
-
-        // 2. Fetch its stats to subtract them later
-        if (plantLinkId) {
-            const plantQuery = await db.query(
-                `SELECT stat_pv, stat_atq, stat_def, stat_speed FROM "CREATURE" WHERE id = $1`,
-                [plantLinkId]
+        // 2. Fetch animal base stats
+        const specieId = creatureQuery.rows[0].species_id;
+        if (creatureQuery.rows.length > 0) {
+            const baseStatsQuery = await db.query(
+                `SELECT base_stat_pv, base_stat_atq, base_stat_def, base_stat_speed FROM "SPECIES" WHERE id = $1`,
+                [specieId]
             );
 
-            if (plantQuery.rows.length > 0) {
-                const plant = plantQuery.rows[0];
-                plantStatPv = plant.stat_pv || 0;
-                plantStatAtq = plant.stat_atq || 0;
-                plantStatDef = plant.stat_def || 0;
-                plantStatSpeed = plant.stat_speed || 0;
+            if (baseStatsQuery.rows.length > 0) {
+                const baseStats = baseStatsQuery.rows[0];
+                baseStatPv = baseStats.base_stat_pv || 0;
+                baseStatAtq = baseStats.base_stat_atq || 0;
+                baseStatDef = baseStats.base_stat_def || 0;
+                baseStatSpeed = baseStats.base_stat_speed || 0;
             }
         }
 
@@ -370,19 +368,19 @@ exports.unlinkPlantFromCreature = async (req, res) => {
             UPDATE "CREATURE"
             SET 
                 plant_link_id = NULL,
-                stat_pv = stat_pv - $1,
-                stat_atq = stat_atq - $2,
-                stat_def = stat_def - $3,
-                stat_speed = stat_speed - $4
+                stat_pv = $1,
+                stat_atq = $2,
+                stat_def = $3,
+                stat_speed = $4
             WHERE id = $5 AND player_id = $6
             RETURNING *;
         `;
 
         const result = await db.query(query, [
-            plantStatPv,
-            plantStatAtq,
-            plantStatDef,
-            plantStatSpeed,
+            baseStatPv,
+            baseStatAtq,
+            baseStatDef,
+            baseStatSpeed,
             creatureId, 
             userId
         ]);
