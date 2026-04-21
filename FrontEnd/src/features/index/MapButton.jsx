@@ -8,16 +8,11 @@ export default function MapButton() {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <View style={styles.displayLatestCaptures}>
-                    <Text style={styles.latestCapturesText}>Dernières captures</Text>
+            <Pressable onPress={() => setModalVisible(true)}>
+                <View style={styles.mapButton}>
+                    <Map style={styles.mapIcon} />
                 </View>
-                <Pressable onPress={() => setModalVisible(true)}>
-                    <View style={styles.mapButton}>
-                        <Map style={styles.mapIcon} />
-                    </View>
-                </Pressable>
-            </View>
+            </Pressable>
             <Modal
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
@@ -49,26 +44,6 @@ export default function MapButton() {
 }
 
 const styles = StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 10,
-    },
-    displayLatestCaptures: {
-        backgroundColor: colors.blancJauni,
-        padding: 10,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(0, 0, 0, 0.1)',
-    },
-    latestCapturesText: {
-        color: colors.marronCuir,
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
     mapButton: {
         padding: 10,
         width: 50,
