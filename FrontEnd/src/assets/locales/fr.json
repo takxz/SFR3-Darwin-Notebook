@@ -72,5 +72,13 @@
         "title": "CHOISIR VOTRE BÊTE",
         "subtitle": "Sélectionnez l'animal qui vous représentera au combat",
         "start_battle": "COMMENCER LE DUEL"
-    }
+    },
+    "indexScreen": {
+        "dataLoading": "Chargement des données...",
+        "unreachableImage": "Image indisponible",
+        "lastCatch": "Dernières captures",
+        "mapNotYetImplemented": "La fonction de carte n'est pas encore disponible dans cette version",
+        "hasCatch": " a capturé ",
+        "unknown": "Inconnue"
+    },
 }

@@ -1,5 +1,7 @@
 import { MapPin, Sparkles } from "lucide-react-native";
 import { View, Text, StyleSheet, Image } from "react-native";
+import fr from "@/assets/locales/fr.json";
+import colors from "@/assets/constants/colors.json";
 
 export default function CardFeedComponent({
     pseudo,
@@ -14,7 +16,7 @@ export default function CardFeedComponent({
         <View style={styles.card}>
             <View style={styles.title_container}>
                 <Text style={styles.pseudo_text}>{pseudo}</Text>
-                <Text style={styles.capture_text}> a capturé </Text>
+                <Text style={styles.capture_text}>{fr.indexScreen.hasCatch}</Text>
                 <Text style={styles.creature_name_text}>{animal_name}</Text>
             </View>
 
@@ -22,16 +24,16 @@ export default function CardFeedComponent({
             {scan_url ? (
                 <Image source={{ uri: scan_url }} style={styles.image} resizeMode="cover" />
             ) : (
-                <Text>Image indisponible</Text>
+                <Text>{fr.indexScreen.unreachableImage}</Text>
             )}
             <View style={styles.top_right}>
-                <Sparkles size={12} color="#FFFFFF" />
-                <Text style={styles.top_right_text}>{scan_quality ?? "Inconnue"}</Text>
+                <Sparkles style={styles.sparkles} />
+                <Text style={styles.top_right_text}>{scan_quality ?? fr.indexScreen.unknown}</Text>
             </View>
             </View>
             <View style={styles.bottom_container}>
                 <Text style={styles.date_text}> {scan_date}</Text>
-                <Text style={styles.gps_text}><MapPin /> {gps_location ? gps_location : "Inconnue"}</Text>
+                <Text style={styles.gps_text}><MapPin /> {gps_location ? gps_location : fr.indexScreen.unknown}</Text>
             </View>
         </View>
     )
@@ -41,8 +43,8 @@ export default function CardFeedComponent({
 
 const styles = StyleSheet.create({
     card: {
-    backgroundColor: "#FAEBD7",
-    borderColor: "#E6DDCF",
+    backgroundColor: colors.blancJauni,
+    borderColor: colros.marronCuir + 'CC',
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 14,
@@ -67,11 +69,11 @@ const styles = StyleSheet.create({
   },
   creature_name_text: {
     fontSize: 16,
-    color: "#97572B",
+    color: colors.marronCuir,
   },
   capture_text: {
     fontSize: 16,
-    color: "#000000",
+    color: colors.black,
   },
   image_container: {
     position: "relative",
@@ -83,13 +85,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#97572B",
+    backgroundColor: colors.marronCuir,
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   top_right_text: {
-    color: "#FFFFFF",
+    color: colors.blanc,
     fontSize: 12,
     fontWeight: "bold",
   },
@@ -100,17 +102,22 @@ const styles = StyleSheet.create({
     },
     gps_text: {
         fontSize: 12,
-        color: "#555555",
-        backgroundColor: "#f2f0f0",
+        color: colors.noir + 'CC',
+        backgroundColor: colors.fondGrisVert,
         borderRadius: 16,
         paddingHorizontal: 12,
         paddingVertical: 4,
-        boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+        boxShadow: "0px 2px 4px " + colors.noir + '20',
     },
     date_text: {
         fontSize: 14,
         fontWeight: "bold",
-        color: "#555555",
+        color: colors.noir + 'CC',
         marginTop: 10,
+    },
+    sparkles: {
+        color: colors.blanc,
+        width: 12,
+        height: 12,
     }
 });

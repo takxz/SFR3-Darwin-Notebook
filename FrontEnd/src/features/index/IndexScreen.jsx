@@ -2,13 +2,15 @@ import { View, Text, StyleSheet } from "react-native";
 import MapButton from "@/features/index/MapButton";
 import HomeFeedComponent from "@/features/index/HomeFeedComponent";
 import colors from "@/assets/constants/colors";
+import fr from "@/assets/locales/fr.json";
+import colors from "@/assets/constants/colors.json";
 
 export default function IndexScreen() {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <View style={styles.displayLatestCaptures}>
-                    <Text style={styles.latestCapturesText}>Dernières captures</Text>
+                    <Text style={styles.latestCapturesText}>{fr.indexScreen.lastCatch}</Text>
                 </View>
                 <MapButton />
             </View>
@@ -36,7 +38,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(0, 0, 0, 0.1)',
+        borderColor: colors.noir + '80',
     },
     latestCapturesText: {
         color: colors.marronCuir,

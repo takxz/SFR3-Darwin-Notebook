@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import CardFeedComponent from "./CardFeedComponent";
 import { useState, useEffect } from "react";
+import fr from "@/assets/locales/fr.json";
+import colors from "@/assets/constants/colors.json";
 
 export default function HomeFeedComponent() {
     const [details, setDetails] = useState(null);
@@ -44,7 +46,7 @@ export default function HomeFeedComponent() {
           />
         ))
       ) : (
-        <Text>Chargement des données...</Text>
+        <Text>{fr.indexScreen.dataLoading}</Text>
       )}
       </View>
     </ScrollView>
@@ -53,8 +55,8 @@ export default function HomeFeedComponent() {
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: "#F8F3EA",
-        borderColor: "#E6DDCF",
+        backgroundColor: colors.blancJauni,
+        borderColor: colros.marronCuir + '80',
         borderWidth: 1,
         borderRadius: 16,
         paddingHorizontal: 14,

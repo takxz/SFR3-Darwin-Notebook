@@ -33,7 +33,7 @@ export default function MapButton() {
                         </View>
                         <View style={styles.modalBody}>    
                             <View style={styles.mapPlaceholder}>
-                                <Text style={styles.notImplementedText}>La fonction de carte n'est pas encore disponible dans cette version</Text>
+                                <Text style={styles.notImplementedText}>{fr.indexScreen.mapNotYetImplemented}</Text>
                             </View>
                         </View>
                     </View>
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(0, 0, 0, 0.1)',
+        borderColor: colors.noir + '20',
         backgroundColor: colors.blancJauni,
     },
     mapIcon: {
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
         flex: 1, 
         justifyContent: 'center', 
         alignItems: 'center', 
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: colors.noir + '80',
     },
     modalContainer:{
         backgroundColor: colors.blancJauni, 
