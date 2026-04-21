@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
+import { View, Text, StyleSheet, Pressable, FlatList, Platform } from "react-native";
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Heart, Star, Swords } from "lucide-react-native";
@@ -283,10 +283,17 @@ const styles = StyleSheet.create({
         backgroundColor: "#fff",
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
+        ...Platform.select({
+            ios: {
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 8,
+            }
+        }),
         elevation: 8,
     },
     infoSection: {

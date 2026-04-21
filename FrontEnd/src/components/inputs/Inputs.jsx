@@ -1,4 +1,4 @@
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Platform } from 'react-native';
 import colors from '@/assets/constants/colors';
 
 export default function Input({
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
             web: {
                 boxShadow: '0 0px 4px ' + colors.noir + 'A0',
             }
-        })
+        }),
         padding: 10,
         fontSize: 16,
         marginBottom: 15,

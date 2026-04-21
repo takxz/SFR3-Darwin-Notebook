@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useRouter } from 'expo-router';
-import { View, Text, Alert, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Alert, StyleSheet, Pressable, Platform } from 'react-native';
 import Input from '@/components/inputs/Inputs';
 import colors from '@/assets/constants/colors';
 import { saveToken, getToken } from '@/utils/auth';

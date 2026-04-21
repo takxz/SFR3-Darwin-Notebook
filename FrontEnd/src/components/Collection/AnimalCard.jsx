@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Image, Pressable, StyleSheet, Dimensions } from "react-native";
+import { View, Text, Image, Pressable, StyleSheet, Dimensions, Platform } from "react-native";
 import { Star, Wind, Droplets, Bug, PawPrint, Leaf } from "lucide-react-native";
 import { getAnimalStatsWithPlantEffects } from "../../utils/tempCollectionApi";
 
@@ -113,10 +113,17 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(250,235,215,0.8)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,1)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.03,
+        shadowRadius: 24,
+      },
+      android: {
+        elevation: 3,
+      }
+    }),
     elevation: 3,
     overflow: "hidden",
   },
