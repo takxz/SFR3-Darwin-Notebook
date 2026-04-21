@@ -22,4 +22,7 @@ router.get('/:id/creatures', authMiddleware, userController.getUserCreatures);
 // Route pour obtenir une créature d'un joueur par leur ID respectif
 router.get('/:id/creatures/:creatureid', authMiddleware, userController.getUserCreatureDetails);
 
+//Route pour avoir les dernières captures des joueurs
+router.get('/creatures/last-captured', authMiddleware, userController.getLastCapturedCreatures)
+
 module.exports = router;
