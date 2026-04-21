@@ -256,6 +256,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f2f6f3',
+        marginTop: 40,
     },
     listContent: {
         paddingHorizontal: 16,
