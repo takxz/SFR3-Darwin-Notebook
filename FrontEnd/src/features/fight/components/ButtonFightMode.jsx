@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, Platform } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 const UI_CONFIG = {
@@ -67,20 +67,7 @@ const styles = StyleSheet.create({
         borderColor: UI_CONFIG.borderOpacity,
         alignItems: "center",
         justifyContent: "center",
-        ...Platform.select({
-            ios: {
-                shadowColor: UI_CONFIG.borderOpacity,
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.5,
-                shadowRadius: 10,
-            },
-            android: {
-                elevation: 8,
-            },
-            web: {
-                shadowOffset: { width: 0, height: 8 },
-            }
-        }),
+        shadowOffset: { width: 0, height: 8 },
         padding: "5%",
     },
     iconCircle: {
