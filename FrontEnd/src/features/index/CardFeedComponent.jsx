@@ -44,7 +44,7 @@ export default function CardFeedComponent({
 const styles = StyleSheet.create({
     card: {
     backgroundColor: colors.blancJauni,
-    borderColor: colros.marronCuir + 'CC',
+    borderColor: colors.marronCuir + 'CC',
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 14,

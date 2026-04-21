@@ -3,7 +3,6 @@ import MapButton from "@/features/index/MapButton";
 import HomeFeedComponent from "@/features/index/HomeFeedComponent";
 import colors from "@/assets/constants/colors";
 import fr from "@/assets/locales/fr.json";
-import colors from "@/assets/constants/colors.json";
 
 export default function IndexScreen() {
     return (
