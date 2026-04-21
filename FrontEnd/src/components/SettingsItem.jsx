@@ -1,6 +1,6 @@
 import { View, Text, Pressable } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
-import { styles } from '../../app/(tabs)/profile.styles';
+import { styles } from '../features/profil/modals/profilStyles';
 
 export default function SettingsItem({
   icon: Icon,
