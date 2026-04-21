@@ -51,7 +51,7 @@ export default function Register() {
                 const token = data?.token ?? data?.accessToken ?? data?.access_token;
                 if (token) {
                     await saveToken(token);
-                    router.replace('/');
+                    router.replace('/cinematic');
                 }
 
                 Alert.alert('Succès', fr.registerScreen.success_message);
