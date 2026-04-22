@@ -1,6 +1,5 @@
 import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
 import { Settings, LogOut, Trash2, User, Bell, Lock, HelpCircle, Shield, X, Info } from 'lucide-react-native';
-import Constants from 'expo-constants';
 import { styles } from './profilStyles';
 import SettingsItem from '@/components/SettingsItem';
 
@@ -92,7 +91,7 @@ export function SettingsModal({ visible, onClose, onLogout, onDeleteAccount }) {
               <Text style={styles.sectionTitle}>À propos</Text>
               <View style={styles.versionContainer}>
                 <Info size={16} color="#97572B60" />
-                <Text style={styles.versionText}>Version {Constants.expoConfig?.version}</Text>
+                <Text style={styles.versionText}>Version {process.env.VERSION}</Text>
               </View>
             </View>
           </ScrollView>
