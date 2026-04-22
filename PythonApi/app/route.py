@@ -144,7 +144,7 @@ def classification():
         rarity_score = 0.0
         
         try:
-            r = requests.get(url, params=params, timeout=5)
+            r = requests.get(url, params=params, timeout=30)
             if r.status_code == 200:
                 data = r.json()
                 if data.get("results"):
