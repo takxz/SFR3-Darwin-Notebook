@@ -8,8 +8,15 @@ jest.mock('../../main/store/redisStore', () => ({
         getBattle: jest.fn(),
         updateBattle: jest.fn(),
         deleteBattle: jest.fn(),
-        updatePlayerBattle: jest.fn()
+        updatePlayerBattle: jest.fn(),
+        client: {
+            hset: jest.fn()
+        }
     }
+}));
+
+jest.mock('../../main/config/db', () => ({
+    query: jest.fn()
 }));
 
 describe('BattleHandler', () => {

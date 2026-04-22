@@ -2,8 +2,12 @@ const { store } = require('../store/redisStore');
 
 module.exports = function(io, socket) {
     // 1. Matchmaking
-    socket.on('findMatch', async () => {
+    socket.on('findMatch', async (data) => {
         console.log(`[Cluster ${process.pid}] User ${socket.id} looking for match...`);
+        
+        // Sauvegarder la creature utilisée pour ce combat
+        const creatureId = data?.creatureId || 1;
+        await store.client.hset(`${store.PREFIX}player:${socket.id}`, 'creatureId', creatureId);
 
         const queueLength = await store.getQueueLength();
 
@@ -17,12 +21,16 @@ module.exports = function(io, socket) {
                 return;
             }
 
+            // Get opponent creatureId from their player session
+            const opData = await store.getPlayer(opponentId);
+            const opCreatureId = opData?.creatureId || 1;
+
             const roomId = `battle_${opponentId}_${socket.id}`;
             const battleState = {
                 roomId,
                 players: {
-                    [opponentId]: { hp: 100, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE' },
-                    [socket.id]: { hp: 100, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE' }
+                    [opponentId]: { hp: 100, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE', creatureId: opCreatureId },
+                    [socket.id]: { hp: 100, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE', creatureId: creatureId }
                 },
                 turn: opponentId, // First to join starts
                 logs: ["Le combat commence !"]
