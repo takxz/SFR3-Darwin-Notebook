@@ -143,22 +143,23 @@ exports.getUserCreatures = async (req, res) => {
         const userId = req.params.id;
 
         // 1. Récupération des données brutes enrichies
-        // On sélectionne toutes les colonnes de la créature (c.*)
-        // et on y ajoute les infos de l'espèce associée (s.name, s.model_path)
-        const query = `
-            SELECT
-                c.*,
-                s.name AS species_name,
-                s.type AS species_type,
-                s.rarity AS species_rarity,
-                s.average_weight AS weight,
-                s.average_life_expectancy AS lifespan,
-                s.model_path AS species_model_path
-            FROM public."CREATURE" c
-            JOIN public."SPECIES" s ON c.species_id = s.id
-            WHERE c.player_id = $1
-            ORDER BY c.scan_date DESC;
-        `;
+         // On sélectionne toutes les colonnes de la créature (c.*)
+         // et on y ajoute les infos de l'espèce associée (s.name, s.model_path)
+         const query = `
+             SELECT
+                 c.*,
+                 s.name AS species_name,
+                 s.type AS species_type,
+                 s.rarity AS species_rarity,
+                 s.average_weight AS weight,
+                 s.average_life_expectancy AS lifespan,
+                 s.model_path AS species_model_path,
+                 s.latin_name AS latin_name
+             FROM public."CREATURE" c
+             JOIN public."SPECIES" s ON c.species_id = s.id
+             WHERE c.player_id = $1
+             ORDER BY c.scan_date DESC;
+         `;
 
         const result = await db.query(query, [userId]);
 
@@ -218,20 +219,21 @@ exports.getUserCreatureDetails = async(req, res) => {
         const userId = req.params.id;
         const creatureId = req.params.creatureid;
 
-        const query = `
-            SELECT
-                c.*,
-                c.plant_link_id AS "plantLinkId",
-                s.name AS species_name,
-                s.type AS species_type,
-                s.rarity AS species_rarity,
-                s.average_weight AS weight,
-                s.average_life_expectancy AS lifespan,
-                s.model_path AS species_model_path
-            FROM public."CREATURE" c
-            JOIN public."SPECIES" s ON c.species_id = s.id
-            WHERE c.player_id = $1 AND c.id = $2;
-        `;
+         const query = `
+             SELECT
+                 c.*,
+                 c.plant_link_id AS "plantLinkId",
+                 s.name AS species_name,
+                 s.type AS species_type,
+                 s.rarity AS species_rarity,
+                 s.average_weight AS weight,
+                 s.average_life_expectancy AS lifespan,
+                 s.model_path AS species_model_path,
+                 s.latin_name AS latin_name
+             FROM public."CREATURE" c
+             JOIN public."SPECIES" s ON c.species_id = s.id
+             WHERE c.player_id = $1 AND c.id = $2;
+         `;
 
         const result = await db.query(query, [userId, creatureId]);
 

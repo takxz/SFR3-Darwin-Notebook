@@ -66,7 +66,7 @@ CREATE TABLE public."SPECIES" (
                                   base_stat_def integer,
                                   base_stat_pv integer,
                                   base_stat_speed integer,
-                                  model_3d_url character varying,
+                                  model_path character varying,
                                   average_weight integer,
                                   average_life_expectancy integer,
                                   latin_name character varying
