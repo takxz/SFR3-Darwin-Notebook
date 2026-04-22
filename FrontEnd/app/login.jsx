@@ -21,6 +21,16 @@ export default function LogIn() {
     }, [router]);
 
     const sendLogin = async () => {
+        // Validation des champs
+        if (!email.trim()) {
+            Alert.alert('Erreur', 'Veuillez entrer votre email');
+            return;
+        }
+        if (!password.trim()) {
+            Alert.alert('Erreur', 'Veuillez entrer votre mot de passe');
+            return;
+        }
+
         try {
             const response = await fetch('http://ikdeksmp.fr:12000/api/auth/login', {
                 method: 'POST',
@@ -35,14 +45,28 @@ export default function LogIn() {
                 const token = data?.token ?? data?.accessToken ?? data?.access_token;
                 if (token) {
                     await saveToken(token);
+                    Alert.alert('Succès', fr.loginScreen.success_message);
+                    router.replace('/');
+                } else {
+                    Alert.alert('Erreur', 'Token non reçu du serveur');
                 }
-                Alert.alert('Succès', fr.loginScreen.success_message);
-                router.replace('/');
+            } else if (response.status === 400) {
+                Alert.alert('Erreur', 'Email ou mot de passe incorrect');
+            } else if (response.status === 429) {
+                Alert.alert('Erreur', 'Trop de tentatives. Veuillez réessayer plus tard');
+            } else if (response.status >= 500) {
+                Alert.alert('Erreur', 'Erreur serveur. Veuillez réessayer plus tard');
             } else {
                 Alert.alert('Erreur', data.message || fr.loginScreen.error_message);
             }
         } catch (error) {
-            Alert.alert('Erreur', fr.loginScreen.server_error_message);
+            if (error.message.includes('Network') || error.message.includes('Failed')) {
+                Alert.alert('Erreur', 'Erreur de connexion réseau. Vérifiez votre connexion internet');
+            } else if (error.message.includes('timeout')) {
+                Alert.alert('Erreur', 'La requête a expiré. Veuillez réessayer');
+            } else {
+                Alert.alert('Erreur', fr.loginScreen.server_error_message);
+            }
         }
     };
 
