@@ -28,7 +28,7 @@ export function SettingsModal({ visible, onClose, onLogout, onDeleteAccount }) {
           </View>
 
           {/* Settings Content */}
-          <ScrollView style={styles.settingsContent}>
+          <ScrollView testID="settings-scroll" style={styles.settingsContent}>
             {/* Account Section */}
             <View style={styles.settingsSection}>
               <Text style={styles.sectionTitle}>{fr.settingsModal.section_account}</Text>
