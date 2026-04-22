@@ -1,3 +1,5 @@
+const appVersion = process.env.EXPO_PUBLIC_APP_VERSION || 'dev';
+
 module.exports = {
   apps: [
     {
@@ -24,7 +26,7 @@ module.exports = {
       env: {
         EXPO_PUBLIC_API_URL: 'http://37.59.111.34:5002',
         EXPO_PUBLIC_USER_API_URL: 'http://37.59.111.34:3001',
-        EXPO_PUBLIC_APP_VERSION: process.env.EXPO_PUBLIC_APP_VERSION
+        EXPO_PUBLIC_APP_VERSION: appVersion
         // You can force the host if needed
         // EXPO_PACKAGER_HOSTNAME: 'votre-domaine.com'
       }

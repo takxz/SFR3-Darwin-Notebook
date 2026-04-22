@@ -24,10 +24,12 @@ jobs:
             
             git checkout tags/${{ github.event.inputs.tag_name }} -f
 
-            echo "EXPO_PUBLIC_APP_VERSION=${{ github.event.inputs.tag_name }}" > FrontEnd/.env
-
-            export EXPO_PUBLIC_APP_VERSION=${{ github.event.inputs.tag_name }}
+            APP_VERSION="${{ github.event.inputs.tag_name }}"
+            export EXPO_PUBLIC_APP_VERSION="$APP_VERSION"
+            echo "Version deployee: $EXPO_PUBLIC_APP_VERSION"
             
             chmod +x ./setup_linux.sh
 
             ./setup_linux.sh
+
+            pm2 restart darwin-expo-develop --update-env
