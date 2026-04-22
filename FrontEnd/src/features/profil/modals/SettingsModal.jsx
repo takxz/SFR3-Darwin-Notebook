@@ -91,7 +91,7 @@ export function SettingsModal({ visible, onClose, onLogout, onDeleteAccount }) {
               <Text style={styles.sectionTitle}>À propos</Text>
               <View style={styles.versionContainer}>
                 <Info size={16} color="#97572B60" />
-                <Text style={styles.versionText}>Version {process.env.VERSION}</Text>
+                <Text style={styles.versionText}>Version {process.env.EXPO_PUBLIC_APP_VERSION}</Text>
               </View>
             </View>
           </ScrollView>
