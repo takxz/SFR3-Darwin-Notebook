@@ -20,6 +20,7 @@ export default function ArenaScreen() {
 
     // ⚔️ STATE & LOGIC ORCHESTRATION
     const [sceneReady, setSceneReady] = useState(false);
+    const [isDebugMode, setIsDebugMode] = useState(false);
 
     const { progress: progressPercent } = useProgress();
     
@@ -93,12 +94,12 @@ export default function ArenaScreen() {
             <View style={styles.container}>
                 {/* 🎲 3D RENDERING LAYER */}
                 <Canvas
-                    camera={{ position: [0, 0, 22], fov: 55, far: 500 }}
+                    camera={{ position: [0, 0, 22], fov: 55, far: 5000 }}
                     dpr={0.5}
                     gl={{ antialias: false, alpha: false, stencil: false, depth: true, powerPreference: 'high-performance' }}
                     onCreated={() => setSceneReady(true)}
                 >
-                    <color attach="background" args={['#000000']} />
+                    {/* Background will be provided by the Skybox component */}
                     <Suspense fallback={null}>
                         <Scene
                             hitTrigger={hit > 0}
@@ -126,7 +127,8 @@ export default function ArenaScreen() {
                     cinematicAnim={cinematicAnim}
                     comboScaleAnim={comboScaleAnim}
                     triggerHit={triggerPlayerHit} // Correction ici 
-                    triggerSpecial={isIntro ? startBattleSequence : triggerSpecial}
+                    triggerSpecial={isIntro ? () => { setIsDebugMode(true); startBattleSequence(); } : triggerSpecial}
+                    isDebugMode={isDebugMode}
                     stats={stats}
                     turn={turn}
                     isMyTurn={isMyTurn}
