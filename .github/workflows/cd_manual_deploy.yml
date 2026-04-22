@@ -25,6 +25,9 @@ jobs:
             git checkout tags/${{ github.event.inputs.tag_name }} -f
 
             echo "EXPO_PUBLIC_APP_VERSION=${{ github.event.inputs.tag_name }}" > FrontEnd/.env
+
+            rm -rf FrontEnd/.expo
+            rm -rf /tmp/metro-* 2>/dev/null || true
             
             chmod +x ./setup_linux.sh
 
