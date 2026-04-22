@@ -188,13 +188,13 @@ describe('userController', () => {
                     id: 'c-1',
                     species_name: 'Alpaca',
                     species_model_path: 'alpaca',
-                    model_3d_url: 'http://localhost:3001/models/alpaca'
+                    model_url: '/models/alpaca'
                 },
                 {
                     id: 'c-2',
                     species_name: 'Fougère',
                     species_model_path: null,
-                    model_3d_url: null
+                    model_url: null
                 }
             ];
 
@@ -255,7 +255,7 @@ describe('userController', () => {
                 id: 'c-99',
                 species_name: 'Lion',
                 species_model_path: 'lion',
-                model_3d_url: 'http://localhost:3001/models/lion'
+                model_url: '/models/lion'
             };
 
             expect(db.query).toHaveBeenCalledTimes(1);
