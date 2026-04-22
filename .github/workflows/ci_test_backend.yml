@@ -1,6 +1,13 @@
 name: CI_Test_Backend
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    paths:
+      - 'BackEnd/**'
+  pull_request:
+    paths:
+      - 'BackEnd/**'
+  workflow_dispatch:
 
 jobs:
   test_backend:
