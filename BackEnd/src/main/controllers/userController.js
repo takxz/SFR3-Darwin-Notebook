@@ -256,24 +256,6 @@ exports.getUserCreatureDetails = async(req, res) => {
     }
 };
 
-exports.getLastCapturedCreatures = async (req, res) => {
-    try {
-    const query = `select p.pseudo,  c.id, c.player_id, c.gamification_name, 
-            c.scan_url, c.scan_quality, c.gps_location, c.scan_date
-            FROM public."CREATURE" c
-            left join public."PLAYER" p
-            on p.id = c.player_id
-            order by scan_date desc
-            fetch first 5 rows only;`
-
-    const result = await db.query(query)
-
-    res.json(result.rows)
-    } catch (err) {
-        console.error('Erreur lors de la récupération des 5 dernières créatures capturées:', err);
-        res.status(500).json({ error: "Erreur lors de la récupération des 5 dernières créatures capturées"})
-    }
-}
 // Lier une plante à une créature
 exports.linkPlantToCreature = async (req, res) => {
     try {
