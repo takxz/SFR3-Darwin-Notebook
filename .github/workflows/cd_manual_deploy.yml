@@ -26,8 +26,7 @@ jobs:
 
             echo "EXPO_PUBLIC_APP_VERSION=${{ github.event.inputs.tag_name }}" > FrontEnd/.env
 
-            rm -rf FrontEnd/.expo
-            rm -rf /tmp/metro-* 2>/dev/null || true
+            export EXPO_PUBLIC_APP_VERSION=${{ github.event.inputs.tag_name }}
             
             chmod +x ./setup_linux.sh
 
