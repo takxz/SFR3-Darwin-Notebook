@@ -61,7 +61,12 @@ export default function CameraScreen() {
         if (result.final_stats.speed != null) formData.append('stat_speed', String(Math.round(result.final_stats.speed)));
       }
 
-      // Ajout du fichier photo si présent pour l'héberger sur le serveur
+      // Fallback : toujours envoyer l'image_url du Python en cas d'échec de l'upload
+      if (result?.image_url) {
+        formData.append('scan_url', result.image_url);
+      }
+
+      // Ajout du fichier photo si présent (prioritaire sur scan_url côté backend)
       if (photo?.uri) {
         const filename = photo.uri.split('/').pop() || 'scan.jpg';
         const match = /\.(\w+)$/.exec(filename);
@@ -72,8 +77,6 @@ export default function CameraScreen() {
           name: filename,
           type: type,
         });
-      } else if (result?.image_url) {
-        formData.append('scan_url', result.image_url);
       }
 
       const debugPayload = {
