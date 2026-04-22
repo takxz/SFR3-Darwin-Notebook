@@ -68,11 +68,35 @@ exports.addCreature = async (req, res) => {
         }
 
         // 1. Récupérer les informations de l'espèce pour les stats de base
-        const speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE id = $1', [species_id]);
-        if (speciesQuery.rows.length === 0) {
-            return res.status(404).json({ error: "Espèce non trouvée." });
+        let speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE LOWER(name) = LOWER($1)', [gamification_name]);
+        let species;
+
+        if (speciesQuery.rows.length > 0) {
+            species = speciesQuery.rows[0];
+        } else {
+            speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE id = $1', [species_id]);
+            if (speciesQuery.rows.length > 0) {
+                species = speciesQuery.rows[0];
+            } else {
+                // Création d'une nouvelle espèce si non trouvée
+                const insertSpecies = await db.query(
+                    `INSERT INTO "SPECIES" (name, type, rarity, base_stat_atq, base_stat_def, base_stat_pv, base_stat_speed)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+                    [
+                        gamification_name || 'Espèce Inconnue', 
+                        'Inconnu', 
+                        'Commun', 
+                        stat_atq || 10, 
+                        stat_def || 10, 
+                        stat_pv || 10, 
+                        stat_speed || 10
+                    ]
+                );
+                species = insertSpecies.rows[0];
+            }
         }
-        const species = speciesQuery.rows[0];
+
+        const actual_species_id = species.id;
 
         // 2. Insérer la nouvelle créature
         const query = `
@@ -95,7 +119,7 @@ exports.addCreature = async (req, res) => {
         `;
 
         const result = await db.query(query, [
-            species_id,
+            actual_species_id,
             userId,
             gamification_name || species.name,
             finalScanUrl,
