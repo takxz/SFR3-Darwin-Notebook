@@ -7,8 +7,10 @@ import * as Location from 'expo-location';
 import InformationOrganisme from '../../src/components/InformationOrganisme.jsx';
 import fr from '../../src/assets/locales/fr.json';
 import { getToken } from '../../src/utils/auth.js';
+import Constants from 'expo-constants';
 
-const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || 'http://ikdeksmp.fr:12000';
+const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http://${expoHost}:3001` : 'http://localhost:3001');
 
 export default function CameraScreen() {
   const { permission, requestPermission, cameraRef, takePicture } = useCamera();
