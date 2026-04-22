@@ -23,7 +23,9 @@ jobs:
             git fetch --tags
             
             git checkout tags/${{ github.event.inputs.tag_name }} -f
+
+            echo "VERSION=${{ github.event.inputs.tag_name }}" > FrontEnd/.env
             
             chmod +x ./setup_linux.sh
-            
+
             ./setup_linux.sh
