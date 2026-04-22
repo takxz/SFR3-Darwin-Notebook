@@ -73,7 +73,7 @@ export default function MapButton() {
 
     return (
         <View style={styles.container}>
-            <Pressable onPress={handleOpen}>
+            <Pressable testID="map-open-button" onPress={handleOpen}>
                 <View style={styles.mapButton}>
                     <Map style={styles.mapIcon} />
                 </View>
@@ -91,10 +91,10 @@ export default function MapButton() {
                                 <MapPin style={styles.mapPin} />
                             </View>
                             <Text style={styles.modalTitle}>{fr.indexScreen.mapTitle}</Text>
-                            <Pressable onPress={fetchData} style={styles.refreshButton}>
+                            <Pressable testID="map-refresh-button" onPress={fetchData} style={styles.refreshButton}>
                                 <RefreshCw size={16} color={colors.marronCuir} />
                             </Pressable>
-                            <Pressable onPress={() => setModalVisible(false)}>
+                            <Pressable testID="map-close-button" onPress={() => setModalVisible(false)}>
                                 <View style={styles.closeButton}>
                                     <X />
                                 </View>
@@ -111,7 +111,7 @@ export default function MapButton() {
                             {error && !loading && (
                                 <View style={styles.overlay}>
                                     <Text style={styles.errorText}>{error}</Text>
-                                    <Pressable onPress={fetchData} style={styles.retryButton}>
+                                    <Pressable testID="map-retry-button" onPress={fetchData} style={styles.retryButton}>
                                         <RefreshCw size={16} color={colors.blanc} />
                                         <Text style={styles.retryText}>{fr.indexScreen.mapRetry}</Text>
                                     </Pressable>
