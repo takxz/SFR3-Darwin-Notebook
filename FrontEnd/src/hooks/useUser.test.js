@@ -12,21 +12,18 @@ jest.mock('../utils/auth', () => ({
 global.fetch = jest.fn();
 
 // Suppress act() warnings for this test suite (expected for async effects)
-const originalError = console.error;
 beforeAll(() => {
-  console.error = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('An update to HookContainer inside a test was not wrapped in act')
-    ) {
+  jest.spyOn(console, 'error').mockImplementation((message) => {
+    // Filter out expected HookContainer act() warnings
+    if (typeof message === 'string' && message.includes('An update to HookContainer inside a test was not wrapped in act')) {
       return;
     }
-    originalError.call(console, ...args);
-  };
+    // Call the original console.error for other messages
+  });
 });
 
 afterAll(() => {
-  console.error = originalError;
+  jest.restoreAllMocks();
 });
 
 describe('useUser Hook', () => {
