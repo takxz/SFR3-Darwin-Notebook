@@ -3,6 +3,7 @@ import React, { useRef, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Animated, Easing, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import socketService from '@/services/SocketService';
 
 /**
  * 🌟 ROTATING HALO COMPONENT
@@ -151,11 +152,11 @@ export const BattleOverlay = ({
                     <View style={styles.healthRow}>
                         <View style={styles.healthBarWrapper}>
                             <View style={[styles.healthBar, { width: `${(stats.hp / stats.maxHp) * 100}%`, backgroundColor: '#44ff00' }]} />
-                            <Text style={styles.hpLabel}>HERO: {stats.hp} HP</Text>
+                            <Text style={styles.hpLabel}>{stats.nickname}: {stats.hp} HP</Text>
                         </View>
                         <View style={styles.healthBarWrapper}>
                             <View style={[styles.healthBar, { width: `${(stats.opHp / stats.opMaxHp) * 100}%`, backgroundColor: '#ff4400', alignSelf: 'flex-end' }]} />
-                            <Text style={[styles.hpLabel, { textAlign: 'right' }]}>GOLEM: {stats.opHp} HP</Text>
+                            <Text style={[styles.hpLabel, { textAlign: 'right' }]}>{stats.opNickname}: {stats.opHp} HP</Text>
                         </View>
                     </View>
                     <Text style={styles.turnIndicator}>{isMyTurn ? "VOTRE TOUR" : "ATTENTE ADVERSAIRE..."}</Text>
@@ -181,8 +182,7 @@ export const BattleOverlay = ({
             {/* ENEMY BADGE */}
             {isIntro && (
                 <Animated.View style={[styles.enemyBadge, { opacity: cinematicAnim }]}>
-                    <Text style={styles.enemyLevel}>LVL 99</Text>
-                    <Text style={styles.enemyName}>ABYSSAL GOLEM</Text>
+                    <Text style={styles.enemyName}>{stats.opNickname}</Text>
                 </Animated.View>
             )}
 
@@ -222,18 +222,18 @@ export const BattleOverlay = ({
 
                         <BattleButton
                             onPress={() => {
-                                if (isMyTurn && !isSpecial) {
+                                if (isMyTurn && !isSpecial && stats.specialCooldown === 0) {
                                     triggerSpecial();
-                                    sendAction('ATTACK');
+                                    sendAction('SPECIAL');
                                 }
                             }}
-                            disabled={isSpecial || !isMyTurn || stats.hp <= 0 || stats.opHp <= 0}
+                            disabled={isSpecial || !isMyTurn || stats.hp <= 0 || stats.opHp <= 0 || stats.specialCooldown > 0}
                             style={styles.actionBtnTop}
                             colors={['#71b5d6', '#327094']}
                         >
                             <MaterialCommunityIcons name="weather-windy" size={24} color="white" />
                             <Text style={styles.actionText}>
-                                {stats.specialCooldown > 0 ? `CD: ${stats.specialCooldown}` : "Spécial"}
+                                {stats.specialCooldown > 0 ? `RECHARGE: ${stats.specialCooldown}` : "Spécial"}
                             </Text>
                         </BattleButton>
                     </View>
@@ -280,8 +280,8 @@ export const BattleOverlay = ({
             {/* RESULTS OVERLAY */}
             {(stats.hp <= 0 || stats.opHp <= 0) && (
                 <View style={styles.resultsOverlay}>
-                    <Text style={styles.resultTitle}>{stats.hp <= 0 ? "GAME OVER" : "VICTORY"}</Text>
-                    <Text style={styles.resultSubtext}>{stats.hp <= 0 ? "YOU HAVE FALLEN..." : "THE ABYSS HAS BEEN CONQUERED"}</Text>
+                    <Text style={styles.resultTitle}>{stats.hp <= 0 ? "DÉFAITE" : "VICTOIRE"}</Text>
+                    <Text style={styles.resultSubtext}>{stats.hp <= 0 ? "VOUS AVEZ ÉTÉ VAINCU..." : `${stats.opNickname} A ÉTÉ TERRASSÉ !`}</Text>
 
                     <BattleButton
                         onPress={onQuit}

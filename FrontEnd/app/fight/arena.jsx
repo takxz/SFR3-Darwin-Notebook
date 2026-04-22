@@ -13,7 +13,10 @@ import { BattleOverlay } from '@/features/fight/components/UI/BattleOverlay';
 import { useBattleManager } from '@/features/fight/hooks/useBattleManager';
 import { useBattleNetwork } from '@/features/fight/hooks/network/useBattleNetwork';
 import socketService from '@/services/SocketService';
+import { useUser } from '@/hooks/useUser';
 import { NavigationIndependentTree } from '@react-navigation/native';
+
+import { MatchmakingScreen } from '@/features/fight/components/UI/MatchmakingScreen';
 
 export default function ArenaScreen() {
     const router = useRouter();
@@ -31,7 +34,7 @@ export default function ArenaScreen() {
     } = useBattleManager(setSceneReady);
 
     // ⚔️ NETWORK ORCHESTRATION (CONNEXION VPS)
-    const { stats, turn, isMyTurn, findMatch, sendAction, abandon } = useBattleNetwork(
+    const { stats, turn, isMyTurn, findMatch, sendAction, abandon, matchStatus } = useBattleNetwork(
         // On Battle Start (Le serveur dit que les 2 joueurs sont là !)
         () => {
             console.log("[Arena] MATCH READY! OPENING ARENA...");
@@ -73,12 +76,17 @@ export default function ArenaScreen() {
         }
     }, [turn, isIntro]);
 
+    const { user } = useUser();
+
     // AUTO-JOIN MATCHMAKING (Dès que l'app est chargée)
     useEffect(() => {
-        if (isLoaded) {
-            findMatch();
+        if (isLoaded && user) {
+            findMatch({
+                nickname: user.pseudo || `Player_${socketService.socket?.id?.substr(0, 4)}`,
+                creatureId: 1 // TODO: Get from router params or state
+            });
         }
-    }, [isLoaded]);
+    }, [isLoaded, user]);
 
     // Final readiness check (Attente des modèles 3D + Audio + Canvas)
     useEffect(() => {
@@ -88,9 +96,15 @@ export default function ArenaScreen() {
         }
     }, [sceneReady, audioReady, progressPercent]);
 
+    // SHOW MATCHMAKING OVERLAY IF WE ARE SEARCHING FOR AN OPPONENT
+    // We render this overlaying the 3D canvas so the models can load in the background!
+    const showMatchmaking = matchStatus === 'searching' || matchStatus === 'idle';
+
     return (
         <NavigationIndependentTree>
             <View style={styles.container}>
+                {showMatchmaking && <MatchmakingScreen onCancel={() => setIsLoaded(false)} />}
+                
                 {/* 🎲 3D RENDERING LAYER */}
                 <Canvas
                     camera={{ position: [0, 0, 22], fov: 55, far: 500 }}
@@ -115,29 +129,30 @@ export default function ArenaScreen() {
                     </Suspense>
                 </Canvas>
 
-                {!isLoaded && <LoadingScreen progress={Math.round(progressPercent)} />}
+                {!isLoaded && !showMatchmaking && <LoadingScreen progress={Math.round(progressPercent)} />}
 
                 {/* 🕹️ HUD & UI LAYER */}
-                <BattleOverlay 
-                    hit={hit}
-                    combo={combo}
-                    isSpecial={isSpecial}
-                    isIntro={isIntro}
-                    cinematicAnim={cinematicAnim}
-                    comboScaleAnim={comboScaleAnim}
-                    triggerHit={triggerPlayerHit} // Correction ici 
-                    triggerSpecial={isIntro ? startBattleSequence : triggerSpecial}
-                    stats={stats}
-                    turn={turn}
-                    isMyTurn={isMyTurn}
-                    sendAction={sendAction}
-                    onFlee={abandon}
-                    onQuit={() => {
-                        socketService.disconnect();
-                        router.replace('/fight');
-                    }}
-                />
-
+                {!showMatchmaking && (
+                    <BattleOverlay 
+                        hit={hit}
+                        combo={combo}
+                        isSpecial={isSpecial}
+                        isIntro={isIntro}
+                        cinematicAnim={cinematicAnim}
+                        comboScaleAnim={comboScaleAnim}
+                        triggerHit={triggerPlayerHit} // Correction ici 
+                        triggerSpecial={isIntro ? startBattleSequence : triggerSpecial}
+                        stats={stats}
+                        turn={turn}
+                        isMyTurn={isMyTurn}
+                        sendAction={sendAction}
+                        onFlee={abandon}
+                        onQuit={() => {
+                            socketService.disconnect();
+                            router.replace('/fight');
+                        }}
+                    />
+                )}
             </View>
         </NavigationIndependentTree>
     );
