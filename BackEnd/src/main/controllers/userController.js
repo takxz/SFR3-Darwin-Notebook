@@ -49,6 +49,7 @@ exports.addCreature = async (req, res) => {
             species_id, 
             player_id, 
             gamification_name, 
+            scientific_name,
             scan_quality, 
             gps_location,
             stat_atq,
@@ -68,7 +69,7 @@ exports.addCreature = async (req, res) => {
         }
 
         // 1. Récupérer les informations de l'espèce pour les stats de base
-        let speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE LOWER(name) = LOWER($1)', [gamification_name]);
+        let speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE LOWER(latin_name) = LOWER($1)', [scientific_name]);
         let species;
 
         if (speciesQuery.rows.length > 0) {
@@ -80,16 +81,17 @@ exports.addCreature = async (req, res) => {
             } else {
                 // Création d'une nouvelle espèce si non trouvée
                 const insertSpecies = await db.query(
-                    `INSERT INTO "SPECIES" (name, type, rarity, base_stat_atq, base_stat_def, base_stat_pv, base_stat_speed)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+                    `INSERT INTO "SPECIES" (latin_name, name, type, rarity, base_stat_atq, base_stat_def, base_stat_pv, base_stat_speed)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
                     [
-                        gamification_name || 'Espèce Inconnue', 
+                        scientific_name || 'Inconnu',
+                        gamification_name || 'Inconnu',
                         'Inconnu', 
                         'Commun', 
                         stat_atq || 10, 
                         stat_def || 10, 
                         stat_pv || 10, 
-                        stat_speed || 10
+                        stat_speed || 10,
                     ]
                 );
                 species = insertSpecies.rows[0];
