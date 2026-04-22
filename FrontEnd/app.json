@@ -3,7 +3,7 @@
     "name": "darwin-notebook",
     "slug": "darwin-notebook",
     "scheme": "darwinnotebook",
-    "version": "0.8.1",
+    "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "experiments": {

@@ -83,7 +83,7 @@ export default function Register() {
             } else if (response.status >= 500) {
                 Alert.alert('Erreur', 'Erreur serveur. Veuillez réessayer plus tard');
             } else {
-                Alert.alert('Erreur', data.message || fr.registerScreen.error_message + ' (Code: ' + response.status + ')');
+                Alert.alert('Erreur', data.message || fr.registerScreen.error_message);
             }
         } catch (error) {
             if (error.message.includes('Network') || error.message.includes('Failed')) {
