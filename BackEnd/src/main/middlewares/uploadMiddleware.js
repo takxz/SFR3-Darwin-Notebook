@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 // Dossier où les images seront stockées
-const uploadDir = path.join(__dirname, '../../uploads');
+const uploadDir = path.join(__dirname, '../../../uploads');
 
 // Création du dossier s'il n'existe pas
 if (!fs.existsSync(uploadDir)) {
