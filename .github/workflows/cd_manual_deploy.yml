@@ -18,7 +18,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            cd /SFR3-Darwin-Notebook
+            cd /home/darwinnotbook/SFR3-Darwin-Notebook
             
             git fetch --tags
             
