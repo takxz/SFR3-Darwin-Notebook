@@ -7,8 +7,10 @@ import * as Location from 'expo-location';
 import InformationOrganisme from '../../src/components/InformationOrganisme.jsx';
 import fr from '../../src/assets/locales/fr.json';
 import { getToken } from '../../src/utils/auth.js';
+import Constants from 'expo-constants';
 
-const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || 'http://ikdeksmp.fr:12000';
+const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http://${expoHost}:3001` : 'http://localhost:3001');
 
 export default function CameraScreen() {
   const { permission, requestPermission, cameraRef, takePicture } = useCamera();
@@ -32,7 +34,7 @@ export default function CameraScreen() {
       // Forçage de l'ID de l'espèce à 1 de manière temporaire car la base de données distante n'a que ça pour le moment
       formData.append('species_id', '1');
       formData.append('gamification_name', result?.common_name || result?.scientific_name || 'Créature inconnue');
-      
+
       // On s'assure que la qualité du scan est aussi un entier
       const rawQuality = result?.sharpness_score ?? 95;
       const safeQuality = !isNaN(Number(rawQuality)) ? String(Math.round(Number(rawQuality))) : '95';
@@ -50,16 +52,21 @@ export default function CameraScreen() {
         console.warn('Erreur GPS:', locErr);
       }
       formData.append('gps_location', currentGpsLocation);
-      
+
       // Envoi des stats dynamiques générées par le Python API en évitant le mot "undefined" et en Forçant un entier pour Postgres
       if (result?.final_stats) {
-          if (result.final_stats.atk != null) formData.append('stat_atq', String(Math.round(result.final_stats.atk)));
-          if (result.final_stats.defense != null) formData.append('stat_def', String(Math.round(result.final_stats.defense)));
-          if (result.final_stats.hp != null) formData.append('stat_pv', String(Math.round(result.final_stats.hp)));
-          if (result.final_stats.speed != null) formData.append('stat_speed', String(Math.round(result.final_stats.speed)));
+        if (result.final_stats.atk != null) formData.append('stat_atq', String(Math.round(result.final_stats.atk)));
+        if (result.final_stats.defense != null) formData.append('stat_def', String(Math.round(result.final_stats.defense)));
+        if (result.final_stats.hp != null) formData.append('stat_pv', String(Math.round(result.final_stats.hp)));
+        if (result.final_stats.speed != null) formData.append('stat_speed', String(Math.round(result.final_stats.speed)));
       }
 
-      // Ajout du fichier photo si présent pour l'héberger sur le serveur
+      // Fallback : toujours envoyer l'image_url du Python en cas d'échec de l'upload
+      if (result?.image_url) {
+        formData.append('scan_url', result.image_url);
+      }
+
+      // Ajout du fichier photo si présent (prioritaire sur scan_url côté backend)
       if (photo?.uri) {
         const filename = photo.uri.split('/').pop() || 'scan.jpg';
         const match = /\.(\w+)$/.exec(filename);
@@ -70,8 +77,6 @@ export default function CameraScreen() {
           name: filename,
           type: type,
         });
-      } else if (result?.image_url) {
-        formData.append('scan_url', result.image_url);
       }
 
       const debugPayload = {
@@ -83,10 +88,10 @@ export default function CameraScreen() {
       };
 
       if (result?.final_stats) {
-          if (result.final_stats.atk != null) debugPayload.stat_atq = String(Math.round(result.final_stats.atk));
-          if (result.final_stats.defense != null) debugPayload.stat_def = String(Math.round(result.final_stats.defense));
-          if (result.final_stats.hp != null) debugPayload.stat_pv = String(Math.round(result.final_stats.hp));
-          if (result.final_stats.speed != null) debugPayload.stat_speed = String(Math.round(result.final_stats.speed));
+        if (result.final_stats.atk != null) debugPayload.stat_atq = String(Math.round(result.final_stats.atk));
+        if (result.final_stats.defense != null) debugPayload.stat_def = String(Math.round(result.final_stats.defense));
+        if (result.final_stats.hp != null) debugPayload.stat_pv = String(Math.round(result.final_stats.hp));
+        if (result.final_stats.speed != null) debugPayload.stat_speed = String(Math.round(result.final_stats.speed));
       }
 
       console.log('[addToDex] ---- RÉSUMÉ DES DONNÉES ENVOYÉES ----', JSON.stringify(debugPayload, null, 2));
@@ -154,7 +159,7 @@ export default function CameraScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, marginTop: 50 },
   camera: { flex: 1 },
   captureButton: {
     position: 'absolute',

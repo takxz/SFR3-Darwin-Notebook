@@ -23,23 +23,39 @@ describe('AuthController', () => {
     });
 
     describe('register', () => {
-        test('should return 400 if user already exists', async () => {
+        test('should return 409 if user with same email already exists', async () => {
             req.body = { email: 'test@example.com', password: 'password', pseudo: 'testuser' };
-            db.query.mockResolvedValue({ rows: [{ id: 1 }] });
+            // Premier appel : email existe
+            db.query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
             await authController.register(req, res);
 
-            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.status).toHaveBeenCalledWith(409);
+            expect(res.json).toHaveBeenCalledWith({ error: expect.any(String) });
+        });
+
+        test('should return 410 if user with same pseudo already exists', async () => {
+            req.body = { email: 'test@example.com', password: 'password', pseudo: 'testuser' };
+            // Premier appel : email n'existe pas
+            db.query.mockResolvedValueOnce({ rows: [] });
+            // Deuxième appel : pseudo existe
+            db.query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+            await authController.register(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(410);
             expect(res.json).toHaveBeenCalledWith({ error: expect.any(String) });
         });
 
         test('should successfully register a new user', async () => {
             req.body = { email: 'new@example.com', password: 'password', pseudo: 'newuser' };
 
-            // Premier appel pour vérifier l'existence : retourne 0 lignes
+            // Premier appel pour vérifier l'email : retourne 0 lignes
+            db.query.mockResolvedValueOnce({ rows: [] });
+            // Deuxième appel pour vérifier le pseudo : retourne 0 lignes
             db.query.mockResolvedValueOnce({ rows: [] });
 
-            // Deuxième appel pour l'insertion : retourne le nouvel utilisateur
+            // Troisième appel pour l'insertion : retourne le nouvel utilisateur
             const newUser = { id: 'uuid-123', email: 'new@example.com', pseudo: 'newuser', player_level: 1 };
             db.query.mockResolvedValueOnce({ rows: [newUser] });
 

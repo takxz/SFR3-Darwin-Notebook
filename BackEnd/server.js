@@ -22,7 +22,7 @@ app.use(express.json());
 
 // ======== MONTAGE DES ROUTES DE L'API REST (HTTP) ========
 const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
@@ -85,6 +85,27 @@ io.on('connection', async (socket) => {
         const newCount = await store.getPlayerCount();
         io.emit('playerCount', newCount);
     });
+});
+
+// 4. Récupération des chemins des modèles 3D
+const fs = require('fs');
+
+// Route dynamique pour servir les modèles 3D
+app.get('/models/:name', (req, res) => {
+    const modelName = req.params.name;
+    const basePath = path.join(__dirname, 'src/assets/fight/models', modelName);
+
+    // 1. On cherche d'abord le GLB (La cible optimisée)
+    if (fs.existsSync(`${basePath}.glb`)) {
+        return res.sendFile(`${basePath}.glb`);
+    }
+
+    // 2. Sinon on se rabat sur le FBX (La dette technique temporaire)
+    if (fs.existsSync(`${basePath}.fbx`)) {
+        return res.sendFile(`${basePath}.fbx`);
+    }
+
+    res.status(404).json({ error: "Modèle 3D introuvable" });
 });
 
 const PORT = process.env.PORT || 3001;
