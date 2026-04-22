@@ -4,6 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import fr from "@/assets/locales/fr.json";
 import colors from "@/assets/constants/colors.json";
 import { getToken } from "@/utils/auth";
+import Constants from "expo-constants";
+
+const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http://${expoHost}:3001` : 'http://localhost:3001');
 
 export default function HomeFeedComponent() {
   const [details, setDetails] = useState([]);
@@ -25,7 +29,7 @@ export default function HomeFeedComponent() {
         throw new Error("Token manquant. Veuillez vous reconnecter.");
       }
 
-      const response = await fetch("http://ikdeksmp.fr:3001/api/user/creatures/last-captured", {
+      const response = await fetch(`${USER_API_URL}/api/user/creatures/last-captured`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

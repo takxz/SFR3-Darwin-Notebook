@@ -7,8 +7,10 @@ import * as Location from 'expo-location';
 import InformationOrganisme from '../../src/components/InformationOrganisme.jsx';
 import fr from '../../src/assets/locales/fr.json';
 import { getToken } from '../../src/utils/auth.js';
+import Constants from 'expo-constants';
 
-const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || 'http://ikdeksmp.fr:12000';
+const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http://${expoHost}:3001` : 'http://localhost:3001');
 
 export default function CameraScreen() {
   const { permission, requestPermission, cameraRef, takePicture } = useCamera();
@@ -59,7 +61,12 @@ export default function CameraScreen() {
         if (result.final_stats.speed != null) formData.append('stat_speed', String(Math.round(result.final_stats.speed)));
       }
 
-      // Ajout du fichier photo si présent pour l'héberger sur le serveur
+      // Fallback : toujours envoyer l'image_url du Python en cas d'échec de l'upload
+      if (result?.image_url) {
+        formData.append('scan_url', result.image_url);
+      }
+
+      // Ajout du fichier photo si présent (prioritaire sur scan_url côté backend)
       if (photo?.uri) {
         const filename = photo.uri.split('/').pop() || 'scan.jpg';
         const match = /\.(\w+)$/.exec(filename);
@@ -70,8 +77,6 @@ export default function CameraScreen() {
           name: filename,
           type: type,
         });
-      } else if (result?.image_url) {
-        formData.append('scan_url', result.image_url);
       }
 
       const debugPayload = {
