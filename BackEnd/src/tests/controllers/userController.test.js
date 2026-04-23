@@ -1,9 +1,15 @@
 const userController = require('../../main/controllers/userController');
 const db = require('../../main/config/db');
+const fs = require('fs');
 
 // Mock du module de base de données pour isoler le contrôleur
 jest.mock('../../main/config/db', () => ({
     query: jest.fn()
+}));
+
+jest.mock('fs', () => ({
+    existsSync: jest.fn(),
+    unlinkSync: jest.fn(),
 }));
 
 describe('userController', () => {
@@ -234,7 +240,122 @@ describe('userController', () => {
 
 
     // ==========================================
-    // 7. getUserCreatureDetails
+    // 7. deleteAccount
+    // ==========================================
+    describe('deleteAccount', () => {
+        it('doit marquer le compte pour suppression dans 30 jours (200)', async () => {
+            req.user.id = 'uuid-123';
+            db.query
+                .mockResolvedValueOnce({}) // ALTER TABLE
+                .mockResolvedValueOnce({}); // UPDATE deletion_requested_at
+
+            await userController.deleteAccount(req, res);
+
+            expect(db.query).toHaveBeenCalledTimes(2);
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(
+                expect.objectContaining({ message: expect.stringContaining('30 jours') })
+            );
+        });
+
+        it('doit renvoyer 500 si la requête DB échoue', async () => {
+            req.user.id = 'uuid-123';
+            db.query.mockRejectedValue(new Error('DB error'));
+
+            await userController.deleteAccount(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({ error: "Erreur interne du serveur." });
+        });
+    });
+
+
+    // ==========================================
+    // 8. cancelDeleteAccount
+    // ==========================================
+    describe('cancelDeleteAccount', () => {
+        it('doit annuler la demande de suppression (200)', async () => {
+            req.user.id = 'uuid-123';
+            db.query.mockResolvedValue({});
+
+            await userController.cancelDeleteAccount(req, res);
+
+            expect(db.query).toHaveBeenCalledTimes(1);
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('deletion_requested_at = NULL'),
+                ['uuid-123']
+            );
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({ message: "Demande de suppression annulée." });
+        });
+
+        it('doit renvoyer 500 si la requête DB échoue', async () => {
+            req.user.id = 'uuid-123';
+            db.query.mockRejectedValue(new Error('DB error'));
+
+            await userController.cancelDeleteAccount(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({ error: "Erreur interne du serveur." });
+        });
+    });
+
+
+    // ==========================================
+    // 9. purgeExpiredAccounts
+    // ==========================================
+    describe('purgeExpiredAccounts', () => {
+        it('doit supprimer les fichiers images et le compte pour chaque compte expiré', async () => {
+            const expiredPlayers = [{ id: 'uuid-expired' }];
+            const creatures = [{ scan_url: 'http://ikdeksmp.fr:3001/uploads/creature-123.jpg' }];
+
+            db.query
+                .mockResolvedValueOnce({})                        // ALTER TABLE
+                .mockResolvedValueOnce({ rows: expiredPlayers })  // SELECT comptes expirés
+                .mockResolvedValueOnce({ rows: creatures })       // SELECT scan_url
+                .mockResolvedValueOnce({});                       // DELETE PLAYER
+
+            fs.existsSync.mockReturnValue(true);
+
+            await userController.purgeExpiredAccounts();
+
+            expect(fs.existsSync).toHaveBeenCalled();
+            expect(fs.unlinkSync).toHaveBeenCalled();
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('DELETE FROM public."PLAYER"'),
+                ['uuid-expired']
+            );
+        });
+
+        it('ne doit pas appeler unlinkSync si le fichier n\'existe pas sur le disque', async () => {
+            db.query
+                .mockResolvedValueOnce({})
+                .mockResolvedValueOnce({ rows: [{ id: 'uuid-expired' }] })
+                .mockResolvedValueOnce({ rows: [{ scan_url: 'http://ikdeksmp.fr:3001/uploads/missing.jpg' }] })
+                .mockResolvedValueOnce({});
+
+            fs.existsSync.mockReturnValue(false);
+
+            await userController.purgeExpiredAccounts();
+
+            expect(fs.unlinkSync).not.toHaveBeenCalled();
+        });
+
+        it('ne doit rien supprimer s\'il n\'y a aucun compte expiré', async () => {
+            db.query
+                .mockResolvedValueOnce({})
+                .mockResolvedValueOnce({ rows: [] });
+
+            await userController.purgeExpiredAccounts();
+
+            expect(db.query).toHaveBeenCalledTimes(2);
+            expect(fs.unlinkSync).not.toHaveBeenCalled();
+        });
+    });
+
+
+    // ==========================================
+    // 10. getUserCreatureDetails
     // ==========================================
     describe('getUserCreatureDetails', () => {
         it('doit renvoyer un objet unique enrichi avec le modèle 3D via JOIN (200)', async () => {

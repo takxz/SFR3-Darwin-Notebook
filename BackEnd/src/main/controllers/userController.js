@@ -17,7 +17,6 @@ async function purgePlayerData(userId) {
             }
         }
     }
-    await db.query('DELETE FROM public."CREATURE" WHERE player_id = $1', [userId]);
     await db.query('DELETE FROM public."PLAYER" WHERE id = $1', [userId]);
 }
 
