@@ -1,0 +1,23 @@
+{
+  "name": "darwin-status-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Publie et maintient le statut des services Darwin sur un webhook Discord",
+  "main": "monitor.js",
+  "scripts": {
+    "start": "node monitor.js",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "pm2": "^5.4.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
