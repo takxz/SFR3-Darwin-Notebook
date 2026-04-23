@@ -130,14 +130,22 @@ describe('userController', () => {
             expect(insertQueryArgs).toContain('http://localhost:3001/uploads/scan123.jpg');
         });
 
-        it('doit throw une 404 et stopper l\'insertion si l\'espèce parente est introuvable', async () => {
-            db.query.mockResolvedValueOnce({ rows: [] });
+        it('doit créer une nouvelle espèce et insérer la créature si l\'espèce parente est introuvable', async () => {
+            const mockNewSpecies = { id: 101, name: 'Pikachu', base_stat_atq: 10 };
+            const mockCreature = { id: 100, gamification_name: 'Pikachu', species_id: 101 };
+
+            // Chainage: 1. SELECT nom -> vide, 2. SELECT id -> vide, 3. INSERT espèce, 4. INSERT créature
+            db.query
+                .mockResolvedValueOnce({ rows: [] })
+                .mockResolvedValueOnce({ rows: [] })
+                .mockResolvedValueOnce({ rows: [mockNewSpecies] })
+                .mockResolvedValueOnce({ rows: [mockCreature] });
 
             await userController.addCreature(req, res);
 
-            expect(db.query).toHaveBeenCalledTimes(1); // L'insertion ne doit pas s'exécuter
-            expect(res.status).toHaveBeenCalledWith(404);
-            expect(res.json).toHaveBeenCalledWith({ error: "Espèce non trouvée." });
+            expect(db.query).toHaveBeenCalledTimes(4); // Les 4 requêtes doivent être exécutées
+            expect(res.status).toHaveBeenCalledWith(201);
+            expect(res.json).toHaveBeenCalledWith(mockCreature);
         });
     });
 

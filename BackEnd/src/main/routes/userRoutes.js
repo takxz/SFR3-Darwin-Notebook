@@ -26,7 +26,8 @@ router.get('/:id/plants', authMiddleware, userController.getUserPlants);
 router.get('/:id/creatures/:creatureid', authMiddleware, userController.getUserCreatureDetails);
 
 //Route pour avoir les dernières captures des joueurs
-router.get('/creatures/last-captured', authMiddleware, userController.getLastCapturedCreatures)
+router.get('/creatures/last-captured', authMiddleware, userController.getLastCapturedCreatures);
+
 // Route pour lier une plante à un animal
 router.post('/:id/creatures/:creatureid/link_plant', authMiddleware, userController.linkPlantToCreature);
 
