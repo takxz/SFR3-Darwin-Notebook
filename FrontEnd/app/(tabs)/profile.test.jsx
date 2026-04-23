@@ -2,8 +2,15 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import ProfilePage from './profile';
+import { getToken, clearToken } from '@/utils/auth';
+
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
+
+jest.mock('@/utils/auth', () => ({
+    clearToken: jest.fn(),
+    getToken: jest.fn(), // Initialise getToken comme un mock Jest
+}));
 
 jest.mock('expo-router', () => ({
     useRouter: jest.fn(() => ({ replace: jest.fn() })),
@@ -27,6 +34,7 @@ jest.mock('lucide-react-native', () => ({
 
 jest.mock('@/utils/auth', () => ({
     clearToken: jest.fn().mockResolvedValue(undefined),
+    getToken: jest.fn().mockResolvedValue('mock-token'),
 }));
 
 jest.mock('@/hooks/useUser', () => ({
@@ -322,15 +330,47 @@ describe('ProfilePage', () => {
             const mockReplace = jest.fn();
             useRouter.mockReturnValue({ replace: mockReplace });
 
+            // 2. Maintenant getToken est défini et possède .mockResolvedValue
+            getToken.mockResolvedValue('fake-token');
+            clearToken.mockResolvedValue(undefined);
+
+            const fetchSpy = jest.spyOn(global, 'fetch').mockImplementation(() =>
+                Promise.resolve({
+                    ok: true,
+                    status: 200,
+                    json: () => Promise.resolve({ success: true }),
+                })
+            );
+
             render(<ProfilePage />);
+            
             await openSettingsModal();
             fireEvent.press(screen.getByTestId('btn-delete-account'));
-            await waitFor(() => screen.getByTestId('btn-confirm-delete'));
-            fireEvent.press(screen.getByTestId('btn-confirm-delete'));
-
-            await waitFor(() => {
-                expect(mockReplace).toHaveBeenCalledWith('/login');
+            const confirmBtn = await screen.findByTestId('btn-confirm-delete');
+            
+            await act(async () => {
+                fireEvent.press(confirmBtn);
             });
+
+            // Attente de l'alerte
+            await waitFor(() => {
+                expect(Alert.alert).toHaveBeenCalledWith(
+                    'Demande enregistrée',
+                    expect.any(String),
+                    expect.any(Array)
+                );
+            });
+
+            // Déclenchement du bouton "OK" de l'alerte
+            const successCall = Alert.alert.mock.calls.find(call => call[0] === 'Demande enregistrée');
+            const okButton = successCall[2][0]; 
+            
+            await act(async () => {
+                await okButton.onPress();
+            });
+
+            expect(mockReplace).toHaveBeenCalledWith('/login');
+            fetchSpy.mockRestore();
         });
     });
 
