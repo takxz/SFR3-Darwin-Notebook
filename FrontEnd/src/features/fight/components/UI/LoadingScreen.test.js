@@ -12,12 +12,12 @@ describe('LoadingScreen', () => {
 
         it('doit afficher le titre de chargement', () => {
             render(<LoadingScreen progress={0} />);
-            expect(screen.getByText('INITIALIZING ABYSSAL DIMENSION...')).toBeTruthy();
+            expect(screen.getByText('CHARGEMENT DE L\'ARÈNE...')).toBeTruthy();
         });
 
         it('doit afficher le sous-texte', () => {
             render(<LoadingScreen progress={0} />);
-            expect(screen.getByText('WAITING FOR GPU COMPILATION & AUDIO CACHE')).toBeTruthy();
+            expect(screen.getByText('PATIENCE...')).toBeTruthy();
         });
     });
 

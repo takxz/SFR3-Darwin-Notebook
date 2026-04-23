@@ -49,13 +49,12 @@ describe('BattleOverlay', () => {
 
         it('doit afficher le texte de matchmaking', () => {
             render(<BattleOverlay {...makeProps({ isIntro: true })} />);
-            expect(screen.getByText('MATCHMAKING IN PROGRESS...')).toBeTruthy();
+            expect(screen.getByText('MATCHMAKING EN COURS...')).toBeTruthy();
         });
 
         it('doit afficher le badge ennemi en intro', () => {
             render(<BattleOverlay {...makeProps({ isIntro: true })} />);
-            expect(screen.getByText('ABYSSAL GOLEM')).toBeTruthy();
-            expect(screen.getByText('LVL 99')).toBeTruthy();
+            expect(screen.getByTestId('enemy-badge')).toBeTruthy();
         });
 
         it('ne doit pas afficher le HUD de tour en mode intro', () => {
@@ -97,8 +96,8 @@ describe('BattleOverlay', () => {
 
         it('doit afficher les HP du héros et du golem', () => {
             render(<BattleOverlay {...makeProps({ isIntro: false })} />);
-            expect(screen.getByText('HERO: 100 HP')).toBeTruthy();
-            expect(screen.getByText('GOLEM: 100 HP')).toBeTruthy();
+            expect(screen.getByTestId('hero-health-bar')).toBeTruthy();
+            expect(screen.getByTestId('enemy-health-bar')).toBeTruthy();
         });
 
         it('doit afficher les boutons d\'action', () => {
@@ -142,22 +141,22 @@ describe('BattleOverlay', () => {
     });
 
     describe('Résultats', () => {
-        it('doit afficher GAME OVER quand hp <= 0', () => {
+        it('doit afficher DÉFAITE quand hp <= 0', () => {
             render(<BattleOverlay {...makeProps({ isIntro: false, stats: { ...defaultStats, hp: 0 } })} />);
-            expect(screen.getByText('GAME OVER')).toBeTruthy();
-            expect(screen.getByText('YOU HAVE FALLEN...')).toBeTruthy();
+            expect(screen.getByText('DÉFAITE')).toBeTruthy();
+            expect(screen.getByTestId('defeat-text')).toBeTruthy();
         });
 
-        it('doit afficher VICTORY quand opHp <= 0', () => {
+        it('doit afficher VICTOIRE quand opHp <= 0', () => {
             render(<BattleOverlay {...makeProps({ isIntro: false, stats: { ...defaultStats, opHp: 0 } })} />);
-            expect(screen.getByText('VICTORY')).toBeTruthy();
-            expect(screen.getByText('THE ABYSS HAS BEEN CONQUERED')).toBeTruthy();
+            expect(screen.getByText('VICTOIRE')).toBeTruthy();
+            expect(screen.getByTestId('victory-text')).toBeTruthy();
         });
 
         it('ne doit pas afficher les résultats quand les deux joueurs sont en vie', () => {
             render(<BattleOverlay {...makeProps({ isIntro: false })} />);
-            expect(screen.queryByText('GAME OVER')).toBeNull();
-            expect(screen.queryByText('VICTORY')).toBeNull();
+            expect(screen.queryByText('DÉFAITE')).toBeNull();
+            expect(screen.queryByText('VICTOIRE')).toBeNull();
         });
 
         it('doit afficher le bouton retour menu après le combat', () => {

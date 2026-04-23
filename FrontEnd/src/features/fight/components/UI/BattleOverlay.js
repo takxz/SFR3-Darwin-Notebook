@@ -120,7 +120,7 @@ export const BattleOverlay = ({
             {/* LOBBY / WAITING STATE */}
             {isIntro && (
                 <View style={styles.lobbyContainer}>
-                    <Text style={styles.lobbyTitle}>MATCHMARKING EN COURS...</Text>
+                    <Text style={styles.lobbyTitle}>MATCHMAKING EN COURS...</Text>
 
                     <View style={styles.statusBox}>
                         <Text style={styles.statusText}>RECHERCHE D'UN ADVERSAIRE...</Text>
@@ -151,11 +151,11 @@ export const BattleOverlay = ({
 
                     <View style={styles.healthRow}>
                         <View style={styles.healthBarWrapper}>
-                            <View style={[styles.healthBar, { width: `${(stats.hp / stats.maxHp) * 100}%`, backgroundColor: '#44ff00' }]} />
+                            <View testID='hero-health-bar' style={[styles.healthBar, { width: `${(stats.hp / stats.maxHp) * 100}%`, backgroundColor: '#44ff00' }]} />
                             <Text style={styles.hpLabel}>{stats.nickname}: {stats.hp} HP</Text>
                         </View>
                         <View style={styles.healthBarWrapper}>
-                            <View style={[styles.healthBar, { width: `${(stats.opHp / stats.opMaxHp) * 100}%`, backgroundColor: '#ff4400', alignSelf: 'flex-end' }]} />
+                            <View testID='enemy-health-bar' style={[styles.healthBar, { width: `${(stats.opHp / stats.opMaxHp) * 100}%`, backgroundColor: '#ff4400', alignSelf: 'flex-end' }]} />
                             <Text style={[styles.hpLabel, { textAlign: 'right' }]}>{stats.opNickname}: {stats.opHp} HP</Text>
                         </View>
                     </View>
@@ -182,7 +182,7 @@ export const BattleOverlay = ({
             {/* ENEMY BADGE */}
             {isIntro && (
                 <Animated.View style={[styles.enemyBadge, { opacity: cinematicAnim }]}>
-                    <Text style={styles.enemyName}>{stats.opNickname}</Text>
+                    <Text testID='enemy-badge' style={styles.enemyName}>{stats.opNickname}</Text>
                 </Animated.View>
             )}
 
@@ -284,7 +284,7 @@ export const BattleOverlay = ({
             {(stats.hp <= 0 || stats.opHp <= 0) && (
                 <View style={styles.resultsOverlay}>
                     <Text style={styles.resultTitle}>{stats.hp <= 0 ? "DÉFAITE" : "VICTOIRE"}</Text>
-                    <Text style={styles.resultSubtext}>{stats.hp <= 0 ? "VOUS AVEZ ÉTÉ VAINCU..." : `${stats.opNickname} A ÉTÉ TERRASSÉ !`}</Text>
+                    <Text testID={stats.hp <= 0 ? "defeat-text" : "victory-text"} style={styles.resultSubtext}>{stats.hp <= 0 ? "VOUS AVEZ ÉTÉ VAINCU..." : `${stats.opNickname} A ÉTÉ TERRASSÉ !`}</Text>
 
                     <BattleButton
                         onPress={onQuit}

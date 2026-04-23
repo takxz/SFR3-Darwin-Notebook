@@ -67,7 +67,7 @@ describe('useBattleNetwork', () => {
         it('doit émettre findMatch via socketService', () => {
             const { result } = renderHook(() => useBattleNetwork(jest.fn(), jest.fn()));
             act(() => { result.current.findMatch(); });
-            expect(socketService.emit).toHaveBeenCalledWith('findMatch');
+            expect(socketService.emit).toHaveBeenCalledWith('findMatch', undefined);
         });
 
         it('doit émettre playerReady via sendReady', () => {
