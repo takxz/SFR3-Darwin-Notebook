@@ -241,41 +241,36 @@ exports.getUserCreatures = async (req, res) => {
         const userId = req.params.id;
 
         // 1. Récupération des données brutes enrichies
-        // On sélectionne toutes les colonnes de la créature (c.*)
-        // et on y ajoute les infos de l'espèce associée (s.name, s.model_path)
-        const query = `
-            SELECT
-                c.*,
-                s.name AS species_name,
-                s.type AS species_type,
-                s.rarity AS species_rarity,
-                s.average_weight AS weight,
-                s.average_life_expectancy AS lifespan,
-                s.model_path AS species_model_path
-            FROM public."CREATURE" c
-            JOIN public."SPECIES" s ON c.species_id = s.id
-            WHERE c.player_id = $1
-            ORDER BY c.scan_date DESC;
-        `;
+         // On sélectionne toutes les colonnes de la créature (c.*)
+         // et on y ajoute les infos de l'espèce associée (s.name, s.model_path, ...)
+         const query = `
+             SELECT
+                 c.*,
+                 s.name AS species_name,
+                 s.type AS species_type,
+                 s.rarity AS species_rarity,
+                 s.average_weight AS weight,
+                 s.average_life_expectancy AS lifespan,
+                 s.model_path AS species_model_path,
+                 s.latin_name AS latin_name
+             FROM public."CREATURE" c
+             JOIN public."SPECIES" s ON c.species_id = s.id
+             WHERE c.player_id = $1
+             ORDER BY c.scan_date DESC;
+         `;
 
         const result = await db.query(query, [userId]);
 
-        // 2. Construction dynamique de la base de l'URL pour les assets statiques
-        // req.protocol = http ou https
-        // req.get('host') = domaine ou IP + port (ex: 192.168.1.15:3001)
-        // Résultat final attendu : "http://192.168.1.15:3001/models/"
-        const baseUrl = `${req.protocol}://${req.get('host')}/models/`;
-
-        // 3. Formatage du payload de sortie (Data Mapping)
-        // On itère sur chaque ligne SQL pour assembler l'URL absolue du modèle 3D
+        // 2. Formatage du payload de sortie (Data Mapping)
+        // On itère sur chaque ligne SQL pour enrichir avec l'URL du modèle
+        // Note: Chemin relatif, le front sait que c'est /models/{model_path}
         const creaturesWithModels = result.rows.map(creature => ({
             ...creature, // On conserve l'intégralité des données d'origine (id, stats, etc.)
-            scan_url: buildScanUrl(req, creature.scan_url),
-            // On crée la nouvelle clé avec le modèle3D
-            model_3d_url: creature.species_model_path ? `${baseUrl}${creature.species_model_path}` : null
+            // URL relative au domaine (optimisé pour cache HTTP et CDN)
+            model_url: creature.species_model_path ? `/models/${creature.species_model_path}` : null
         }));
 
-        // 4. Envoi de la réponse JSON enrichie au client (Code HTTP 200 implicite)
+        // 3. Envoi de la réponse JSON enrichie au client (Code HTTP 200 implicite)
         res.json(creaturesWithModels);
 
     } catch (err) {
@@ -317,38 +312,37 @@ exports.getUserCreatureDetails = async(req, res) => {
         const userId = req.params.id;
         const creatureId = req.params.creatureid;
 
-        const query = `
-            SELECT
-                c.*,
-                c.plant_link_id AS "plantLinkId",
-                s.name AS species_name,
-                s.type AS species_type,
-                s.rarity AS species_rarity,
-                s.average_weight AS weight,
-                s.average_life_expectancy AS lifespan,
-                s.model_path AS species_model_path
-            FROM public."CREATURE" c
-            JOIN public."SPECIES" s ON c.species_id = s.id
-            WHERE c.player_id = $1 AND c.id = $2;
-        `;
+         const query = `
+             SELECT
+                 c.*,
+                 c.plant_link_id AS "plantLinkId",
+                 s.name AS species_name,
+                 s.type AS species_type,
+                 s.rarity AS species_rarity,
+                 s.average_weight AS weight,
+                 s.average_life_expectancy AS lifespan,
+                 s.model_path AS species_model_path,
+                 s.latin_name AS latin_name
+             FROM public."CREATURE" c
+             JOIN public."SPECIES" s ON c.species_id = s.id
+             WHERE c.player_id = $1 AND c.id = $2;
+         `;
 
-        const result = await db.query(query, [userId, creatureId]);
+         const result = await db.query(query, [userId, creatureId]);
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: "Créature non trouvée ou n'appartenant pas à ce joueur." });
-        }
+         if (result.rows.length === 0) {
+             return res.status(404).json({ error: "Créature non trouvée ou n'appartenant pas à ce joueur." });
+         }
 
-        const creature = result.rows[0];
-        const baseUrl = `${req.protocol}://${req.get('host')}/models/`;
+         const creature = result.rows[0];
 
-        // Assemblage de l'objet de retour
-        const creatureDetails = {
-            ...creature,
-            scan_url: buildScanUrl(req, creature.scan_url),
-            model_3d_url: creature.species_model_path ? `${baseUrl}${creature.species_model_path}` : null
-        };
+         // Assemblage de l'objet de retour
+         const creatureDetails = {
+             ...creature,
+             model_url: creature.species_model_path ? `/models/${creature.species_model_path}` : null
+         };
 
-        res.json(creatureDetails);
+         res.json(creatureDetails);
 
     } catch (err) {
         console.error('Erreur SQL dans getUserCreatureDetails :', err);

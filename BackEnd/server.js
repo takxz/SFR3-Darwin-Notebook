@@ -4,9 +4,10 @@ const { Server } = require("socket.io");
 const cors = require('cors');
 require('dotenv').config();
 
-// 0. Importation des routes API
+// 0. Importation des routes et des modules utilitaires
 const authRoutes = require('./src/main/routes/authRoutes');
 const userRoutes = require('./src/main/routes/userRoutes');
+const { createModelRegistry } = require('./src/main/utils/modelRegistry');
 const { purgeExpiredAccounts } = require('./src/main/controllers/userController');
 
 // 1. Importation du Redis-Adapter
@@ -27,6 +28,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
+
+
+// ======== GESTION DES WEBSOCKETS (Socket.io) ========
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -88,26 +92,34 @@ io.on('connection', async (socket) => {
     });
 });
 
-// 4. Récupération des chemins des modèles 3D
-const fs = require('fs');
+// 4. 🎨 Initialisation du registre des modèles 3D au démarrage
+const MODELS_DIR = path.join(__dirname, 'src', 'assets', 'fight', 'models');
+const modelFilenameRegistry = createModelRegistry(MODELS_DIR);
 
-// Route dynamique pour servir les modèles 3D
+// Route pour les images uploadées (avatars, etc.)
+app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
+
+// Route pour servir les modèles 3D avec cache HTTP natif
 app.get('/models/:name', (req, res) => {
-    const modelName = req.params.name;
-    const basePath = path.join(__dirname, 'src/assets/fight/models', modelName);
+    const fileName = modelFilenameRegistry.get(req.params.name);
 
-    // 1. On cherche d'abord le GLB (La cible optimisée)
-    if (fs.existsSync(`${basePath}.glb`)) {
-        return res.sendFile(`${basePath}.glb`);
+    if (!fileName) {
+        return res.status(404).json({ error: "Modèle introuvable" });
     }
 
-    // 2. Sinon on se rabat sur le FBX (La dette technique temporaire)
-    if (fs.existsSync(`${basePath}.fbx`)) {
-        return res.sendFile(`${basePath}.fbx`);
-    }
-
-    res.status(404).json({ error: "Modèle 3D introuvable" });
+    res.sendFile(fileName, {
+        root: MODELS_DIR,
+        maxAge: '1y', // Cache client pour 1 an
+        immutable: true,
+        headers: {
+            'Content-Type': fileName.endsWith('.glb') ? 'model/gltf-binary' : 'model/vnd.maya.binary',
+            'Vary': 'Accept-Encoding'
+        }
+    });
 });
+
+
+// ======== DÉMARRAGE DU SERVEUR ========
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
