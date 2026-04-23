@@ -1,6 +1,13 @@
 name: CI_Test_Frontend
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    paths:
+      - 'FrontEnd/**'
+  pull_request:
+    paths:
+      - 'FrontEnd/**'
+  workflow_dispatch:
 
 jobs:
   test_frontend:

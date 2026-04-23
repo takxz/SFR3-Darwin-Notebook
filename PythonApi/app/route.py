@@ -138,17 +138,21 @@ def classification():
         # Récupérer rareté via iNaturalist (observation_count), puis score global.
         url = "https://api.inaturalist.org/v1/taxa/autocomplete"
         params = {"q": predicted_label, "per_page": 1, "locale": "fr"}
-        r = requests.get(url, params=params)
+        
         animal = None
         observation_count = 0
         rarity_score = 0.0
-
-        if r.status_code == 200:
-            data = r.json()
-            if data.get("results"):
-                animal = data["results"][0]
-                observation_count = animal.get("observations_count", 0)
-                rarity_score = rarity_score_from_observation_count(observation_count)
+        
+        try:
+            r = requests.get(url, params=params, timeout=30)
+            if r.status_code == 200:
+                data = r.json()
+                if data.get("results"):
+                    animal = data["results"][0]
+                    observation_count = animal.get("observations_count", 0)
+                    rarity_score = rarity_score_from_observation_count(observation_count)
+        except requests.exceptions.RequestException as e:
+            print(f"Warning: Failed to fetch data from iNaturalist API: {e}")
 
         # Global score même si iNaturalist absent (len par défaut)
         gscore = compute_global_score(
@@ -158,9 +162,10 @@ def classification():
         )
 
         # IVs utilisés en interne uniquement (pour produire final_stats).
-        seed = f"{animal.get('id','')}-{predicted_label}-{sharp.score_0_100:.3f}-{filename or ''}"
-        ivs = distribute_ivs(gscore, seed=seed, max_total=25)
-        ivs_dict = ivs.as_dict()
+        if animal is not None:
+            seed = f"{animal.get('id','')}-{predicted_label}-{sharp.score_0_100:.3f}-{filename or ''}"
+            ivs = distribute_ivs(gscore, seed=seed, max_total=25)
+            ivs_dict = ivs.as_dict()
 
         base = get_base_stats(animal.get("id") if animal else None)
         client_level = None

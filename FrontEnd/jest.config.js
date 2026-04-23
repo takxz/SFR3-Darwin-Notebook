@@ -14,5 +14,26 @@ module.exports = {
     // Ignorer les modules qui posent problème lors des tests
     transformIgnorePatterns: [
         "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@react-navigation/.*|react-native-svg|lucide-react-native|expo-linear-gradient)"
-    ]
+    ],
+
+    // Configuration du Coverage
+    collectCoverageFrom: [
+        "src/**/*.{js,jsx}",
+        "!src/**/*.test.{js,jsx}",
+        "!src/index.js",
+        "!src/**/__tests__/**"
+    ],
+    coveragePathIgnorePatterns: [
+        "/node_modules/",
+        "/\.expo/",
+        "jest.setup.js"
+    ],
+    coverageThreshold: {
+        global: {
+            branches: 0,
+            functions: 0,
+            lines: 0,
+            statements: 0
+        }
+    }
 };
