@@ -240,12 +240,7 @@ exports.getUserPlants = async (req, res) => {
 
         const result = await db.query(query, [userId]);
 
-        const plantsWithUrls = result.rows.map(plant => ({
-            ...plant,
-            scan_url: buildScanUrl(req, plant.scan_url)
-        }));
-
-        res.json(plantsWithUrls);
+        res.json(result.rows);
     } catch (err) {
         console.error('Erreur lors de la récupération des plantes:', err);
         res.status(500).json({ error: "Erreur lors de la récupération des plantes." });
