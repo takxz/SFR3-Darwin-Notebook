@@ -45,7 +45,7 @@ describe('BattleHandler', () => {
         test('should start battle when both players are ready', async () => {
             const roomId = 'room1';
             store.getPlayer.mockResolvedValue({ inBattle: roomId });
-            store.getBattle.mockResolvedValue({ readyCount: 1, turn: 'p1', logs: [], players: {} });
+            store.getBattle.mockResolvedValue({ readyPlayers: { 'p2': true }, turn: 'p1', logs: [], players: {} });
 
             await playerReadyHandler();
 
