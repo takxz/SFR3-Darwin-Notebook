@@ -3,10 +3,12 @@ const http = require('http');
 const { Server } = require("socket.io");
 const cors = require('cors');
 require('dotenv').config();
+const path = require('path');
 
-// 0. Importation des routes API
+// 0. Importation des routes et des modules utilitaires
 const authRoutes = require('./src/main/routes/authRoutes');
 const userRoutes = require('./src/main/routes/userRoutes');
+const { createModelRegistry } = require('./src/main/utils/modelRegistry');
 
 // 1. Importation du Redis-Adapter
 const { createAdapter } = require('@socket.io/redis-adapter');
@@ -20,12 +22,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ======== MONTAGE DES ROUTES DE L'API REST (HTTP) ========
-const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
+// ======== CONFIGURATION ET INITIALISATION ========
 
+// ======== MONTAGE DES ROUTES HTTP ========
+
+// Routes de l'API REST
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
+
+
+// ======== GESTION DES WEBSOCKETS (Socket.io) ========
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -87,44 +93,34 @@ io.on('connection', async (socket) => {
     });
 });
 
-// 4. 🎨 SYSTÈME DE CACHE INTELLIGENT POUR LES MODÈLES 3D
-const { modelCache, initializeModelCache } = require('./src/main/utils/modelCacheManager');
-// OBJECTIF: Optimiser la performance du chargement des modèles 3D
-// Solution: Utiliser un système de cache HTTP avec ETag
-// Avantage: 95% réduction de bande passante, scalabilité 20x
-// 🎯 LANCER L'INITIALISATION DU CACHE AU DÉMARRAGE
-initializeModelCache();
+// 4. 🎨 Initialisation du registre des modèles 3D au démarrage
+const MODELS_DIR = path.join(__dirname, 'src', 'assets', 'fight', 'models');
+const modelFilenameRegistry = createModelRegistry(MODELS_DIR);
 
-// 📡 ROUTE: GET /models/:name
-// Cette route sert les fichiers modèles 3D avec cache HTTP intelligent
-//
-// FLUX:
-//   1. Client demande: GET /models/Alpaca
-//   2. Serveur cherche "Alpaca" dans le cache interne
-//   3. Si trouvé + ETag matche → 304 Not Modified (pas de download!)
-//   4. Sinon → 200 OK + fichier + headers cache
-//
-// HEADERS HTTP IMPORTANTS:
-//   - ETag: '"a1b2c3d4"' 
-//     → Identifiant unique du fichier, permet au client de vérifier s'il a déjà la version
+// Route pour les images uploadées (avatars, etc.)
+app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
 
+// Route pour servir les modèles 3D avec cache HTTP natif
 app.get('/models/:name', (req, res) => {
-    const modelInfo = modelCache.get(req.params.name);
+    const fileName = modelFilenameRegistry.get(req.params.name);
 
-    if (!modelInfo) return res.status(404).json({ error: "Modèle introuvable" });
+    if (!fileName) {
+        return res.status(404).json({ error: "Modèle introuvable" });
+    }
 
-    // Gestion du cache HTTP 304
-    if (req.get('If-None-Match') === modelInfo.etag) return res.status(304).end();
-
-    res.set({
-        'ETag': modelInfo.etag,
-        'Cache-Control': 'public, max-age=31536000, immutable',
-        'Content-Type': modelInfo.ext === 'glb' ? 'model/gltf-binary' : 'model/vnd.maya.binary',
-        'Vary': 'Accept-Encoding'
+    res.sendFile(fileName, {
+        root: MODELS_DIR,
+        maxAge: '1y', // Cache client pour 1 an
+        immutable: true,
+        headers: {
+            'Content-Type': fileName.endsWith('.glb') ? 'model/gltf-binary' : 'model/vnd.maya.binary',
+            'Vary': 'Accept-Encoding'
+        }
     });
-
-    res.sendFile(modelInfo.filePath);
 });
+
+
+// ======== DÉMARRAGE DU SERVEUR ========
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
