@@ -1,17 +1,13 @@
-import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
-import { useState } from "react";
+import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator, Image } from "react-native";
+import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Heart, Star, Swords } from "lucide-react-native";
+import { ArrowLeft, Heart, Star, Swords, AlertCircle } from "lucide-react-native";
 import fr from "@/assets/locales/fr.json";
+import { getToken } from "../../utils/auth.js";
+import Constants from 'expo-constants';
 
-// Mock beasts data
-const mockBeasts = [
-    { id: 1, name: "Lion", type: "Prédateur", image: "🦁", hp: 120, maxHp: 120, rarity: 4 },
-    { id: 2, name: "Éléphant", type: "Herbivore", image: "🐘", hp: 150, maxHp: 150, rarity: 3 },
-    { id: 3, name: "Aigle", type: "Rapace", image: "🦅", hp: 90, maxHp: 90, rarity: 3 },
-    { id: 4, name: "Serpent", type: "Reptile", image: "🐍", hp: 80, maxHp: 80, rarity: 2 },
-    { id: 5, name: "Loup", type: "Prédateur", image: "🐺", hp: 110, maxHp: 110, rarity: 3 },
-];
+const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http://${expoHost}:3001` : 'http://localhost:3001');
 
 const RARITY_COLORS = {
     1: '#97572B',
@@ -29,15 +25,73 @@ const RARITY_LABELS = {
     5: 'Legendary',
 };
 
+const FALLBACK_IMAGE = "https://via.placeholder.com/150?text=No+Image";
+
+function normalizeCreature(creature) {
+    const rawRarity = Number(creature?.species_rarity || 1);
+    const safeRarity = isNaN(rawRarity) ? 1 : Math.max(1, Math.min(5, Math.round(rawRarity)));
+    const hp = Number(creature?.stat_pv ?? creature?.hp ?? 100);
+    
+    return {
+        id: String(creature?.id),
+        name: creature?.gamification_name || creature?.species_name || "Inconnue",
+        image: creature?.scan_url || creature?.image_url || null,
+        hp: isNaN(hp) ? 100 : hp,
+        maxHp: Number(creature?.stat_pv ?? 100) || 100,
+        rarity: safeRarity,
+    };
+}
+
 export default function ChooseBeastScreen() {
+    const [creatures, setCreatures] = useState([]);
     const [selectedBeast, setSelectedBeast] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const router = useRouter();
+
+    useEffect(() => {
+        loadCollection();
+    }, []);
+
+    const loadCollection = async () => {
+        try {
+            const token = await getToken();
+            if (!token) throw new Error("Non authentifié");
+
+            // 1. Get Profile
+            const profileRes = await fetch(`${USER_API_URL}/api/user/profile`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const profile = await profileRes.json();
+            const userId = profile?.id;
+
+            if (!userId) throw new Error("Utilisateur introuvable");
+
+            // 2. Get Creatures
+            const res = await fetch(`${USER_API_URL}/api/user/${userId}/creatures`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (!res.ok) throw new Error("Erreur réseau");
+            
+            const data = await res.json();
+            const normalized = (data || []).map(normalizeCreature);
+            setCreatures(normalized);
+            
+            if (normalized.length > 0) {
+                setSelectedBeast(normalized[0]);
+            }
+        } catch (err) {
+            console.error("Failed to load collection for duel:", err);
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleSelectBeast = (beast) => {
         if (selectedBeast?.id === beast.id) {
-            // alert(`Bête sélectionnée : ${beast.name} - {chooseBeastScreen.start_battle} !`);
-            router.push({ pathname: "/fight/arena", params: { beastId: beast.id } });
-
+            handleStartBattle();
         } else {
             setSelectedBeast(beast);
         }
@@ -45,11 +99,40 @@ export default function ChooseBeastScreen() {
 
     const handleStartBattle = () => {
         if (selectedBeast) {
-            // alert(`Commencer le duel avec ${selectedBeast.name} !`);
             router.push({ pathname: "/fight/arena", params: { beastId: selectedBeast.id } });
-
         }
     };
+
+    if (isLoading) {
+        return (
+            <View style={[styles.container, styles.centered]}>
+                <ActivityIndicator size="large" color="#97572B" />
+            </View>
+        );
+    }
+
+    if (creatures.length === 0) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <Pressable onPress={() => router.back()} style={styles.backButton}>
+                        <ArrowLeft size={24} color="#97572B" />
+                        <Text style={styles.backText}>{fr.chooseBeastScreen.back}</Text>
+                    </Pressable>
+                </View>
+                <View style={styles.emptyContainer}>
+                    <AlertCircle size={64} color="#97572B" />
+                    <Text style={styles.emptyTitle}>Collection Vide</Text>
+                    <Text style={styles.emptyText}>
+                        Vous devez capturer au moins une créature avant de pouvoir lancer un duel.
+                    </Text>
+                    <Pressable style={styles.captureButton} onPress={() => router.push("/(tabs)/camera")}>
+                        <Text style={styles.captureButtonText}>Aller chasser !</Text>
+                    </Pressable>
+                </View>
+            </View>
+        );
+    }
 
     const renderBeastItem = ({ item }) => (
         <View style={styles.beastCardContainer}>
@@ -63,12 +146,16 @@ export default function ChooseBeastScreen() {
                 <View style={styles.glassBackground} />
 
                 <View style={styles.imageContainer}> 
-                    <Text style={styles.beastEmoji}>{item.image}</Text>
+                    {item.image ? (
+                        <Image source={{ uri: item.image }} style={styles.beastImage} />
+                    ) : (
+                        <Text style={styles.beastEmoji}>🐾</Text>
+                    )}
                     <View style={styles.imageOverlay} />
 
-                    <View style={[styles.rarityBadge, { backgroundColor: `${RARITY_COLORS[item.rarity]}40`, borderColor: `${RARITY_COLORS[item.rarity]}80` }]}>
-                        {[...Array(item.rarity)].map((_, i) => (
-                            <Star key={i} size={10} color={RARITY_COLORS[item.rarity]} fill={RARITY_COLORS[item.rarity]} />
+                    <View style={[styles.rarityBadge, { backgroundColor: `${RARITY_COLORS[item.rarity || 1]}40`, borderColor: `${RARITY_COLORS[item.rarity || 1]}80` }]}>
+                        {[...Array(Math.floor(item.rarity || 1))].map((_, i) => (
+                            <Star key={i} size={10} color={RARITY_COLORS[item.rarity || 1]} fill={RARITY_COLORS[item.rarity || 1]} />
                         ))}
                     </View>
 
@@ -88,7 +175,7 @@ export default function ChooseBeastScreen() {
                 </View>
 
                 <View style={styles.infoSection}> 
-                    <Text style={styles.beastName}>{item.name}</Text>
+                    <Text style={styles.beastName} numberOfLines={1}>{item.name}</Text>
 
                     <View style={styles.hpContainer}> 
                         <Heart size={14} color="#B01E28" fill="#B01E28" />
@@ -96,12 +183,12 @@ export default function ChooseBeastScreen() {
                             <View
                                 style={[
                                     styles.hpFill,
-                                    { width: `${(item.hp / item.maxHp) * 100}%` }
+                                    { width: `${Math.min(100, (item.hp / item.maxHp) * 100)}%` }
                                 ]}
                             />
                         </View>
                         <Text style={styles.hpText}>
-                            {item.hp}/{item.maxHp}
+                            {Math.round(item.hp)}
                         </Text>
                     </View>
 
@@ -132,9 +219,9 @@ export default function ChooseBeastScreen() {
             </View>
 
             <FlatList
-                data={mockBeasts}
+                data={creatures}
                 renderItem={renderBeastItem}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={(item) => item.id}
                 numColumns={2}
                 contentContainerStyle={styles.listContainer}
                 showsVerticalScrollIndicator={false}
@@ -148,7 +235,10 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#FAEBD7",
         position: "relative",
-        overflow: "hidden",
+    },
+    centered: {
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     glowTop: {
         position: "absolute",
@@ -192,9 +282,6 @@ const styles = StyleSheet.create({
         fontWeight: "900",
         color: "#000",
         textAlign: "center",
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
     },
     subtitle: {
         fontSize: 14,
@@ -205,7 +292,7 @@ const styles = StyleSheet.create({
     },
     listContainer: {
         paddingHorizontal: 20,
-        paddingBottom: 120,
+        paddingBottom: 40,
     },
     beastCardContainer: {
         flex: 1,
@@ -215,17 +302,12 @@ const styles = StyleSheet.create({
         flex: 1,
         borderRadius: 24,
         overflow: "hidden",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 16,
+        backgroundColor: '#fff',
         elevation: 6,
     },
     selectedCard: {
-        shadowColor: "#97572B",
-        shadowOpacity: 0.4,
-        shadowRadius: 32,
-        elevation: 12,
+        borderWidth: 2,
+        borderColor: '#97572B',
     },
     glassBackground: {
         position: "absolute",
@@ -234,17 +316,22 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         backgroundColor: "rgba(255,255,255,0.7)",
-        backdropFilter: "blur(16px)",
     },
     imageContainer: {
         aspectRatio: 1,
         position: "relative",
         overflow: "hidden",
+        backgroundColor: '#f0f0f0',
+    },
+    beastImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
     },
     beastEmoji: {
         fontSize: 60,
         textAlign: "center",
-        lineHeight: 120,
+        lineHeight: 150,
     },
     imageOverlay: {
         position: "absolute",
@@ -252,19 +339,20 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.6)",
+        backgroundColor: "rgba(0,0,0,0.1)",
     },
     rarityBadge: {
         position: "absolute",
-        top: 12,
-        right: 12,
+        top: 8,
+        right: 8,
         flexDirection: "row",
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 10,
         borderWidth: 1,
+        backgroundColor: 'rgba(255,255,255,0.8)',
         alignItems: "center",
-        gap: 2,
+        gap: 1,
     },
     selectedOverlay: {
         position: "absolute",
@@ -272,93 +360,86 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "rgba(151,87,43,0.2)",
+        backgroundColor: "rgba(151,87,43,0.3)",
         alignItems: "center",
         justifyContent: "center",
     },
     startButton: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         backgroundColor: "#fff",
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
         elevation: 8,
     },
     infoSection: {
-        padding: 16,
-        backgroundColor: "rgba(255,255,255,0.8)",
-        backdropFilter: "blur(16px)",
+        padding: 12,
     },
     beastName: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: "700",
         color: "#000",
         textAlign: "center",
-        marginBottom: 8,
+        marginBottom: 6,
     },
     hpContainer: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 8,
-        marginBottom: 8,
+        gap: 6,
+        marginBottom: 6,
     },
     hpBar: {
         flex: 1,
-        height: 8,
+        height: 6,
         backgroundColor: "rgba(0,0,0,0.1)",
-        borderRadius: 4,
+        borderRadius: 3,
         overflow: "hidden",
     },
     hpFill: {
         height: "100%",
         backgroundColor: "#B01E28",
-        borderRadius: 4,
     },
     hpText: {
-        fontSize: 12,
-        fontWeight: "600",
+        fontSize: 10,
+        fontWeight: "700",
         color: "#000",
     },
     rarityLabel: {
-        fontSize: 12,
+        fontSize: 10,
         fontWeight: "700",
         textTransform: "uppercase",
-        letterSpacing: 1,
         textAlign: "center",
     },
-    bottomButtonContainer: {
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingBottom: 40,
-        paddingHorizontal: 20,
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 40,
     },
-    combatButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 12,
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        borderRadius: 24,
-        backgroundColor: "linear-gradient(135deg, #97572B 0%, #7a4522 100%)",
-        shadowColor: "#97572B",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 16,
-        elevation: 8,
+    emptyTitle: {
+        fontSize: 22,
+        fontWeight: '900',
+        color: '#97572B',
+        marginTop: 20,
     },
-    combatButtonText: {
-        color: "#fff",
-        fontSize: 18,
-        fontWeight: "900",
-        textTransform: "uppercase",
-        letterSpacing: 2,
+    emptyText: {
+        fontSize: 16,
+        color: '#555',
+        textAlign: 'center',
+        marginTop: 10,
+        lineHeight: 22,
     },
-});
+    captureButton: {
+        marginTop: 30,
+        backgroundColor: '#97572B',
+        paddingVertical: 14,
+        paddingHorizontal: 30,
+        borderRadius: 20,
+    },
+    captureButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '700',
+    },
+});
