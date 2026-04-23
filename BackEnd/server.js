@@ -3,12 +3,12 @@ const http = require('http');
 const { Server } = require("socket.io");
 const cors = require('cors');
 require('dotenv').config();
-const path = require('path');
 
 // 0. Importation des routes et des modules utilitaires
 const authRoutes = require('./src/main/routes/authRoutes');
 const userRoutes = require('./src/main/routes/userRoutes');
 const { createModelRegistry } = require('./src/main/utils/modelRegistry');
+const { purgeExpiredAccounts } = require('./src/main/controllers/userController');
 
 // 1. Importation du Redis-Adapter
 const { createAdapter } = require('@socket.io/redis-adapter');
@@ -22,11 +22,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ======== CONFIGURATION ET INITIALISATION ========
+// ======== MONTAGE DES ROUTES DE L'API REST (HTTP) ========
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
 
-// ======== MONTAGE DES ROUTES HTTP ========
-
-// Routes de l'API REST
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 
@@ -128,4 +127,9 @@ server.listen(PORT, '0.0.0.0', () => {
     🚀  Game Server [Cluster PID: ${process.pid}] running on port ${PORT}
         - Redis Adapter: Connecté ! Prêt pour la multi-instanciation.
     `);
+
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+    purgeExpiredAccounts();
+    setInterval(purgeExpiredAccounts, TWENTY_FOUR_HOURS);
+    console.log('[RGPD] Job de purge des comptes expirés démarré (toutes les 24h).');
 });

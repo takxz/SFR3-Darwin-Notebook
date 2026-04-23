@@ -63,7 +63,8 @@ describe('MatchmakingHandler', () => {
         expect(socket.join).toHaveBeenCalledWith(expect.stringContaining(`battle_${opponentId}`));
         expect(io.in).toHaveBeenCalledWith(opponentId);
         expect(io.socketsJoin).toHaveBeenCalledWith(expect.stringContaining(`battle_${opponentId}`));
-        expect(io.to).toHaveBeenCalledWith(expect.stringContaining(`battle_${opponentId}`));
+        expect(io.to).toHaveBeenCalledWith(socket.id);
+        expect(io.to).toHaveBeenCalledWith(opponentId);
         expect(io.emit).toHaveBeenCalledWith('matchFound', expect.any(Object));
     });
 
