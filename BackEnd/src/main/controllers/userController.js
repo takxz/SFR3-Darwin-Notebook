@@ -1,5 +1,14 @@
 const db = require('../config/db');
 
+// Reconstruit l'URL publique à partir d'un scan_url stocké en base.
+// Retourne l'URL telle quelle si c'est déjà une URL absolue (ancienne donnée ou source externe),
+// sinon préfixe avec l'URL de base + "/uploads/".
+const buildScanUrl = (req, storedValue) => {
+    if (!storedValue) return null;
+    if (/^https?:\/\//i.test(storedValue)) return storedValue;
+    return `${req.protocol}://${req.get('host')}/uploads/${storedValue}`;
+};
+
 exports.getProfile = async (req, res) => {
     try {
         // req.user.id vient du middleware d'authentification
@@ -59,13 +68,12 @@ exports.addCreature = async (req, res) => {
         } = req.body;
 
         const userId = player_id || req.user.id;
+        // On stocke uniquement le nom du fichier en base pour les uploads locaux.
+        // Pour les URLs externes (ex: image renvoyée par l'API Python), on conserve l'URL telle quelle.
         let finalScanUrl = req.body.scan_url || null;
 
-        // Si une image a été envoyée, on génère son URL
         if (req.file) {
-            const protocol = req.protocol;
-            const host = req.get('host');
-            finalScanUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+            finalScanUrl = req.file.filename;
         }
 
         // 1. Récupérer les informations de l'espèce pour les stats de base
@@ -198,6 +206,7 @@ exports.getUserCreatures = async (req, res) => {
         // On itère sur chaque ligne SQL pour assembler l'URL absolue du modèle 3D
         const creaturesWithModels = result.rows.map(creature => ({
             ...creature, // On conserve l'intégralité des données d'origine (id, stats, etc.)
+            scan_url: buildScanUrl(req, creature.scan_url),
             // On crée la nouvelle clé avec le modèle3D
             model_3d_url: creature.species_model_path ? `${baseUrl}${creature.species_model_path}` : null
         }));
@@ -231,7 +240,12 @@ exports.getUserPlants = async (req, res) => {
 
         const result = await db.query(query, [userId]);
 
-        res.json(result.rows);
+        const plantsWithUrls = result.rows.map(plant => ({
+            ...plant,
+            scan_url: buildScanUrl(req, plant.scan_url)
+        }));
+
+        res.json(plantsWithUrls);
     } catch (err) {
         console.error('Erreur lors de la récupération des plantes:', err);
         res.status(500).json({ error: "Erreur lors de la récupération des plantes." });
@@ -271,6 +285,7 @@ exports.getUserCreatureDetails = async(req, res) => {
         // Assemblage de l'objet de retour
         const creatureDetails = {
             ...creature,
+            scan_url: buildScanUrl(req, creature.scan_url),
             model_3d_url: creature.species_model_path ? `${baseUrl}${creature.species_model_path}` : null
         };
 
@@ -412,7 +427,12 @@ exports.getLastCapturedCreatures = async (req, res) => {
 
     const result = await db.query(query)
 
-    res.json(result.rows)
+    const rowsWithUrls = result.rows.map(row => ({
+        ...row,
+        scan_url: buildScanUrl(req, row.scan_url)
+    }));
+
+    res.json(rowsWithUrls)
     } catch (err) {
         console.error('Erreur lors de la récupération des 5 dernières créatures capturées:', err);
         res.status(500).json({ error: "Erreur lors de la récupération des 5 dernières créatures capturées"})
