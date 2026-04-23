@@ -1,6 +1,9 @@
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { Zap, Sword, Map } from "lucide-react-native";
+import SpotlightTooltip from "@/components/SpotlightTooltip";
+import { useSpotlight } from "@/hooks/useSpotlight";
+import { useUserId } from "@/hooks/useUserId";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ButtonFightMode from "@/features/fight/components/ButtonFightMode";
 import fr from "@/assets/locales/fr.json";
@@ -54,6 +57,8 @@ export default function FightScreen()
 {
     const insets = useSafeAreaInsets();
     const router = useRouter();
+    const userId = useUserId();
+    const { visible, targetLayout, ref, onLayout, dismiss } = useSpotlight('duel_button', userId);
     return (
         <ScrollView
             contentContainerStyle={styles.mainContainer}
@@ -72,14 +77,26 @@ export default function FightScreen()
 
             {/* Main Content */}
             <View style={styles.mainContainer}>
-                {FIGHT_MODES.map((mode) => (
-                    <ButtonFightMode
+                {FIGHT_MODES.map((mode, index) => (
+                    <View
                         key={mode.id}
-                        {...mode}
-                        onPress={() => router.push(mode.route)}
-                    />
+                        ref={index === 0 ? ref : null}
+                        onLayout={index === 0 ? onLayout : null}
+                        collapsable={false}
+                    >
+                        <ButtonFightMode
+                            {...mode}
+                            onPress={() => router.push(mode.route)}
+                        />
+                    </View>
                 ))}
             </View>
+        <SpotlightTooltip
+                visible={visible}
+                targetLayout={targetLayout}
+                description={fr.tutorial.duel}
+                onDismiss={dismiss}
+            />
         </ScrollView>
     );
 }

@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import SpotlightTooltip from '@/components/SpotlightTooltip';
+import { useSpotlight } from '@/hooks/useSpotlight';
+import { useUserId } from '@/hooks/useUserId';
 import { View, Text, Alert, StyleSheet, Pressable } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { Aperture } from 'lucide-react-native';
@@ -14,6 +17,8 @@ const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http:/
 
 export default function CameraScreen() {
   const { permission, requestPermission, cameraRef, takePicture } = useCamera();
+  const userId = useUserId();
+  const { visible, targetLayout, ref, onLayout, dismiss } = useSpotlight('capture_button', userId);
   const [photo, setPhoto] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -163,17 +168,16 @@ export default function CameraScreen() {
   return (
     <View style={styles.container}>
       <CameraView style={styles.camera} ref={cameraRef}>
-        <Pressable 
-          testID="capture-button"
-          onPress={handleCapture} 
-          style={[styles.captureButton, isProcessing && styles.captureButtonDisabled]}
-          disabled={isProcessing}
-        >
-
-          <View style={styles.captureInner}>
+        <View ref={ref} onLayout={onLayout} collapsable={false} style={styles.captureButton}>
+          <Pressable
+            testID="capture-button"
+            onPress={handleCapture}
+            style={[styles.captureInner, isProcessing && styles.captureButtonDisabled]}
+            disabled={isProcessing}
+          >
             <Aperture size={32} style={styles.aperture} />
-          </View>
-        </Pressable>
+          </Pressable>
+        </View>
 
         <InformationOrganisme 
           photo={photo} 
@@ -185,7 +189,12 @@ export default function CameraScreen() {
           addToDex={addToDex} 
         />
       </CameraView>
-
+      <SpotlightTooltip
+        visible={visible}
+        targetLayout={targetLayout}
+        description={fr.tutorial.camera}
+        onDismiss={dismiss}
+      />
     </View>
   );
 }
