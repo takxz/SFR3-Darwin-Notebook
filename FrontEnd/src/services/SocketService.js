@@ -1,7 +1,10 @@
 
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = 'http://ikdeksmp.fr:12000';
+import Constants from 'expo-constants';
+
+const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const SOCKET_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http://${expoHost}:3001` : 'http://localhost:3001');
 
 class SocketService {
     socket = null;

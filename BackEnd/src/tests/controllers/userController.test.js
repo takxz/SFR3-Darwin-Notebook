@@ -123,29 +123,37 @@ describe('userController', () => {
             expect(res.json).toHaveBeenCalledWith(mockCreature);
         });
 
-        it('doit construire et insérer l\'URL publique si un fichier (req.file) est fourni', async () => {
+        it('doit insérer uniquement le nom de fichier si un fichier (req.file) est fourni', async () => {
             req.file = { filename: 'scan123.jpg' };
             db.query
                 .mockResolvedValueOnce({ rows: [{ id: 1 }] })
-                .mockResolvedValueOnce({ rows: [{ scan_url: 'http://localhost:3001/uploads/scan123.jpg' }] });
+                .mockResolvedValueOnce({ rows: [{ scan_url: 'scan123.jpg' }] });
 
             await userController.addCreature(req, res);
 
             // Vérification des arguments passés à la requête d'insertion
             const insertQueryArgs = db.query.mock.calls[1][1];
-            expect(insertQueryArgs).toContain('http://localhost:3001/uploads/scan123.jpg');
+            expect(insertQueryArgs).toContain('scan123.jpg');
+            expect(insertQueryArgs).not.toContain('http://localhost:3001/uploads/scan123.jpg');
         });
 
         it('doit créer une nouvelle espèce et insérer la créature si l\'espèce parente est introuvable', async () => {
+            // La logique du contrôleur a changé pour chercher par latin_name puis par id, puis créer
+            // Ce test doit refléter ce nouveau comportement.
+            req.body = {
+                species_id: 999, // ID qui ne sera pas trouvé
+                gamification_name: 'Pikachu',
+                scientific_name: 'Mus musculus' // Nom scientifique pour la recherche
+            };
+
             const mockNewSpecies = { id: 101, name: 'Pikachu', base_stat_atq: 10 };
             const mockCreature = { id: 100, gamification_name: 'Pikachu', species_id: 101 };
 
-            // Chainage: 1. SELECT nom -> vide, 2. SELECT id -> vide, 3. INSERT espèce, 4. INSERT créature
             db.query
-                .mockResolvedValueOnce({ rows: [] })
-                .mockResolvedValueOnce({ rows: [] })
-                .mockResolvedValueOnce({ rows: [mockNewSpecies] })
-                .mockResolvedValueOnce({ rows: [mockCreature] });
+                .mockResolvedValueOnce({ rows: [] }) // latin_name not found
+                .mockResolvedValueOnce({ rows: [] }) // species_id not found
+                .mockResolvedValueOnce({ rows: [mockNewSpecies] }) // species created
+                .mockResolvedValueOnce({ rows: [mockCreature] }); // creature inserted
 
             await userController.addCreature(req, res);
 
@@ -189,8 +197,8 @@ describe('userController', () => {
 
             // Mock du retour SQL brut (ce qui sort du JOIN)
             const mockDbRows = [
-                { id: 'c-1', species_name: 'Alpaca', species_model_path: 'alpaca' },
-                { id: 'c-2', species_name: 'Fougère', species_model_path: null } // Le fameux edge case
+                { id: 'c-1', species_name: 'Alpaca', species_model_path: 'alpaca', scan_url: 'scan1.jpg' },
+                { id: 'c-2', species_name: 'Fougère', species_model_path: null, scan_url: null }
             ];
             db.query.mockResolvedValue({ rows: mockDbRows });
 
@@ -202,13 +210,15 @@ describe('userController', () => {
                     id: 'c-1',
                     species_name: 'Alpaca',
                     species_model_path: 'alpaca',
-                    model_3d_url: 'http://localhost:3001/models/alpaca'
+                    scan_url: 'scan1.jpg', // scan_url est renvoyé tel quel de la DB
+                    model_url: '/models/alpaca' // model_url est généré
                 },
                 {
                     id: 'c-2',
                     species_name: 'Fougère',
                     species_model_path: null,
-                    model_3d_url: null
+                    scan_url: null,
+                    model_url: null
                 }
             ];
 
@@ -320,8 +330,8 @@ describe('userController', () => {
             db.query
                 .mockResolvedValueOnce({})                        // ALTER TABLE
                 .mockResolvedValueOnce({ rows: expiredPlayers })  // SELECT comptes expirés
-                .mockResolvedValueOnce({ rows: creatures })       // SELECT scan_url
-                .mockResolvedValueOnce({});                       // DELETE PLAYER
+                .mockResolvedValueOnce({ rows: creatures })       // SELECT scan_url dans purgePlayerData
+                .mockResolvedValueOnce({});                       // DELETE PLAYER dans purgePlayerData
 
             fs.existsSync.mockReturnValue(true);
 
@@ -373,7 +383,8 @@ describe('userController', () => {
             const mockDbRow = {
                 id: 'c-99',
                 species_name: 'Lion',
-                species_model_path: 'lion'
+                species_model_path: 'lion',
+                scan_url: 'lion_scan.jpg' // Ajout de scan_url pour refléter la DB
             };
             db.query.mockResolvedValue({ rows: [mockDbRow] });
 
@@ -384,7 +395,8 @@ describe('userController', () => {
                 id: 'c-99',
                 species_name: 'Lion',
                 species_model_path: 'lion',
-                model_3d_url: 'http://localhost:3001/models/lion'
+                scan_url: 'lion_scan.jpg', // scan_url est renvoyé tel quel de la DB
+                model_url: '/models/lion' // model_url est généré
             };
 
             expect(db.query).toHaveBeenCalledTimes(1);

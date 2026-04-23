@@ -20,11 +20,25 @@ export default function CameraScreen() {
   const userId = useUserId();
   const { visible, targetLayout, ref, onLayout, dismiss } = useSpotlight('capture_button', userId);
   const [photo, setPhoto] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleCapture = async () => {
-    const captured = await takePicture();
-    if (captured) setPhoto(captured);
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+      const captured = await takePicture();
+      if (captured) {
+        setPhoto(captured);
+      } else {
+        setIsProcessing(false);
+      }
+    } catch (err) {
+      console.error('Erreur capture:', err);
+      setIsProcessing(false);
+    }
   };
+
+
 
   const addToDex = async (result) => {
     try {
@@ -160,7 +174,15 @@ export default function CameraScreen() {
           </Pressable>
         </View>
 
-        <InformationOrganisme photo={photo} onClose={() => setPhoto(null)} addToDex={addToDex} />
+        <InformationOrganisme 
+          photo={photo} 
+          onClose={() => {
+            setPhoto(null);
+            setIsProcessing(false);
+          }} 
+          onFinish={() => setIsProcessing(false)}
+          addToDex={addToDex} 
+        />
       </CameraView>
       <SpotlightTooltip
         visible={visible}
@@ -188,6 +210,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  captureButtonDisabled: {
+    opacity: 0.3,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+
   captureInner: {
     width: 62,
     height: 62,

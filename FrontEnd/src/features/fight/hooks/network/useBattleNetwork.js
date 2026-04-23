@@ -35,7 +35,7 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
                 const op = dataPlayers[opId];
                 setStats(prev => ({
                     ...prev,
-                    nickname: me.nickname,
+                    nickname: me.nickname || 'Hero',
                     opNickname: op?.nickname || 'Opponent',
                     specialCooldown: me.specialCooldown !== undefined ? me.specialCooldown : 5
                 }));
@@ -48,14 +48,6 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
             
             // On extrait déjà les noms pour l'affichage initial (Intro)
             handlePlayersData(data.players);
-
-            // Envoi immédiat
-            socketService.emit('playerReady');
-            
-            // FRONTEND WORKAROUND : on renvoie 'playerReady' régulièrement. 
-            readyInterval = setInterval(() => {
-                socketService.emit('playerReady');
-            }, 800);
         });
 
         // 2. Écoute du début de combat (Matchmaking terminé)
@@ -88,9 +80,9 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
                     maxHp: me.maxHp || 100,
                     opHp: op?.hp || 0,
                     opMaxHp: op?.maxHp || 100,
-                    nickname: me.nickname,
+                    nickname: me.nickname || 'Hero',
                     opNickname: op?.nickname || 'Opponent',
-                    specialCooldown: me.specialCooldown
+                    specialCooldown: me.specialCooldown !== undefined ? me.specialCooldown : 5
                 });
 
                 setTurn(update.turn);

@@ -36,6 +36,14 @@ module.exports = {
       env: {
           PORT: 3002
       }
+    },
+    {
+      name: 'darwin-status-monitor',
+      cwd: './StatusService',
+      script: 'monitor.js',
+      env: {
+          NODE_ENV: 'production'
+      }
     }
   ]
 };
