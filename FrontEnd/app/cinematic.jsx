@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   View,
+  TouchableOpacity,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -253,6 +254,14 @@ export default function Cinematic() {
 
       {/* Letterbox — bottom */}
       <View style={styles.barBottom} />
+
+      {/* Skip Button */}
+      <TouchableOpacity 
+        style={styles.skipButton} 
+        onPress={() => router.replace('/')}
+      >
+        <Text style={styles.skipText}>Passer &gt;&gt;</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -338,5 +347,24 @@ const styles = StyleSheet.create({
     height: H * 0.055,
     backgroundColor: '#000',
     zIndex: 10,
+  },
+  skipButton: {
+    position: 'absolute',
+    top: H * 0.055 + 20,
+    right: 20,
+    zIndex: 100,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(210,180,110,0.4)',
+  },
+  skipText: {
+    color: 'rgba(242,230,200,0.8)',
+    fontFamily: 'serif',
+    fontSize: 14,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
 });
