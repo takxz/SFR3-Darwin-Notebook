@@ -1,35 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import socketService from '@/services/SocketService';
 
 export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
-    const [stats, setStats] = useState({ 
-        hp: 100, maxHp: 100, 
+    const [stats, setStats] = useState({
+        hp: 100, maxHp: 100,
         opHp: 100, opMaxHp: 100,
         nickname: 'Hero', opNickname: 'Opponent',
-        specialCooldown: 5 // DEFAULT TO 5 NOW
+        specialCooldown: 0,
+        isStunned: false,
+        action: 'IDLE',
+        opAction: 'IDLE'
     });
-    const [turn, setTurn] = useState(null);
     const [result, setResult] = useState(null);
-    // NEW: state for Matchmaking UI tracking
     const [matchStatus, setMatchStatus] = useState('idle'); // idle | searching | found | started
+    const lastLogRef = useRef('');
 
     useEffect(() => {
-        // Connexion initiale
         socketService.connect();
 
-        // 1. Écoute du Matchmaking
         socketService.on('waitingForMatch', () => {
             console.log('[BattleNetwork] In queue, waiting for opponent...');
             setMatchStatus('searching');
         });
 
-        let readyInterval;
-
         const handlePlayersData = (dataPlayers) => {
             if (!dataPlayers) return;
             const myId = socketService.socket?.id;
             const opId = Object.keys(dataPlayers).find(id => id !== myId);
-            
+
             if (myId && dataPlayers[myId]) {
                 const me = dataPlayers[myId];
                 const op = dataPlayers[opId];
@@ -49,31 +47,28 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
         };
 
         socketService.on('matchFound', (data) => {
-            console.log('[BattleNetwork] Match Found! Room:', data.roomId);
+            console.log('[BattleNetwork] Match Found!');
             setMatchStatus('found');
-            
-            // On extrait déjà les noms pour l'affichage initial (Intro)
             handlePlayersData(data.players);
         });
 
-        // 2. Écoute du début de combat (Matchmaking terminé)
         socketService.on('battleStart', (data) => {
-            if (readyInterval) clearInterval(readyInterval);
-            console.log('[BattleNetwork] Battle Starting! Turn:', data.turn);
+            console.log('[BattleNetwork] Battle Starting!');
             setMatchStatus('started');
-            
-            // Re-extract in case we missed it or ID changed
             handlePlayersData(data.players);
-            
-            setTurn(data.turn);
             if (onBattleStart) onBattleStart(data);
         });
 
-        // 2. Écoute des mises à jour (Dégâts, Actions)
         socketService.on('gameUpdate', (update) => {
-            console.log('[BattleNetwork] Game Update Received');
+            // Log des nouveaux messages de combat uniquement
+            if (update.logs && update.logs.length > 0) {
+                const latestLog = update.logs[update.logs.length - 1];
+                if (latestLog !== lastLogRef.current) {
+                    console.log(`[BATTLE] ${latestLog}`);
+                    lastLogRef.current = latestLog;
+                }
+            }
 
-            // On peut extraire les HPs de l'objet players renvoyé par ton backend
             const myId = socketService.socket?.id;
             const opId = Object.keys(update.players).find(id => id !== myId);
 
@@ -94,7 +89,11 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
                     opModelPath: op?.modelPath,
                     opAnimalType: op?.animalType,
                     opLatinName: op?.latinName,
-                    specialCooldown: me.specialCooldown !== undefined ? me.specialCooldown : 5
+                    specialCharge: me.specialCharge || 0,
+                    specialReady: (me.specialCharge || 0) >= 50,
+                    isStunned: me.action === 'STUNNED',
+                    action: me.action,
+                    opAction: op?.action
                 });
 
                 setTurn(update.turn);
@@ -107,10 +106,8 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
             }
         });
 
-        // 3. Gestion des déconnexions (Si l'adversaire fuit/crash)
         socketService.on('playerDisconnected', () => {
             console.log('[BattleNetwork] Opponent disconnected');
-            // Si l'adversaire part, on considère qu'on a gagné par forfait
             setStats(prev => ({ ...prev, opHp: 0 }));
         });
 
@@ -123,36 +120,28 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
         };
     }, []);
 
-    // ACTIONS À ENVOYER AU SERVEUR
     const findMatch = (data) => {
-        console.log('[BattleNetwork] Looking for a match...', data);
         setMatchStatus('searching');
         socketService.emit('findMatch', data);
     };
 
     const sendReady = () => {
-        console.log('[BattleNetwork] Sending playerReady...');
         socketService.emit('playerReady');
     };
 
     const sendAction = (action) => {
-        // action: 'ATTACK' | 'DEFEND' | 'HEAL'
-        console.log(`[BattleNetwork] Sending Action: ${action}`);
         socketService.emit('playerAction', { action });
     };
 
     const abandon = () => {
-        console.log('[BattleNetwork] Abandoning match...');
-        setStats(prev => ({ ...prev, hp: 0 })); // Défaite locale immédiate
-        socketService.disconnect(); // Le serveur préviendra l'autre joueur via playerDisconnected
+        setStats(prev => ({ ...prev, hp: 0 }));
+        socketService.disconnect();
     };
 
     return {
         stats,
-        turn,
         result,
-        matchStatus, // <--- EXPOSED
-        isMyTurn: turn === socketService.socket?.id,
+        matchStatus,
         findMatch,
         sendReady,
         sendAction,

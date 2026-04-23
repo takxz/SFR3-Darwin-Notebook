@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Canvas } from '@react-three/fiber/native';
 import { useProgress } from '@react-three/drei/native';
@@ -26,7 +26,7 @@ export default function ArenaScreen() {
     const [isDebugMode, setIsDebugMode] = useState(false);
 
     const { progress: progressPercent } = useProgress();
-    
+
     const {
         hit, enemyHit, combo, isSpecial, isBerserkStrike, isFinisher, isIntro, setIsIntro, isLoaded, setIsLoaded,
         zawarudoProgress, audioReady,
@@ -34,48 +34,47 @@ export default function ArenaScreen() {
         triggerPlayerHit, triggerEnemyHit, triggerSpecial, triggerEnemySpecial, startBattleSequence
     } = useBattleManager(setSceneReady);
 
+    const prevMyActionRef = useRef('IDLE');
+    const prevOpActionRef = useRef('IDLE');
+
     // ⚔️ NETWORK ORCHESTRATION (CONNEXION VPS)
-    const { stats, turn, isMyTurn, findMatch, sendReady, sendAction, abandon, matchStatus } = useBattleNetwork(
-        // On Battle Start (Le serveur dit que les 2 joueurs sont là !)
+    const { stats, findMatch, sendReady, sendAction, abandon, matchStatus } = useBattleNetwork(
         () => {
             console.log("[Arena] MATCH READY! OPENING ARENA...");
-            startBattleSequence(); 
+            startBattleSequence();
         },
-        // On Game Update (Chaque coup du serveur)
         (update) => {
             if (!update.players) return;
 
-            const myId = socketService.socket?.id; 
+            const myId = socketService.socket?.id;
             const myPlayer = update.players[myId];
             const opId = Object.keys(update.players).find(id => id !== myId);
             const opPlayer = update.players[opId];
 
-            // 1. SI JE ME PRENDS UN COUP (Je suis 'HIT')
-            if (myPlayer && myPlayer.action === 'HIT') {
-                if (opPlayer && opPlayer.action === 'SPECIAL') {
-                    triggerEnemySpecial(); // L'adversaire a fait son attaque Spéciale !
-                } else {
-                    triggerEnemyHit(); // L'adversaire a fait une attaque normale
+            if (myPlayer && opPlayer) {
+                // 1. SI L'ADVERSAIRE LANCE SON SPÉCIAL
+                if (opPlayer.action === 'SPECIAL' && prevOpActionRef.current !== 'SPECIAL') {
+                    triggerEnemySpecial();
                 }
-            }
 
-            // 2. SI L'ADVERSAIRE SE PREND UN COUP (Il est 'HIT')
-            if (opPlayer && opPlayer.action === 'HIT') {
-                // Si ce n'est PAS mon attaque spéciale (car l'attaque spéciale est gérée localement via le bouton)
-                if (myPlayer && myPlayer.action !== 'SPECIAL') {
-                    triggerPlayerHit();
+                // 2. SI JE ME PRENDS UN COUP (Je deviens 'HIT')
+                if (myPlayer.action === 'HIT' && prevMyActionRef.current !== 'HIT') {
+                    triggerEnemyHit(); // Les dégâts normaux
                 }
+
+                prevMyActionRef.current = myPlayer.action;
+                prevOpActionRef.current = opPlayer.action;
             }
         }
     );
 
     // RATTRAPAGE RÉSEAU (Si le combat a déjà commencé mais qu'on est bloqués dans l'intro)
     useEffect(() => {
-        if (turn && isIntro) {
-            console.log("[Arena] Turn detected! Forced opening arena...");
+        if (matchStatus === 'started' && isIntro) {
+            console.log("[Arena] Forced opening arena...");
             startBattleSequence();
         }
-    }, [turn, isIntro]);
+    }, [turn, matchStatus, isIntro]);
 
     const { beastId, creatureId } = useLocalSearchParams();
     const finalCreatureId = beastId || creatureId || 1;
@@ -123,7 +122,7 @@ export default function ArenaScreen() {
         <NavigationIndependentTree>
             <View style={styles.container}>
                 {showMatchmaking && <MatchmakingScreen onCancel={() => setIsLoaded(false)} />}
-                
+
                 {/* 🎲 3D RENDERING LAYER */}
                 {show3D && (
                     <Canvas
@@ -145,6 +144,8 @@ export default function ArenaScreen() {
                                 combo={combo}
                                 isIntro={isIntro}
                                 themeColor="#ff4400"
+                                opAction={stats.opAction}
+                                myAction={stats.action}
                                 stats={stats} // Pass stats to resolve models
                             />
                         </Suspense>
@@ -155,18 +156,16 @@ export default function ArenaScreen() {
 
                 {/* 🕹️ HUD & UI LAYER */}
                 {show3D && isLoaded && (
-                    <BattleOverlay 
+                    <BattleOverlay
                         hit={hit}
                         combo={combo}
                         isSpecial={isSpecial}
                         isIntro={isIntro}
                         cinematicAnim={cinematicAnim}
                         comboScaleAnim={comboScaleAnim}
-                        triggerHit={triggerPlayerHit} // Correction ici 
+                        triggerHit={triggerPlayerHit}
                         triggerSpecial={isIntro ? startBattleSequence : triggerSpecial}
                         stats={stats}
-                        turn={turn}
-                        isMyTurn={isMyTurn}
                         sendAction={sendAction}
                         onFlee={abandon}
                         onQuit={() => {

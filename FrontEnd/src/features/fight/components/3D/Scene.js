@@ -9,7 +9,7 @@ import { DeviceMotion } from 'expo-sensors';
 import PlayerCharacter from './PlayerCharacter';
 import TargetGolem from './TargetGolem';
 
-import { ImpactParticles, SlashEffect } from './Impacts';
+import { ImpactParticles, SlashEffect, StunStars } from './Impacts';
 import { CombatEnvironment, CombatSkybox } from '../Environment/Level';
 import { getModelForCreature } from '../../constants/FightAssets';
 
@@ -23,9 +23,9 @@ const LOOK_AT_Y = 1;
 const LOOK_AT_Z = -10;
 // --------------------------------
 
-export default function Scene({ 
+export default function Scene({
     hitTrigger, enemyHitTrigger, triggerHit, isSpecialAttack, isBerserkStrike, isFinisher,
-    combo, isIntro, zawarudoProgress, themeColor, stats
+    combo, isIntro, zawarudoProgress, themeColor, stats, opAction, myAction
 }) {
     const meshRef = useRef();
     const impactAnchor = useRef(new THREE.Vector3(0, 0.5, -13));
@@ -61,9 +61,9 @@ export default function Scene({
 
         // CALCUL ORBITAL (Position de base propre avec Rotation Spéciale)
         // On rajoute une rotation automatique pendant le Berserk
-        const berserkRotation = isSpecialAttack ? clock * 2.0 : 0; 
+        const berserkRotation = isSpecialAttack ? clock * 2.0 : 0;
         const radH = ((CAMERA_ROTATION_H) * Math.PI) / 180 + berserkRotation;
-        
+
         const baseX = Math.sin(radH) * CAMERA_DISTANCE;
         const baseZ = Math.cos(radH) * CAMERA_DISTANCE;
         const baseY = Math.sin(CAMERA_ROTATION_V) * CAMERA_DISTANCE;
@@ -81,13 +81,13 @@ export default function Scene({
         if (shake.current > 0.05) {
             state.camera.position.x += (Math.random() - 0.5) * shake.current;
             state.camera.position.y += (Math.random() - 0.5) * shake.current;
-            shake.current *= 0.85; 
+            shake.current *= 0.85;
         }
 
         // LOOK AT : On décale aussi le point de focus pour accentuer l'immersion
         state.camera.lookAt(
-            LOOK_AT_X + parallax.current.y * 3, 
-            LOOK_AT_Y - (parallax.current.x - 0.8) * 3, 
+            LOOK_AT_X + parallax.current.y * 3,
+            LOOK_AT_Y - (parallax.current.x - 0.8) * 3,
             LOOK_AT_Z
         );
     });
@@ -108,11 +108,11 @@ export default function Scene({
             <CombatEnvironment isVisible={!isSpecialAttack} />
             <CombatSkybox isVisible={!isSpecialAttack} />
 
-            <PlayerCharacter 
-                attackTrigger={hitTrigger} 
-                damageTrigger={enemyHitTrigger} 
+            <PlayerCharacter
+                attackTrigger={hitTrigger}
+                damageTrigger={enemyHitTrigger}
                 isSpecialAttack={isBerserkStrike}
-                isFinisher={isFinisher} 
+                isFinisher={isFinisher}
                 modelSource={playerModel}
             />
 
@@ -123,7 +123,11 @@ export default function Scene({
                 isSpecialAttack={isSpecialAttack}
                 color={themeColor}
                 modelSource={enemyModel}
+                opAction={opAction}
             />
+
+            <StunStars active={myAction === 'STUNNED'} position={[0, 4, 10]} />
+            <StunStars active={opAction === 'STUNNED'} position={[0, 6, -15]} />
 
             <ImpactParticles position={impactAnchor.current} trigger={hitTrigger} />
             <SlashEffect active={hitTrigger} position={[0, 0.5, -13]} />

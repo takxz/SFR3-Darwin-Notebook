@@ -107,7 +107,7 @@ const BattleButton = ({ children, onPress, disabled, style, colors }) => {
 export const BattleOverlay = ({
     hit, combo, isSpecial, isIntro,
     cinematicAnim, comboScaleAnim,
-    stats, turn, isMyTurn, // NOUVEAUX PROPS NETWORK
+    stats, // NOUVEAUX PROPS NETWORK
     sendAction, triggerHit, triggerSpecial, onFlee, onQuit,
     isDebugMode
 }) => {
@@ -159,7 +159,6 @@ export const BattleOverlay = ({
                             <Text style={[styles.hpLabel, { textAlign: 'right' }]}>{stats.opNickname}: {stats.opHp} HP</Text>
                         </View>
                     </View>
-                    <Text style={styles.turnIndicator}>{isMyTurn ? "VOTRE TOUR" : "ATTENTE ADVERSAIRE..."}</Text>
                 </View>
             )}
 
@@ -202,49 +201,49 @@ export const BattleOverlay = ({
                     <View style={styles.actionRow}>
                         <BattleButton
                             onPress={() => {
-                                if (isDebugMode) triggerHit();
-                                else if (isMyTurn) sendAction('ATTACK');
+                                triggerHit(); // Client-side prediction: instant animation !
+                                if (!isDebugMode) sendAction('ATTACK');
                             }}
-                            disabled={(!isMyTurn && !isDebugMode) || isSpecial || stats.hp <= 0 || stats.opHp <= 0}
+                            disabled={isSpecial || stats.hp <= 0 || stats.opHp <= 0 || stats.action !== 'IDLE'}
                             style={styles.actionBtnTop}
                             colors={['#d14d53', '#8e1b1b']}
                         >
                             <Ionicons name="flash-outline" size={24} color="white" />
-                            <Text style={styles.actionText}>Attaque</Text>
+                            <Text style={styles.actionText}>{stats.action === 'STUNNED' ? 'ÉTOURDI' : 'Attaque'}</Text>
                         </BattleButton>
 
                         <BattleButton
-                            onPress={() => !isDebugMode && isMyTurn && sendAction('DEFEND')}
-                            disabled={(!isMyTurn && !isDebugMode) || isSpecial || stats.hp <= 0 || stats.opHp <= 0}
+                            onPress={() => !isDebugMode && sendAction('DEFEND')}
+                            disabled={isSpecial || stats.hp <= 0 || stats.opHp <= 0 || stats.action !== 'IDLE'}
                             style={styles.actionBtnTop}
                             colors={['#6bb57c', '#2c693b']}
                         >
                             <Ionicons name="shield-outline" size={24} color="white" />
-                            <Text style={styles.actionText}>Défense</Text>
-                        </BattleButton>
-
-                        <BattleButton
-                            onPress={() => {
-                                if (isMyTurn && !isSpecial && stats.specialCooldown === 0) {
-                                    triggerSpecial();
-                                    sendAction('SPECIAL');
-                                }
-                            }}
-                            disabled={isSpecial || !isMyTurn || stats.hp <= 0 || stats.opHp <= 0 || stats.specialCooldown > 0}
-                            style={styles.actionBtnTop}
-                            colors={['#71b5d6', '#327094']}
-                        >
-                            <MaterialCommunityIcons name="weather-windy" size={24} color="white" />
-                            <Text style={styles.actionText}>
-                                {stats.specialCooldown > 0 ? `RECHARGE: ${stats.specialCooldown}` : "Spécial"}
-                            </Text>
+                            <Text style={styles.actionText}>{stats.action === 'PARRYING' ? 'EN GARDE' : 'Paré'}</Text>
                         </BattleButton>
                     </View>
 
                     <View style={styles.actionRow}>
                         <BattleButton
                             onPress={() => {
-                                if ((!isMyTurn && !isDebugMode) || isSpecial || stats.hp <= 0 || stats.opHp <= 0) return;
+                                if (!isSpecial && stats.specialReady) {
+                                    triggerSpecial();
+                                    sendAction('SPECIAL');
+                                }
+                            }}
+                            disabled={isSpecial || stats.hp <= 0 || stats.opHp <= 0 || !stats.specialReady || stats.action !== 'IDLE'}
+                            style={styles.actionBtnTop}
+                            colors={['#71b5d6', '#327094']}
+                        >
+                            <MaterialCommunityIcons name="weather-windy" size={24} color="white" />
+                            <Text style={styles.actionText}>
+                                {stats.specialReady ? "Spécial" : `CHARGE: ${stats.specialCharge}/50`}
+                            </Text>
+                        </BattleButton>
+
+                        <BattleButton
+                            onPress={() => {
+                                if (isSpecial || stats.hp <= 0 || stats.opHp <= 0) return;
 
                                 Alert.alert(
                                     "Abandonner le combat ?",
@@ -259,22 +258,12 @@ export const BattleOverlay = ({
                                     ]
                                 );
                             }}
-                            disabled={(!isMyTurn && !isDebugMode) || isSpecial || stats.hp <= 0 || stats.opHp <= 0}
-                            style={styles.actionBtnBottom}
+                            disabled={isSpecial || stats.hp <= 0 || stats.opHp <= 0}
+                            style={styles.actionBtnTop}
                             colors={['#b87c53', '#69381b']}
                         >
                             <Ionicons name="arrow-back-outline" size={24} color="white" />
                             <Text style={styles.actionText}>Fuir</Text>
-                        </BattleButton>
-
-                        <BattleButton
-                            onPress={() => !isDebugMode && isMyTurn && sendAction('HEAL')}
-                            disabled={(!isMyTurn && !isDebugMode) || isSpecial || stats.hp <= 0 || stats.opHp <= 0}
-                            style={styles.actionBtnBottom}
-                            colors={['#b87c53', '#69381b']}
-                        >
-                            <Ionicons name="play-skip-forward-outline" size={24} color="white" />
-                            <Text style={styles.actionText}>Passer</Text>
                         </BattleButton>
                     </View>
                 </View>

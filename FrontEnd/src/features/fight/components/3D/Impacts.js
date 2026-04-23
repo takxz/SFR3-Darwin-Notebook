@@ -93,3 +93,35 @@ export function ImpactParticles({ position, trigger }) {
         </instancedMesh>
     );
 }
+
+export function StunStars({ active, position }) {
+    const group = useRef();
+    
+    useFrame((state) => {
+        if (!group.current) return;
+        const time = state.clock.elapsedTime;
+        
+        // Rotation rapide du cercle
+        group.current.rotation.y = time * 5.0;
+        
+        // Bobbing vertical sinusoïdal (optionnel)
+        // Correction : position est un tableau [x, y, z]
+        group.current.position.y = position[1] + Math.sin(time * 3) * 0.2;
+        
+        // Apparition / Disparition fluide
+        const targetScale = active ? 1.0 : 0.0;
+        group.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.15);
+    });
+
+    return (
+        <group ref={group} position={position}>
+            {/* 4 petites étoiles jaunes qui tournent */}
+            {[0, 1, 2, 3].map((i) => (
+                <mesh key={i} position={[Math.cos((i * Math.PI * 2) / 4) * 4, 0, Math.sin((i * Math.PI * 2) / 4) * 4]}>
+                    <octahedronGeometry args={[0.4, 0]} />
+                    <meshBasicMaterial color="#ffee00" />
+                </mesh>
+            ))}
+        </group>
+    );
+}

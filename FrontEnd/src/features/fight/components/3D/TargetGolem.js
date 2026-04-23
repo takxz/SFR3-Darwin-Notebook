@@ -3,7 +3,10 @@ import React, { forwardRef, useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber/native';
 import { useFBX } from '@react-three/drei/native';
 import * as THREE from 'three';
-const TargetGolem = forwardRef(({ attackTrigger, damageTrigger, color, isSpecialAttack, modelSource }, ref) => {
+import { FBX_ASSETS } from '../../constants/FightAssets';
+
+
+const TargetGolem = forwardRef(({ attackTrigger, damageTrigger, color, isSpecialAttack, modelSource, opAction }, ref) => {
     // Note: useMemo is critical when rendering dynamic components so we don't recreate geometries every frame
     const model = React.useMemo(() => {
         return useFBX(modelSource || require('@/assets/fight/models/Pig.fbx')).clone();
@@ -13,28 +16,38 @@ const TargetGolem = forwardRef(({ attackTrigger, damageTrigger, color, isSpecial
 
     useFrame((state) => {
         if (!ref.current) return;
-        
+
         let targetRotZ = 0;
         let targetX = 0;
         let targetY = 0;
         let targetZ = -15;
+        let targetRotX = 0;
 
         // ANIMATION DE DÉGÂT (Quand on le frappe)
         if (damageTrigger) {
             targetRotZ = (Math.random() - 0.5) * 1.5;
             targetX = (Math.random() - 0.5) * 3;
-            targetY = 1.5; 
-        } 
-        // ANIMATION D'ATTAQUE (Quand il nous frappe)
+            targetY = 1.5;
+        }
+        // ANIMATION D'ATTAQUE FINALE (Phase 2, Dégâts, 1000ms)
+        // Priorité haute car c'est l'instant de l'impact
         else if (attackTrigger) {
             targetZ = -5; // Dash plongeant vers la caméra/le joueur
             targetY = 2.5; // S'élève en attaquant
+            targetRotX = 0.5; // Plonge en avant
         }
-        
-        ref.current.rotation.z = THREE.MathUtils.lerp(ref.current.rotation.z, targetRotZ, attackTrigger || damageTrigger ? 0.3 : 0.1);
-        ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, targetX, attackTrigger || damageTrigger ? 0.3 : 0.1);
-        ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, -1.8 + targetY, attackTrigger || damageTrigger ? 0.3 : 0.1);
-        ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, targetZ, attackTrigger || damageTrigger ? 0.4 : 0.08);
+        // ANIMATION DE PRÉPARATION (Phase 1, vulnérable, 0-400ms)
+        else if (opAction === 'ATTACKING') {
+            targetZ = -17; // Recule un peu (telegraph l'attaque)
+            targetY = 1.0;
+            targetRotX = -0.3; // Se penche en arrière
+        }
+
+        ref.current.rotation.x = THREE.MathUtils.lerp(ref.current.rotation.x, targetRotX, attackTrigger || damageTrigger || opAction === 'ATTACKING' ? 0.3 : 0.1);
+        ref.current.rotation.z = THREE.MathUtils.lerp(ref.current.rotation.z, targetRotZ, attackTrigger || damageTrigger || opAction === 'ATTACKING' ? 0.3 : 0.1);
+        ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, targetX, attackTrigger || damageTrigger || opAction === 'ATTACKING' ? 0.3 : 0.1);
+        ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, -1.8 + targetY, attackTrigger || damageTrigger || opAction === 'ATTACKING' ? 0.3 : 0.1);
+        ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, targetZ, attackTrigger || damageTrigger || opAction === 'ATTACKING' ? 0.4 : 0.08);
 
         // GESTION DU FLASH COLORÉ (Orange/Rouge)
         matRefs.current.forEach(mat => {
@@ -53,11 +66,11 @@ const TargetGolem = forwardRef(({ attackTrigger, damageTrigger, color, isSpecial
         if (model) {
             const mats = [];
             model.traverse((child) => {
-                child.frustumCulled = false; 
-                child.matrixAutoUpdate = true; 
+                child.frustumCulled = false;
+                child.matrixAutoUpdate = true;
                 if (child.isMesh) {
                     child.isSkinnedMesh = false;
-                    child.geometry.computeBoundingSphere(); 
+                    child.geometry.computeBoundingSphere();
                     if (child.material) {
                         // CLONAGE UNIQUE DU MATÉRIAU POUR NE PAS AFFECTER LE HÉROS
                         if (Array.isArray(child.material)) {
