@@ -7,6 +7,7 @@ require('dotenv').config();
 // 0. Importation des routes API
 const authRoutes = require('./src/main/routes/authRoutes');
 const userRoutes = require('./src/main/routes/userRoutes');
+const { purgeExpiredAccounts } = require('./src/main/controllers/userController');
 
 // 1. Importation du Redis-Adapter
 const { createAdapter } = require('@socket.io/redis-adapter');
@@ -114,4 +115,9 @@ server.listen(PORT, '0.0.0.0', () => {
     🚀  Game Server [Cluster PID: ${process.pid}] running on port ${PORT}
         - Redis Adapter: Connecté ! Prêt pour la multi-instanciation.
     `);
+
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+    purgeExpiredAccounts();
+    setInterval(purgeExpiredAccounts, TWENTY_FOUR_HOURS);
+    console.log('[RGPD] Job de purge des comptes expirés démarré (toutes les 24h).');
 });
