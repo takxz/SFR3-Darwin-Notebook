@@ -22,7 +22,7 @@ module.exports = {
       name: 'darwin-expo-develop',
       cwd: './FrontEnd',
       script: 'npx',
-      args: 'expo start --no-dev',
+      args: 'expo start --no-dev -c',
       env: {
         EXPO_PUBLIC_API_URL: 'http://37.59.111.34:5002',
         EXPO_PUBLIC_USER_API_URL: 'http://37.59.111.34:3001',
