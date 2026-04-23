@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Canvas } from '@react-three/fiber/native';
 import { useProgress } from '@react-three/drei/native';
 import { ExpoStatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 
 // CUSTOM MODULES
