@@ -26,3 +26,7 @@ jobs:
       - name: Test Python API with pytest
         run: |
           pytest
+      - name: Get test coverage
+        run: |
+          coverage run -m pytest tests/ --tb=short
+          coverage report
