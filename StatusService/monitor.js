@@ -15,6 +15,11 @@ const SELF_NAME = process.env.SELF_SERVICE_NAME || 'darwin-status-monitor';
 const STATE_FILE = path.join(__dirname, '.state.json');
 const REPO_DIR = path.resolve(__dirname, '..');
 
+const COLOR_OK = 0x57f287;
+const COLOR_WARN = 0xfee75c;
+const COLOR_DOWN = 0xed4245;
+const COLOR_IDLE = 0x99aab5;
+
 if (!WEBHOOK_URL) {
     console.error('[StatusMonitor] DISCORD_WEBHOOK_URL manquant (voir .env.example)');
     process.exit(1);
@@ -33,8 +38,8 @@ async function saveState(state) {
 }
 
 function getGitInfo() {
-    const run = (cmd) => execSync(cmd, { cwd: REPO_DIR, stdio: ['ignore', 'pipe', 'ignore'] })
-        .toString().trim();
+    const run = (cmd) =>
+        execSync(cmd, { cwd: REPO_DIR, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
     let branch = 'unknown';
     let version = 'unknown';
     try { branch = run('git rev-parse --abbrev-ref HEAD'); } catch {}
@@ -57,68 +62,109 @@ function listPm2() {
     });
 }
 
-function buildPayload({ branch, version, services, expoUrl }) {
-    const allOk = services.length > 0 && services.every((s) => s.online);
-    const color = services.length === 0 ? 0x95a5a6 : allOk ? 0x2ecc71 : 0xe74c3c;
+function formatUptime(ms) {
+    if (!ms || ms < 0) return '—';
+    const s = Math.floor(ms / 1000);
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    if (d > 0) return `${d}d ${h}h`;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m`;
+    return `${s}s`;
+}
 
-    const statusLines = services.length
-        ? services.map((s) => `${s.online ? '🟢' : '🔴'} **${s.name}**`).join('\n')
-        : '_Aucun service détecté_';
+function progressBar(ratio, width = 12) {
+    const filled = Math.round(ratio * width);
+    return '█'.repeat(filled) + '░'.repeat(width - filled);
+}
 
-    return {
-        embeds: [
+function buildEmbed({ branch, version, services, expoUrl, qrImageUrl }) {
+    const total = services.length;
+    const online = services.filter((s) => s.online).length;
+    const allOk = total > 0 && online === total;
+    const allDown = total > 0 && online === 0;
+
+    let color = COLOR_IDLE;
+    let headline = '_Aucun service détecté_';
+    if (total > 0) {
+        color = allOk ? COLOR_OK : allDown ? COLOR_DOWN : COLOR_WARN;
+        const icon = allOk ? '✅' : allDown ? '⛔' : '⚠️';
+        const bar = progressBar(online / total);
+        headline = `${icon}  **${online}/${total}** services en ligne\n\`${bar}\``;
+    }
+
+    const nameWidth = Math.max(0, ...services.map((s) => s.name.length));
+    const servicesBlock = services.length
+        ? services
+              .map((s) => {
+                  const dot = s.online ? '🟢' : '🔴';
+                  const label = s.name.padEnd(nameWidth, ' ');
+                  const uptime = s.online ? formatUptime(s.uptime) : 'offline';
+                  return `${dot}  \`${label}\`  •  \`${uptime}\``;
+              })
+              .join('\n')
+        : '_—_';
+
+    const embed = {
+        author: { name: 'Darwin Notebook · Deployment Monitor' },
+        title: '🛰️  Statut des services',
+        description: headline,
+        color,
+        fields: [
+            { name: '🌿  Branch Deploy', value: '```' + branch + '```', inline: true },
+            { name: '🏷️  Version', value: '```' + version + '```', inline: true },
+            { name: '​', value: '​', inline: true },
+            { name: '📦  Services', value: servicesBlock, inline: false },
             {
-                title: '🛰️ Darwin Notebook — Statut des services',
-                color,
-                fields: [
-                    { name: 'Branch Deploy', value: '`' + branch + '`', inline: true },
-                    { name: 'Version', value: '`' + version + '`', inline: true },
-                    { name: 'Services', value: statusLines, inline: false },
-                    { name: 'Expo', value: '`' + expoUrl + '`', inline: false },
-                ],
-                image: { url: 'attachment://expo-qr.png' },
-                timestamp: new Date().toISOString(),
-                footer: { text: 'Mise à jour automatique' },
+                name: '📱  Expo Go',
+                value: '```' + expoUrl + '```_Scanne le QR code pour te connecter._',
+                inline: false,
             },
         ],
+        timestamp: new Date().toISOString(),
+        footer: { text: 'Auto-refresh · Darwin Notebook' },
     };
-}
 
-function buildForm(payload, qrBuffer) {
-    const form = new FormData();
-    form.append('payload_json', JSON.stringify(payload));
-    const blob = new Blob([qrBuffer], { type: 'image/png' });
-    form.append('files[0]', blob, 'expo-qr.png');
-    return form;
-}
-
-async function sendOrEdit(payload, qrBuffer) {
-    const state = await loadState();
-
-    if (state.messageId) {
-        const res = await fetch(`${WEBHOOK_URL}/messages/${state.messageId}`, {
-            method: 'PATCH',
-            body: buildForm(payload, qrBuffer),
-        });
-        if (res.ok) return;
-        if (res.status !== 404) {
-            console.error('[StatusMonitor] Edit KO', res.status, await res.text());
-            return;
-        }
-        console.warn('[StatusMonitor] Message introuvable, recréation…');
+    if (qrImageUrl) {
+        embed.image = { url: qrImageUrl };
     }
+    return embed;
+}
 
-    const res = await fetch(`${WEBHOOK_URL}?wait=true`, {
-        method: 'POST',
-        body: buildForm(payload, qrBuffer),
-    });
+async function uploadMessage(embed, qrBuffer, existingId) {
+    embed.image = { url: 'attachment://expo-qr.png' };
+    const form = new FormData();
+    const payload = existingId ? { embeds: [embed], attachments: [] } : { embeds: [embed] };
+    form.append('payload_json', JSON.stringify(payload));
+    form.append('files[0]', new Blob([qrBuffer], { type: 'image/png' }), 'expo-qr.png');
+
+    const url = existingId ? `${WEBHOOK_URL}/messages/${existingId}` : `${WEBHOOK_URL}?wait=true`;
+    const method = existingId ? 'PATCH' : 'POST';
+    const res = await fetch(url, { method, body: form });
+    if (existingId && res.status === 404) return { missing: true };
     if (!res.ok) {
-        console.error('[StatusMonitor] Post KO', res.status, await res.text());
-        return;
+        console.error(`[StatusMonitor] ${method} KO`, res.status, await res.text());
+        return null;
     }
     const message = await res.json();
-    await saveState({ messageId: message.id });
-    console.log('[StatusMonitor] Message créé, id =', message.id);
+    const qrUrl = message.attachments?.[0]?.url || null;
+    console.log(`[StatusMonitor] ${method === 'POST' ? 'Message créé' : 'QR remplacé'}, id =`, message.id);
+    return { messageId: message.id, qrUrl };
+}
+
+async function editMessageJson(messageId, embed) {
+    const res = await fetch(`${WEBHOOK_URL}/messages/${messageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ embeds: [embed] }),
+    });
+    if (res.status === 404) return 'missing';
+    if (!res.ok) {
+        console.error('[StatusMonitor] Edit KO', res.status, await res.text());
+        return 'error';
+    }
+    return 'ok';
 }
 
 async function tick() {
@@ -130,14 +176,37 @@ async function tick() {
             .map((p) => ({
                 name: p.name,
                 online: p.pm2_env && p.pm2_env.status === 'online',
+                uptime: p.pm2_env && p.pm2_env.pm_uptime ? Date.now() - p.pm2_env.pm_uptime : 0,
             }))
             .sort((a, b) => a.name.localeCompare(b.name));
 
         const expoUrl = `exp://${EXPO_HOST}:${EXPO_PORT}`;
-        const qrBuffer = await QRCode.toBuffer(expoUrl, { width: 320, margin: 1 });
+        const state = await loadState();
+        const qrNeedsUpload = !state.messageId || !state.qrUrl || state.qrPayload !== expoUrl;
 
-        const payload = buildPayload({ branch, version, services, expoUrl });
-        await sendOrEdit(payload, qrBuffer);
+        let messageId = state.messageId || null;
+
+        if (!qrNeedsUpload) {
+            const embed = buildEmbed({ branch, version, services, expoUrl, qrImageUrl: state.qrUrl });
+            const outcome = await editMessageJson(messageId, embed);
+            if (outcome === 'ok' || outcome === 'error') return;
+            console.warn('[StatusMonitor] Message introuvable, recréation…');
+            messageId = null;
+        }
+
+        const qrBuffer = await QRCode.toBuffer(expoUrl, {
+            width: 320,
+            margin: 1,
+            color: { dark: '#1a1a1a', light: '#ffffff' },
+        });
+        const embed = buildEmbed({ branch, version, services, expoUrl });
+        let result = await uploadMessage(embed, qrBuffer, messageId);
+        if (result && result.missing) {
+            result = await uploadMessage(embed, qrBuffer, null);
+        }
+        if (result && result.messageId) {
+            await saveState({ messageId: result.messageId, qrUrl: result.qrUrl, qrPayload: expoUrl });
+        }
     } catch (err) {
         console.error('[StatusMonitor] Erreur tick:', err);
     }
