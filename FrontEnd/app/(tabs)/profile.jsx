@@ -1,6 +1,8 @@
 import { View, Text, Image, ScrollView, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
+import SpotlightTooltip from '@/components/SpotlightTooltip';
+import { useSpotlight } from '@/hooks/useSpotlight';
 import * as SecureStore from 'expo-secure-store';
 import { Settings, Award, Camera } from 'lucide-react-native';
 import { clearToken, getToken } from '@/utils/auth';
@@ -13,6 +15,7 @@ import { styles } from '../../src/features/profil/modals/profilStyles';
 export default function ProfilePage() {
   const router = useRouter();
   const { user, loading, error } = useUser();
+  const { visible, targetLayout, ref, onLayout, dismiss } = useSpotlight('profile_settings', user?.id);
   const [showSettings, setShowSettings] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
@@ -104,12 +107,14 @@ export default function ProfilePage() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profil</Text>
-        <Pressable
-          style={styles.settingsButton}
-          onPress={() => setShowSettings(true)}
-        >
-          <Settings size={20} color="#97572B" />
-        </Pressable>
+        <View ref={ref} onLayout={onLayout} collapsable={false}>
+          <Pressable
+            style={styles.settingsButton}
+            onPress={() => setShowSettings(true)}
+          >
+            <Settings size={20} color="#97572B" />
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -217,6 +222,12 @@ export default function ProfilePage() {
         onDescriptionChange={setDescription}
         onSave={saveDescription}
         isSaving={savingDescription}
+      />
+      <SpotlightTooltip
+        visible={visible}
+        targetLayout={targetLayout}
+        description="Accédez aux paramètres de votre compte : modifier votre description, vous déconnecter ou supprimer votre compte."
+        onDismiss={dismiss}
       />
     </ScrollView>
   );

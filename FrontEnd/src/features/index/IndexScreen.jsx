@@ -1,21 +1,35 @@
 import { View, Text, StyleSheet } from "react-native";
 import MapButton from "@/features/index/MapButton";
 import HomeFeedComponent from "@/features/index/HomeFeedComponent";
+import SpotlightTooltip from "@/components/SpotlightTooltip";
+import { useSpotlight } from "@/hooks/useSpotlight";
+import { useUserId } from "@/hooks/useUserId";
 import colors from "@/assets/constants/colors";
 import fr from "@/assets/locales/fr.json";
 
 export default function IndexScreen() {
+    const userId = useUserId();
+    const { visible, targetLayout, ref, onLayout, dismiss } = useSpotlight('map_button', userId);
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <View style={styles.displayLatestCaptures}>
                     <Text style={styles.latestCapturesText}>{fr.indexScreen.lastCatch}</Text>
                 </View>
-                <MapButton />
+                <View ref={ref} onLayout={onLayout} collapsable={false}>
+                    <MapButton />
+                </View>
             </View>
             <View style={styles.feedContainer}>
                 <HomeFeedComponent />
             </View>
+            <SpotlightTooltip
+                visible={visible}
+                targetLayout={targetLayout}
+                description="Ce bouton ouvre la carte interactive. Vous pouvez voir votre position et les animaux que vous avez capturés autour de vous."
+                onDismiss={dismiss}
+            />
         </View>
     );
 }
