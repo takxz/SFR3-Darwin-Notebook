@@ -11,6 +11,7 @@ import { SettingsModal } from '../../src/features/profil/modals/SettingsModal';
 import { DeleteConfirmModal } from '../../src/features/profil/modals/DeleteConfirmModal';
 import { DescriptionEditModal } from '../../src/features/profil/modals/DescriptionEditModal';
 import { styles } from '../../src/features/profil/modals/profilStyles';
+import fr from '@/assets/locales/fr.json';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -226,7 +227,7 @@ export default function ProfilePage() {
       <SpotlightTooltip
         visible={visible}
         targetLayout={targetLayout}
-        description="Accédez aux paramètres de votre compte : modifier votre description, vous déconnecter ou supprimer votre compte."
+        description={fr.tutorial.profile_settings}
         onDismiss={dismiss}
       />
     </ScrollView>

@@ -94,7 +94,7 @@ export default function FightScreen()
         <SpotlightTooltip
                 visible={visible}
                 targetLayout={targetLayout}
-                description="Choisissez une créature et affrontez un autre joueur en duel en temps réel !"
+                description={fr.tutorial.duel}
                 onDismiss={dismiss}
             />
         </ScrollView>

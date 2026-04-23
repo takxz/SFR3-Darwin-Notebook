@@ -1,5 +1,6 @@
 import { View, Text, Pressable, StyleSheet, Dimensions, Modal } from 'react-native';
 import colors from '@/assets/constants/colors';
+import fr from '@/assets/locales/fr.json';
 
 const { width: W, height: H } = Dimensions.get('window');
 const PAD = 10;
@@ -40,7 +41,7 @@ export default function SpotlightTooltip({ visible, targetLayout, description, o
                     {isBelow && <View style={[styles.arrowUp, { left: arrowLeft }]} />}
                     <Text style={styles.text}>{description}</Text>
                     <Pressable style={styles.btn} onPress={onDismiss}>
-                        <Text style={styles.btnText}>Compris !</Text>
+                        <Text style={styles.btnText}>{fr.tutorial.dismiss}</Text>
                     </Pressable>
                     {!isBelow && <View style={[styles.arrowDown, { left: arrowLeft }]} />}
                 </View>

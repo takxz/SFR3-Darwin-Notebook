@@ -165,7 +165,7 @@ export default function CameraScreen() {
       <SpotlightTooltip
         visible={visible}
         targetLayout={targetLayout}
-        description="Appuyez sur ce bouton pour photographier un animal ou une plante. L'IA l'identifie et vous pouvez l'ajouter à votre collection !"
+        description={fr.tutorial.camera}
         onDismiss={dismiss}
       />
     </View>

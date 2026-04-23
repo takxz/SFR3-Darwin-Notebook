@@ -27,7 +27,7 @@ export default function IndexScreen() {
             <SpotlightTooltip
                 visible={visible}
                 targetLayout={targetLayout}
-                description="Ce bouton ouvre la carte interactive. Vous pouvez voir votre position et les animaux que vous avez capturés autour de vous."
+                description={fr.tutorial.map}
                 onDismiss={dismiss}
             />
         </View>

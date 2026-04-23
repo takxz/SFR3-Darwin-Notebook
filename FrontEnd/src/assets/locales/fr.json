@@ -92,5 +92,12 @@
     },
     "emptyCollectionScreen": {
         "text": "Aucune créature disponible dans cette catégorie pour le moment."
+    },
+    "tutorial": {
+        "dismiss": "Compris !",
+        "map": "Ce bouton ouvre la carte interactive. Visualisez votre position et retrouvez les animaux que vous avez capturés autour de vous.",
+        "camera": "Appuyez ici pour photographier un animal ou une plante. L'IA l'identifie automatiquement et vous propose de l'ajouter à votre collection !",
+        "duel": "Choisissez une créature et affrontez d'autres joueurs en duel en temps réel !",
+        "profile_settings": "Accédez aux paramètres de votre compte pour personnaliser votre profil."
     }
 }
