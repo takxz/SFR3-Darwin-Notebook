@@ -60,8 +60,8 @@ describe('Reward System Functional Test', () => {
         const battleState = {
             roomId: roomId,
             players: {
-                [winnerId]: { hp: 100, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE', creatureId: winnerCreatureUUID },
-                [loserId]: { hp: 5, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE', creatureId: loserCreatureUUID }
+                [winnerId]: { hp: 100, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE', creatureId: winnerCreatureUUID, playerId: winnerPlayerUUID },
+                [loserId]: { hp: 5, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE', creatureId: loserCreatureUUID, playerId: 'loser-player-uuid' }
             },
             turn: winnerId,
             logs: ["Combat en cours..."]
@@ -71,7 +71,10 @@ describe('Reward System Functional Test', () => {
         store.getBattle.mockResolvedValue(battleState);
         
         // Mock des réponses DB
-        // 1ère requête : MàJ CREATURE et récupération du player_id
+        // 1ère requête : Insertion FIGHT (Historique)
+        db.query.mockResolvedValueOnce({ rows: [] });
+        
+        // 2ème requête : MàJ CREATURE et récupération du player_id
         db.query.mockResolvedValueOnce({
             rows: [{ player_id: winnerPlayerUUID }]
         });
@@ -119,8 +122,8 @@ describe('Reward System Functional Test', () => {
         const battleState = {
             roomId: roomId,
             players: {
-                [winnerId]: { hp: 100, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE', creatureId: winnerCreatureUUID },
-                [loserId]: { hp: 5, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE', creatureId: loserCreatureUUID }
+                [winnerId]: { hp: 100, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE', creatureId: winnerCreatureUUID, playerId: winnerPlayerUUID },
+                [loserId]: { hp: 5, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE', creatureId: loserCreatureUUID, playerId: 'loser-player-uuid' }
             },
             turn: winnerId,
             logs: []

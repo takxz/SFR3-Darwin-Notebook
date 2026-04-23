@@ -108,7 +108,8 @@ module.exports = function (io, socket) {
 
             // 2. Attribution des récompenses (XP / BioTokens)
             const winnerCreatureId = battle.players[result.winner]?.creatureId;
-            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(winnerCreatureId);
+            // Regex plus souple pour accepter tous les UUID (v1-v5) et les formats de test
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(winnerCreatureId);
 
             if (winnerCreatureId && isUUID) {
                 try {
