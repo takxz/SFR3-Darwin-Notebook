@@ -123,17 +123,18 @@ describe('userController', () => {
             expect(res.json).toHaveBeenCalledWith(mockCreature);
         });
 
-        it('doit construire et insérer l\'URL publique si un fichier (req.file) est fourni', async () => {
+        it('doit insérer uniquement le nom de fichier si un fichier (req.file) est fourni', async () => {
             req.file = { filename: 'scan123.jpg' };
             db.query
                 .mockResolvedValueOnce({ rows: [{ id: 1 }] })
-                .mockResolvedValueOnce({ rows: [{ scan_url: 'http://localhost:3001/uploads/scan123.jpg' }] });
+                .mockResolvedValueOnce({ rows: [{ scan_url: 'scan123.jpg' }] });
 
             await userController.addCreature(req, res);
 
             // Vérification des arguments passés à la requête d'insertion
             const insertQueryArgs = db.query.mock.calls[1][1];
-            expect(insertQueryArgs).toContain('http://localhost:3001/uploads/scan123.jpg');
+            expect(insertQueryArgs).toContain('scan123.jpg');
+            expect(insertQueryArgs).not.toContain('http://localhost:3001/uploads/scan123.jpg');
         });
 
         it('doit créer une nouvelle espèce et insérer la créature si l\'espèce parente est introuvable', async () => {
@@ -202,12 +203,14 @@ describe('userController', () => {
                     id: 'c-1',
                     species_name: 'Alpaca',
                     species_model_path: 'alpaca',
+                    scan_url: null,
                     model_3d_url: 'http://localhost:3001/models/alpaca'
                 },
                 {
                     id: 'c-2',
                     species_name: 'Fougère',
                     species_model_path: null,
+                    scan_url: null,
                     model_3d_url: null
                 }
             ];
@@ -384,6 +387,7 @@ describe('userController', () => {
                 id: 'c-99',
                 species_name: 'Lion',
                 species_model_path: 'lion',
+                scan_url: null,
                 model_3d_url: 'http://localhost:3001/models/lion'
             };
 
