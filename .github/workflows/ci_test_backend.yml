@@ -14,22 +14,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Set up Node.js environment
         uses: actions/setup-node@v3
         with:
           node-version: 18
-          
+
       - name: Install dependencies (Strict mode)
         # npm ci garantit un build propre et exact basé sur le package-lock.json
         run: npm ci
         working-directory: BackEnd
-        
+
       - name: Run tests with annotations
         # L'ajout des reporters permet à GitHub Actions d'afficher des annotations visuelles sur le code
         run: npm test -- --reporters=default --reporters=github-actions
         working-directory: BackEnd
-        
+
       - name: Get test coverage
         # if: always() permet de récupérer le coverage même si un test échoue précédemment
         if: always()
