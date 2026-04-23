@@ -169,7 +169,12 @@ export default function CameraScreen() {
     <View style={styles.container}>
       <CameraView style={styles.camera} ref={cameraRef}>
         <View ref={ref} onLayout={onLayout} collapsable={false} style={styles.captureButton}>
-          <Pressable onPress={handleCapture} style={styles.captureInner}>
+          <Pressable
+            testID="capture-button"
+            onPress={handleCapture}
+            style={[styles.captureInner, isProcessing && styles.captureButtonDisabled]}
+            disabled={isProcessing}
+          >
             <Aperture size={32} style={styles.aperture} />
           </Pressable>
         </View>
