@@ -45,12 +45,12 @@ describe('BattleHandler', () => {
         test('should start battle when both players are ready', async () => {
             const roomId = 'room1';
             store.getPlayer.mockResolvedValue({ inBattle: roomId });
-            store.getBattle.mockResolvedValue({ readyCount: 1, turn: 'p1', logs: [] });
+            store.getBattle.mockResolvedValue({ readyCount: 1, turn: 'p1', logs: [], players: {} });
 
             await playerReadyHandler();
 
             expect(io.to).toHaveBeenCalledWith(roomId);
-            expect(io.emit).toHaveBeenCalledWith('battleStart', { turn: 'p1' });
+            expect(io.emit).toHaveBeenCalledWith('battleStart', { turn: 'p1', players: {} });
             expect(store.updateBattle).toHaveBeenCalled();
         });
     });
@@ -75,8 +75,8 @@ describe('BattleHandler', () => {
             const battle = {
                 turn: 'p1',
                 players: {
-                    p1: { hp: 100, attack: 20, defense: 10, speed: 10, action: 'IDLE' },
-                    p2: { hp: 100, attack: 20, defense: 10, speed: 10, action: 'IDLE' }
+                    p1: { hp: 100, attack: 20, defense: 10, speed: 10, action: 'IDLE', nickname: 'Joueur p1' },
+                    p2: { hp: 100, attack: 20, defense: 10, speed: 10, action: 'IDLE', nickname: 'Joueur p2' }
                 },
                 logs: []
             };
@@ -92,7 +92,11 @@ describe('BattleHandler', () => {
             expect(io.to).toHaveBeenCalledWith(roomId);
             expect(io.emit).toHaveBeenCalledWith('gameUpdate', expect.objectContaining({
                 turn: 'p2',
-                lastLog: expect.stringContaining('Joueur p1 attaque')
+                lastLog: expect.stringContaining('Joueur p1 attaque'),
+                players: expect.objectContaining({
+                    p1: expect.objectContaining({ nickname: 'Joueur p1', action: 'ATTACK' }),
+                    p2: expect.objectContaining({ nickname: 'Joueur p2', action: 'HIT' })
+                })
             }));
             expect(store.updateBattle).toHaveBeenCalled();
 

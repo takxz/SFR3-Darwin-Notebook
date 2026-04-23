@@ -12,13 +12,13 @@ let p2Id = null;
 player1.on('connect', () => {
     p1Id = player1.id;
     console.log('[P1] Connected:', p1Id);
-    player1.emit('findMatch', { creatureId: 1 });
+    player1.emit('findMatch', { creatureId: 1, nickname: 'Tester_P1' });
 });
 
 player2.on('connect', () => {
     p2Id = player2.id;
     console.log('[P2] Connected:', p2Id);
-    player2.emit('findMatch', { creatureId: 2 });
+    player2.emit('findMatch', { creatureId: 2, nickname: 'Tester_P2' });
 });
 
 // Quand la room est prête
@@ -43,10 +43,13 @@ const handleAction = (playerObj, updateData) => {
     }
     // Si c'est notre tour après la mise à jour, on tape !
     if (updateData.turn === playerObj.id) {
+        const me = updateData.players[playerObj.id];
         // Timeout léger pour ne pas flooder
         setTimeout(() => {
-            playerObj.emit('playerAction', { action: 'ATTACK' });
-        }, 50);
+            const action = (me.specialCooldown === 0) ? 'SPECIAL' : 'ATTACK';
+            console.log(`[${playerObj.id === p1Id ? 'P1' : 'P2'}] Sending Action: ${action}`);
+            playerObj.emit('playerAction', { action });
+        }, 500);
     }
 };
 
