@@ -15,11 +15,25 @@ const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http:/
 export default function CameraScreen() {
   const { permission, requestPermission, cameraRef, takePicture } = useCamera();
   const [photo, setPhoto] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleCapture = async () => {
-    const captured = await takePicture();
-    if (captured) setPhoto(captured);
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+      const captured = await takePicture();
+      if (captured) {
+        setPhoto(captured);
+      } else {
+        setIsProcessing(false);
+      }
+    } catch (err) {
+      console.error('Erreur capture:', err);
+      setIsProcessing(false);
+    }
   };
+
+
 
   const addToDex = async (result) => {
     try {
@@ -149,14 +163,29 @@ export default function CameraScreen() {
   return (
     <View style={styles.container}>
       <CameraView style={styles.camera} ref={cameraRef}>
-        <Pressable onPress={handleCapture} style={styles.captureButton}>
+        <Pressable 
+          testID="capture-button"
+          onPress={handleCapture} 
+          style={[styles.captureButton, isProcessing && styles.captureButtonDisabled]}
+          disabled={isProcessing}
+        >
+
           <View style={styles.captureInner}>
             <Aperture size={32} style={styles.aperture} />
           </View>
         </Pressable>
 
-        <InformationOrganisme photo={photo} onClose={() => setPhoto(null)} addToDex={addToDex} />
+        <InformationOrganisme 
+          photo={photo} 
+          onClose={() => {
+            setPhoto(null);
+            setIsProcessing(false);
+          }} 
+          onFinish={() => setIsProcessing(false)}
+          addToDex={addToDex} 
+        />
       </CameraView>
+
     </View>
   );
 }
@@ -177,6 +206,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  captureButtonDisabled: {
+    opacity: 0.3,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+
   captureInner: {
     width: 62,
     height: 62,
