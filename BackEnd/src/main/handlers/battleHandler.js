@@ -14,7 +14,7 @@ module.exports = function (io, socket) {
         battle.readyCount = (battle.readyCount || 0) + 1;
 
         if (battle.readyCount === 2) {
-            io.to(roomId).emit('battleStart', { turn: battle.turn });
+            io.to(roomId).emit('battleStart', { turn: battle.turn, players: battle.players });
             battle.logs.push("Le combat commence !");
         }
 
@@ -48,11 +48,24 @@ module.exports = function (io, socket) {
             opState.hp = Math.max(0, opState.hp - dmg);
             myState.action = 'ATTACK';
             opState.action = 'HIT';
-            message = `Joueur ${socket.id.substr(0, 4)} attaque (-${dmg} PV)`;
+            message = `${myState.nickname} attaque (-${dmg} PV)`;
+
+        } else if (data.action === 'SPECIAL') {
+            if (myState.specialCooldown === 0) {
+                const dmg = 25 + Math.floor(Math.random() * 15);
+                opState.hp = Math.max(0, opState.hp - dmg);
+                myState.action = 'SPECIAL';
+                opState.action = 'HIT';
+                myState.specialCooldown = 5;
+                message = `${myState.nickname} lance son ATTAQUE SPÉCIALE ! (-${dmg} PV)`;
+            } else {
+                socket.emit('error', 'Attaque spéciale en recharge !');
+                return;
+            }
 
         } else if (data.action === 'DEFEND') {
             myState.action = 'IDLE';
-            message = `Joueur ${socket.id.substr(0, 4)} se défend.`;
+            message = `${myState.nickname} se défend.`;
 
         } else if (data.action === 'HEAL') {
             if (myState.inventory.potion > 0) {
@@ -60,10 +73,16 @@ module.exports = function (io, socket) {
                 const heal = 30;
                 myState.hp = Math.min(myState.maxHp, myState.hp + heal);
                 myState.action = 'HEAL';
-                message = `Joueur ${socket.id.substr(0, 4)} se soigne (+${heal} PV)`;
+                message = `${myState.nickname} se soigne (+${heal} PV)`;
             } else {
                 message = "Plus de potions !";
             }
+        }
+
+        // Gestion du cooldown : on décrémente à la fin de son tour si on n'a pas utilisé le spécial ce tour-ci
+        // Ou plus simple : si on a utilisé le spécial, il est à 5. Si on ne l'a pas utilisé et qu'il est > 0, on baisse.
+        if (data.action !== 'SPECIAL' && myState.specialCooldown > 0) {
+            myState.specialCooldown--;
         }
 
         let result = null;
@@ -127,4 +146,3 @@ module.exports = function (io, socket) {
         }
     });
 };
-
