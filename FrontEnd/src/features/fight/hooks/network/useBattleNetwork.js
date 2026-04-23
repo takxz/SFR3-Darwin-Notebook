@@ -86,9 +86,9 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
     }, []);
 
     // ACTIONS À ENVOYER AU SERVEUR
-    const findMatch = () => {
-        console.log('[BattleNetwork] Looking for a match...');
-        socketService.emit('findMatch');
+    const findMatch = (creatureId) => {
+        console.log(`[BattleNetwork] Looking for a match with creature: ${creatureId}`);
+        socketService.emit('findMatch', { creatureId });
     };
 
     const sendReady = () => {

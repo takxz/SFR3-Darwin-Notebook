@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Canvas } from '@react-three/fiber/native';
 import { useProgress } from '@react-three/drei/native';
 import { ExpoStatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 
 // CUSTOM MODULES
@@ -31,6 +31,7 @@ export default function ArenaScreen() {
     } = useBattleManager(setSceneReady);
 
     // ⚔️ NETWORK ORCHESTRATION (CONNEXION VPS)
+    const { beastId } = useLocalSearchParams(); // Récupération correcte des paramètres
     const { stats, turn, isMyTurn, findMatch, sendAction, abandon } = useBattleNetwork(
         // On Battle Start (Le serveur dit que les 2 joueurs sont là !)
         () => {
@@ -76,9 +77,9 @@ export default function ArenaScreen() {
     // AUTO-JOIN MATCHMAKING (Dès que l'app est chargée)
     useEffect(() => {
         if (isLoaded) {
-            findMatch();
+            findMatch(beastId);
         }
-    }, [isLoaded]);
+    }, [isLoaded, beastId]);
 
     // Final readiness check (Attente des modèles 3D + Audio + Canvas)
     useEffect(() => {

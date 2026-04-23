@@ -84,9 +84,33 @@ module.exports = function (io, socket) {
         });
 
         if (result) {
-            // Attribution des récompenses (XP / BioTokens)
+            // 1. Enregistrement du combat dans l'historique (Table FIGHT)
+            try {
+                const p1 = battle.players[socket.id]; // Le perdant ou gagnant actuel
+                const p2 = battle.players[opponentId];
+                
+                // On détermine qui est player1 et player2 pour la table FIGHT
+                await db.query(
+                    `INSERT INTO "FIGHT" (played_at, player1_id, player2_id, creature1_id, creature2_id, winner_id)
+                     VALUES (NOW(), $1, $2, $3, $4, $5)`,
+                    [
+                        p1.playerId, 
+                        p2.playerId, 
+                        p1.creatureId, 
+                        p2.creatureId, 
+                        battle.players[result.winner]?.playerId
+                    ]
+                );
+                console.log(`[BattleHandler] 📜 Combat enregistré dans la table FIGHT`);
+            } catch (fightErr) {
+                console.error("[BattleHandler] ⚠️ Impossible d'enregistrer l'historique FIGHT:", fightErr.message);
+            }
+
+            // 2. Attribution des récompenses (XP / BioTokens)
             const winnerCreatureId = battle.players[result.winner]?.creatureId;
-            if (winnerCreatureId) {
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(winnerCreatureId);
+
+            if (winnerCreatureId && isUUID) {
                 try {
                     const xpGain = 50;
                     const bioTokenGain = 10;
@@ -117,6 +141,8 @@ module.exports = function (io, socket) {
                 } catch (err) {
                     console.error("[BattleHandler] ❌ Erreur SQL récompenses:", err.message);
                 }
+            } else if (winnerCreatureId) {
+                console.warn(`[BattleHandler] ⚠️ ID créature invalide (pas un UUID): ${winnerCreatureId}. Récompenses créature ignorées.`);
             }
 
             await store.deleteBattle(roomId);
