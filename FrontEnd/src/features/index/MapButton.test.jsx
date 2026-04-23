@@ -141,23 +141,16 @@ describe('MapButton', () => {
       expect(screen.getByText('Carte des captures')).toBeTruthy();
     });
  
-    it('doit afficher l\'indicateur de chargement au moment de l\'ouverture', async () => {
-      // Delay location so the loading state is visible synchronously after press
+    it('doit afficher l\'indicateur de chargement au moment de l\'ouverture', () => {
+      // Never-resolving promise: loading state stays visible, no timer dependency
       getLocationMock().getCurrentPositionAsync.mockImplementationOnce(
-        () => new Promise(resolve => setTimeout(() => resolve(mockLocation), 500))
+        () => new Promise(() => {})
       );
- 
+
       render(<MapButton />);
       fireEvent.press(screen.getByTestId('map-open-button'));
- 
-      // Synchronous check — fetch hasn't resolved yet
+
       expect(screen.getByText('Localisation en cours…')).toBeTruthy();
- 
-      // Let the delayed promise settle so it doesn't leak into the next test
-      await waitFor(() =>
-        expect(screen.queryByText('Localisation en cours…')).toBeNull(),
-        { timeout: 2000 }
-      );
     });
   });
  
