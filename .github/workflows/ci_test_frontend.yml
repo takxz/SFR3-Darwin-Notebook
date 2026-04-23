@@ -2,7 +2,11 @@ name: CI_Test_Frontend
 
 on:
   push:
+    paths:
+      - 'FrontEnd/**'
   pull_request:
+    paths:
+      - 'FrontEnd/**'
   workflow_dispatch:
 
 jobs:
