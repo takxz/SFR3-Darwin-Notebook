@@ -25,18 +25,17 @@ async function parseResponseBody(response) {
   }
 }
 
-export default function InformationOrganisme({ photo, onClose, addToDex }) {
+export default function InformationOrganisme({ photo, onClose, addToDex, onFinish }) {
   const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    if (!photo?.uri) return;
-
     const classify = async () => {
+      if (!photo?.uri) return;
       setLoading(true);
-      setError('');
+      setError(null);
       setResult(null);
 
       try {
@@ -81,6 +80,7 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
         }
       } finally {
         setLoading(false);
+        onFinish?.();
       }
     };
 
@@ -105,9 +105,11 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
         {error ? <Text style={styles.error}>{error}</Text> : null}
         {result ? (
           <>
-            {result.image_url ? <Image source={{ uri: result.image_url }} style={styles.image} /> : null}
-            <Text style={styles.title}>{result.common_name || 'Nom inconnu'}</Text>
-            <Text style={styles.subtitle}>{result.scientific_name || ''}</Text>
+            <Image source={{ uri: `data:image/jpeg;base64,${photo.base64}` }} style={styles.image} />
+            <View style={styles.mainContainerTitle}>
+              <Text style={styles.title}>{result.common_name || 'Nom inconnu'}</Text>
+              <Text style={styles.subtitle}>{result.scientific_name || ''}</Text>
+            </View>
             <View style={styles.sharpnessBadge}>
               <Text style={styles.sharpnessLabel}>Netteté :</Text>
               <Text style={styles.sharpnessValue}>{result.sharpness_rank || '-'}</Text>
@@ -133,11 +135,8 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
           </>
         ) : null}
       </ScrollView>
-      {!loading && !error ?
+      {!loading && result && !error ?
         <View style={styles.bottomButtonContainer}>
-          <Pressable onPress={onClose} style={styles.bottomButtonReject}>
-            <Text style={styles.buttonTextDismiss}>{fr.informationAnimalScreen.reject_button}</Text>
-          </Pressable>
           <Pressable onPress={() => addToDex?.(result)} style={styles.bottomButtonAccept}>
             <Text style={styles.buttonTextAccept}>{fr.informationAnimalScreen.accept_button}</Text>
           </Pressable>
@@ -234,12 +233,18 @@ const styles = StyleSheet.create({
     padding: 8,
     marginBottom: 4,
   },
+  mainContainerTitle: {
+    flexDirection: 'column',
+    gap: 2,
+    marginVertical: 4,
+  },
   mainContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     rowGap: 10,
   },
+
   statItem: {
     width: '48%',
   },
