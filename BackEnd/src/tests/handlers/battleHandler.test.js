@@ -92,7 +92,11 @@ describe('BattleHandler', () => {
             expect(io.to).toHaveBeenCalledWith(roomId);
             expect(io.emit).toHaveBeenCalledWith('gameUpdate', expect.objectContaining({
                 turn: 'p2',
-                lastLog: expect.stringContaining('Joueur p1 attaque')
+                lastLog: expect.stringContaining('Joueur p1 attaque'),
+                players: expect.objectContaining({
+                    p1: expect.objectContaining({ nickname: 'Joueur p1', action: 'ATTACK' }),
+                    p2: expect.objectContaining({ nickname: 'Joueur p2', action: 'HIT' })
+                })
             }));
             expect(store.updateBattle).toHaveBeenCalled();
 
