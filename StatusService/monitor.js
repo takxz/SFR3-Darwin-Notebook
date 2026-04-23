@@ -20,11 +20,6 @@ const COLOR_WARN = 0xfee75c;
 const COLOR_DOWN = 0xed4245;
 const COLOR_IDLE = 0x99aab5;
 
-if (!WEBHOOK_URL) {
-    console.error('[StatusMonitor] DISCORD_WEBHOOK_URL manquant (voir .env.example)');
-    process.exit(1);
-}
-
 async function loadState() {
     try {
         return JSON.parse(await fs.readFile(STATE_FILE, 'utf8'));
@@ -212,8 +207,27 @@ async function tick() {
     }
 }
 
-(async () => {
-    console.log(`[StatusMonitor] Démarré — intervalle ${POLL_INTERVAL_MS} ms`);
-    await tick();
-    setInterval(tick, POLL_INTERVAL_MS);
-})();
+module.exports = {
+    loadState,
+    saveState,
+    getGitInfo,
+    listPm2,
+    formatUptime,
+    progressBar,
+    buildEmbed,
+    uploadMessage,
+    editMessageJson,
+    tick,
+};
+
+if (require.main === module) {
+    if (!WEBHOOK_URL) {
+        console.error('[StatusMonitor] DISCORD_WEBHOOK_URL manquant (voir .env.example)');
+        process.exit(1);
+    }
+    (async () => {
+        console.log(`[StatusMonitor] Démarré — intervalle ${POLL_INTERVAL_MS} ms`);
+        await tick();
+        setInterval(tick, POLL_INTERVAL_MS);
+    })();
+}
