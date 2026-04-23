@@ -5,7 +5,9 @@ export function useUserId() {
     const [userId, setUserId] = useState(null);
 
     useEffect(() => {
-        getUserIdFromToken().then(setUserId);
+        if (typeof getUserIdFromToken === 'function') {
+            getUserIdFromToken().then(setUserId);
+        }
     }, []);
 
     return userId;
