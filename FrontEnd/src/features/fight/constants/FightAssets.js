@@ -4,9 +4,9 @@ export const FBX_ASSETS = {
     ENEMY: require('@/assets/fight/models/Pig.fbx')
 };
 
-export const TEXTURE_ASSETS = {
-    GROUND: require('@/assets/fight/textures/ground.png'),
-    BACKGROUND: require('@/assets/fight/textures/background.png'),
+export const GLTF_ASSETS = {
+    SKYBOX: require('@/assets/models/skybox.glb'),
+    ENVIRONMENT: require('@/assets/models/map.glb')
 };
 
 export const AUDIO_ASSETS = {

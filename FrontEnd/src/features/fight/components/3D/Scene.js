@@ -10,7 +10,7 @@ import PlayerCharacter from './PlayerCharacter';
 import TargetGolem from './TargetGolem';
 
 import { ImpactParticles, SlashEffect } from './Impacts';
-import { MossyFloor, ForestBackground } from '../Environment/Level';
+import { CombatEnvironment, CombatSkybox } from '../Environment/Level';
 
 // --- RÉGLAGES CAMÉRA ORBITALE ---
 const CAMERA_DISTANCE = 50;  // Recul (Rayon)
@@ -93,12 +93,16 @@ export default function Scene({
 
     return (
         <>
-            <fog attach="fog" args={['#000000', isSpecialAttack ? 5 : 20, 150]} />
-            <ambientLight intensity={isSpecialAttack ? 0.3 : 0.7} color="#ffffff" />
-            <directionalLight position={[10, 20, 5]} intensity={1.5} color="#ffeebb" />
+            {/* Pushed the fog way back so it doesn't swallow the edges of the map in darkness */}
+            <fog attach="fog" args={['#000000', isSpecialAttack ? 5 : 150, 1500]} />
+            <ambientLight intensity={isSpecialAttack ? 0.4 : 0.8} color="#ffffff" />
+            {/* Added a hemisphere light to naturally brighten the dark map */}
+            <hemisphereLight skyColor="#ffffff" groundColor="#444444" intensity={1.0} />
+            {/* Moved the main sun to be high up and behind the camera (positive Z) */}
+            <directionalLight position={[0, 60, 60]} intensity={3.5} color="#fff5b6" />
 
-            <MossyFloor />
-            <ForestBackground />
+            <CombatEnvironment isVisible={!isSpecialAttack} />
+            <CombatSkybox isVisible={!isSpecialAttack} />
 
             <PlayerCharacter 
                 attackTrigger={hitTrigger} 
