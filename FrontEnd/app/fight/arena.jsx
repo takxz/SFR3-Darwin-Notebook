@@ -35,7 +35,7 @@ export default function ArenaScreen() {
     } = useBattleManager(setSceneReady);
 
     // ⚔️ NETWORK ORCHESTRATION (CONNEXION VPS)
-    const { stats, turn, isMyTurn, findMatch, sendAction, abandon, matchStatus } = useBattleNetwork(
+    const { stats, turn, isMyTurn, findMatch, sendReady, sendAction, abandon, matchStatus } = useBattleNetwork(
         // On Battle Start (Le serveur dit que les 2 joueurs sont là !)
         () => {
             console.log("[Arena] MATCH READY! OPENING ARENA...");
@@ -81,13 +81,28 @@ export default function ArenaScreen() {
 
     // AUTO-JOIN MATCHMAKING (Dès que l'app est chargée)
     useEffect(() => {
-        if (isLoaded && user) {
+        if (user && matchStatus === 'idle') {
             findMatch({
                 nickname: user.pseudo || `Player_${socketService.socket?.id?.substr(0, 4)}`,
                 creatureId: 1 // TODO: Get from router params or state
             });
         }
-    }, [isLoaded, user]);
+    }, [user, matchStatus]);
+
+    // ENVOI DE PLAYER READY UNE FOIS CHARGÉ
+    useEffect(() => {
+        let readyInterval;
+        if (isLoaded && matchStatus === 'found') {
+            console.log("[Arena] 3D Loaded, sending playerReady to server...");
+            sendReady();
+            readyInterval = setInterval(() => {
+                sendReady();
+            }, 800);
+        }
+        return () => {
+            if (readyInterval) clearInterval(readyInterval);
+        };
+    }, [isLoaded, matchStatus]);
 
     // Final readiness check (Attente des modèles 3D + Audio + Canvas)
     useEffect(() => {
@@ -98,8 +113,8 @@ export default function ArenaScreen() {
     }, [sceneReady, audioReady, progressPercent]);
 
     // SHOW MATCHMAKING OVERLAY IF WE ARE SEARCHING FOR AN OPPONENT
-    // We render this overlaying the 3D canvas so the models can load in the background!
     const showMatchmaking = matchStatus === 'searching' || matchStatus === 'idle';
+    const show3D = matchStatus === 'found' || matchStatus === 'started';
 
     return (
         <NavigationIndependentTree>
@@ -107,33 +122,35 @@ export default function ArenaScreen() {
                 {showMatchmaking && <MatchmakingScreen onCancel={() => setIsLoaded(false)} />}
                 
                 {/* 🎲 3D RENDERING LAYER */}
-                <Canvas
-                    camera={{ position: [0, 0, 22], fov: 55, far: 5000 }}
-                    dpr={0.5}
-                    gl={{ antialias: false, alpha: false, stencil: false, depth: true, powerPreference: 'high-performance' }}
-                    onCreated={() => setSceneReady(true)}
-                >
-                    {/* Background will be provided by the Skybox component */}
-                    <Suspense fallback={null}>
-                        <Scene
-                            hitTrigger={hit > 0}
-                            enemyHitTrigger={enemyHit > 0} // Nouveau flash pour NOTRE perso
-                            triggerHit={triggerPlayerHit}
-                            isSpecialAttack={isSpecial}
-                            isBerserkStrike={isBerserkStrike}
-                            isFinisher={isFinisher}
-                            zawarudoProgress={zawarudoProgress}
-                            combo={combo}
-                            isIntro={isIntro}
-                            themeColor="#ff4400"
-                        />
-                    </Suspense>
-                </Canvas>
+                {show3D && (
+                    <Canvas
+                        camera={{ position: [0, 0, 22], fov: 55, far: 5000 }}
+                        dpr={0.5}
+                        gl={{ antialias: false, alpha: false, stencil: false, depth: true, powerPreference: 'high-performance' }}
+                        onCreated={() => setSceneReady(true)}
+                    >
+                        {/* Background will be provided by the Skybox component */}
+                        <Suspense fallback={null}>
+                            <Scene
+                                hitTrigger={hit > 0}
+                                enemyHitTrigger={enemyHit > 0} // Nouveau flash pour NOTRE perso
+                                triggerHit={triggerPlayerHit}
+                                isSpecialAttack={isSpecial}
+                                isBerserkStrike={isBerserkStrike}
+                                isFinisher={isFinisher}
+                                zawarudoProgress={zawarudoProgress}
+                                combo={combo}
+                                isIntro={isIntro}
+                                themeColor="#ff4400"
+                            />
+                        </Suspense>
+                    </Canvas>
+                )}
 
-                {!isLoaded && !showMatchmaking && <LoadingScreen progress={Math.round(progressPercent)} />}
+                {!isLoaded && show3D && <LoadingScreen progress={Math.round(progressPercent)} />}
 
                 {/* 🕹️ HUD & UI LAYER */}
-                {!showMatchmaking && (
+                {show3D && isLoaded && (
                     <BattleOverlay 
                         hit={hit}
                         combo={combo}

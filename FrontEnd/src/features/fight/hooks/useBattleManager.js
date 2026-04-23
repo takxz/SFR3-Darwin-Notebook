@@ -94,13 +94,13 @@ export const useBattleManager = (setSceneReady) => {
         Animated.spring(comboScaleAnim, { toValue: 1, friction: 4, useNativeDriver: true }).start();
 
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        setTimeout(() => setHit(0), 40);
+        setTimeout(() => setHit(0), 150); // Increased from 40ms for Android React Native Bridge sync
     };
 
     const triggerEnemyHit = () => {
         setEnemyHit(h => h + 1);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        setTimeout(() => setEnemyHit(0), 40);
+        setTimeout(() => setEnemyHit(0), 150); // Increased from 40ms for Android
     };
 
     const triggerSpecial = async () => {

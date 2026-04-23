@@ -63,21 +63,15 @@ module.exports = function(io, socket) {
 
             // Join socket rooms
             socket.join(roomId);
-            
-            // L'autre joueur peut être connecté à un AUTRE cluster qui fait tourner Node.js
-            // C'est là toute la magie : on utilise 'io.sockets.sockets.get' (qui ne marche que sur le PC local)
-            // Mais grace à l'adapter Redis, si on fait "io.to(roomId).emit" après, Socket.io va se débrouiller !
-            
-            // Pour forcer un joueur d'un autre cluster à rejoindre la room (fonction magique de Redis Adapter) :
-            // io.in(opponentId).socketsJoin(roomId); 
-            // C'est la nouvelle méthode requise par le cluster
             io.in(opponentId).socketsJoin(roomId);
 
-            // Notify both players that match is found
-            io.to(roomId).emit('matchFound', {
+            // Notify both players explicitly (avoids Redis socketsJoin race conditions)
+            const matchPayload = {
                 roomId,
                 players: battleState.players
-            });
+            };
+            io.to(socket.id).emit('matchFound', matchPayload);
+            io.to(opponentId).emit('matchFound', matchPayload);
 
             console.log(`[Cluster ${process.pid}] Match found: ${roomId}`);
 
