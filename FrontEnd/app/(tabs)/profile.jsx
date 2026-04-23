@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { Settings, Award, Camera } from 'lucide-react-native';
-import { clearToken } from '@/utils/auth';
+import { clearToken, getToken } from '@/utils/auth';
 import { useUser } from '@/hooks/useUser';
 import { SettingsModal } from '../../src/features/profil/modals/SettingsModal';
 import { DeleteConfirmModal } from '../../src/features/profil/modals/DeleteConfirmModal';
@@ -51,10 +51,28 @@ export default function ProfilePage() {
     Alert.alert('Enregistré', 'Votre description a été mise à jour.');
   };
 
-  const confirmDeleteAccount = () => {
-    setShowDeleteConfirm(false);
-    setShowSettings(false);
-    router.replace('/login');
+  const confirmDeleteAccount = async () => {
+    try {
+      const token = await getToken();
+      const response = await fetch('http://ikdeksmp.fr:3001/api/user/profile', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        Alert.alert('Erreur', body?.error || 'Impossible de supprimer le compte. Veuillez réessayer.');
+        return;
+      }
+      setShowDeleteConfirm(false);
+      setShowSettings(false);
+      Alert.alert(
+        'Demande enregistrée',
+        'Votre compte sera supprimé définitivement dans 30 jours. Pour annuler, reconnectez-vous simplement.',
+        [{ text: 'OK', onPress: async () => { await clearToken(); router.replace('/login'); } }]
+      );
+    } catch {
+      Alert.alert('Erreur', 'Une erreur est survenue. Veuillez réessayer.');
+    }
   };
 
   if (loading) {

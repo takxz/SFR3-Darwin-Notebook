@@ -31,9 +31,12 @@ export default function CameraScreen() {
       }
 
       const formData = new FormData();
-      // Forçage de l'ID de l'espèce à 1 de manière temporaire car la base de données distante n'a que ça pour le moment
-      formData.append('species_id', '1');
+      // Utilisation de l'animal_id recupéré de la classification ou 1 par défaut
+      formData.append('species_id', result?.animal_id ? String(result.animal_id) : '1');
       formData.append('gamification_name', result?.common_name || result?.scientific_name || 'Créature inconnue');
+      if (result?.scientific_name) {
+        formData.append('scientific_name', result.scientific_name);
+      }
 
       // On s'assure que la qualité du scan est aussi un entier
       const rawQuality = result?.sharpness_score ?? 95;

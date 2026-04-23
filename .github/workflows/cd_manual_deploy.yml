@@ -1,0 +1,31 @@
+name: Manual Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag à déployer (ex: v1.2.0)'
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Déploiement via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: |
+            cd /home/darwinnotbook/SFR3-Darwin-Notebook
+            
+            git fetch --tags
+            
+            git checkout tags/${{ github.event.inputs.tag_name }} -f
+
+            echo "EXPO_PUBLIC_APP_VERSION=${{ github.event.inputs.tag_name }}" > FrontEnd/.env
+            
+            chmod +x ./setup_linux.sh
+
+            ./setup_linux.sh

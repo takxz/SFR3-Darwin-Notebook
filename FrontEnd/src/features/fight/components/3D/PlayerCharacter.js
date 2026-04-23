@@ -91,12 +91,17 @@ const PlayerCharacter = ({ attackTrigger, damageTrigger, isSpecialAttack, isFini
             }
             
             const baseIdle = new THREE.Vector3(idleX, idleY, idleZ);
-            groupRef.current.position.lerp(baseIdle, attackTrigger || damageTrigger ? 0.4 : 0.08);
+            
+            // Si le perso revient de l'attaque spéciale (très loin), on le fait revenir plus vite (0.15)
+            const dist = groupRef.current.position.distanceTo(baseIdle);
+            const lerpSpeed = attackTrigger || damageTrigger ? 0.4 : (dist > 5 ? 0.15 : 0.08);
+            
+            groupRef.current.position.lerp(baseIdle, lerpSpeed);
 
-            // Rotation douce
-            groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, rotX, 0.1);
-            groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, Math.PI, 0.1);
-            groupRef.current.rotation.z = 0;
+            // Rotation douce via Quaternion Slerp pour éviter les vrilles/spins étranges après un "lookAt"
+            const targetEuler = new THREE.Euler(rotX, Math.PI, 0);
+            const targetQuat = new THREE.Quaternion().setFromEuler(targetEuler);
+            groupRef.current.quaternion.slerp(targetQuat, 0.15);
         }
     });
 

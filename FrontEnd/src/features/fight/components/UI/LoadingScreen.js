@@ -6,12 +6,12 @@ export function LoadingScreen({ progress }) {
     return (
         <View style={[StyleSheet.absoluteFill, styles.loadingContainer]}>
             <View style={styles.loadingInner}>
-                <Text style={styles.loadingTitle}>INITIALIZING ABYSSAL DIMENSION...</Text>
+                <Text style={styles.loadingTitle}>CHARGEMENT DE L'ARÈNE...</Text>
                 <View style={styles.progressBar}>
                     <Animated.View style={{ width: `${progress}%`, height: '100%', backgroundColor: '#ffaa00' }} />
                 </View>
                 <Text style={styles.progressText}>{progress}%</Text>
-                <Text style={styles.loadingSubtext}>WAITING FOR GPU COMPILATION & AUDIO CACHE</Text>
+                <Text style={styles.loadingSubtext}>PATIENCE...</Text>
             </View>
         </View>
     );

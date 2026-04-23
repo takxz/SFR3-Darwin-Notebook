@@ -70,7 +70,7 @@ export default function Register() {
                 if (token) {
                     await saveToken(token);
                     Alert.alert('Succès', fr.registerScreen.success_message);
-                    router.replace('/');
+                    router.replace('/cinematic');
                 } else {
                     Alert.alert('Erreur', 'Token non reçu du serveur');
                 }

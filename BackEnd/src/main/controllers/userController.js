@@ -1,4 +1,68 @@
 const db = require('../config/db');
+const fs = require('fs');
+const path = require('path');
+
+const UPLOADS_DIR = path.join(__dirname, '../../uploads');
+
+async function purgePlayerData(userId) {
+    const creatures = await db.query('SELECT scan_url FROM public."CREATURE" WHERE player_id = $1', [userId]);
+    for (const creature of creatures.rows) {
+        if (creature.scan_url) {
+            const filename = creature.scan_url.split('/uploads/').pop();
+            if (filename) {
+                const filePath = path.join(UPLOADS_DIR, filename);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            }
+        }
+    }
+    await db.query('DELETE FROM public."PLAYER" WHERE id = $1', [userId]);
+}
+
+exports.purgeExpiredAccounts = async () => {
+    try {
+        await db.query(`ALTER TABLE public."PLAYER" ADD COLUMN IF NOT EXISTS deletion_requested_at TIMESTAMPTZ`);
+        const result = await db.query(
+            `SELECT id FROM public."PLAYER" WHERE deletion_requested_at IS NOT NULL AND deletion_requested_at <= NOW() - INTERVAL '30 days'`
+        );
+        for (const row of result.rows) {
+            await purgePlayerData(row.id);
+            console.log(`[RGPD] Compte ${row.id} supprimé définitivement.`);
+        }
+    } catch (err) {
+        console.error('[RGPD] Erreur purge comptes expirés:', err);
+    }
+};
+
+exports.deleteAccount = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        await db.query(`ALTER TABLE public."PLAYER" ADD COLUMN IF NOT EXISTS deletion_requested_at TIMESTAMPTZ`);
+        await db.query(
+            `UPDATE public."PLAYER" SET deletion_requested_at = NOW() WHERE id = $1`,
+            [userId]
+        );
+        res.status(200).json({ message: "Votre compte sera supprimé définitivement dans 30 jours. Vous pouvez annuler cette demande en vous reconnectant." });
+    } catch (err) {
+        console.error('Erreur lors de la demande de suppression du compte:', err);
+        res.status(500).json({ error: "Erreur interne du serveur." });
+    }
+};
+
+exports.cancelDeleteAccount = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        await db.query(
+            `UPDATE public."PLAYER" SET deletion_requested_at = NULL WHERE id = $1`,
+            [userId]
+        );
+        res.status(200).json({ message: "Demande de suppression annulée." });
+    } catch (err) {
+        console.error('Erreur lors de l\'annulation de la suppression:', err);
+        res.status(500).json({ error: "Erreur interne du serveur." });
+    }
+};
 
 exports.getProfile = async (req, res) => {
     try {
@@ -49,6 +113,7 @@ exports.addCreature = async (req, res) => {
             species_id, 
             player_id, 
             gamification_name, 
+            scientific_name,
             scan_quality, 
             gps_location,
             stat_atq,
@@ -68,11 +133,36 @@ exports.addCreature = async (req, res) => {
         }
 
         // 1. Récupérer les informations de l'espèce pour les stats de base
-        const speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE id = $1', [species_id]);
-        if (speciesQuery.rows.length === 0) {
-            return res.status(404).json({ error: "Espèce non trouvée." });
+        let speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE LOWER(latin_name) = LOWER($1)', [scientific_name]);
+        let species;
+
+        if (speciesQuery.rows.length > 0) {
+            species = speciesQuery.rows[0];
+        } else {
+            speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE id = $1', [species_id]);
+            if (speciesQuery.rows.length > 0) {
+                species = speciesQuery.rows[0];
+            } else {
+                // Création d'une nouvelle espèce si non trouvée
+                const insertSpecies = await db.query(
+                    `INSERT INTO "SPECIES" (latin_name, name, type, rarity, base_stat_atq, base_stat_def, base_stat_pv, base_stat_speed)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+                    [
+                        scientific_name || 'Inconnu',
+                        gamification_name || 'Inconnu',
+                        'Inconnu', 
+                        'Commun', 
+                        stat_atq || 10, 
+                        stat_def || 10, 
+                        stat_pv || 10, 
+                        stat_speed || 10,
+                    ]
+                );
+                species = insertSpecies.rows[0];
+            }
         }
-        const species = speciesQuery.rows[0];
+
+        const actual_species_id = species.id;
 
         // 2. Insérer la nouvelle créature
         const query = `
@@ -95,7 +185,7 @@ exports.addCreature = async (req, res) => {
         `;
 
         const result = await db.query(query, [
-            species_id,
+            actual_species_id,
             userId,
             gamification_name || species.name,
             finalScanUrl,

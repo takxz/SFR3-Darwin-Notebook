@@ -5,7 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "jest src/tests"
+    "test": "jest src/tests",
+    "test:coverage": "jest --coverage",
+    "test:coverage:html": "jest --coverage --collectCoverageFrom='src/**/*.js'",
+    "test:watch": "jest --watch"
   },
   "keywords": [],
   "author": "",
