@@ -234,8 +234,7 @@ describe('userController', () => {
                 {
                     id: 'c-2',
                     species_name: 'Fougère',
-                    species_model_path: null,
-                    scan_url: null
+                    species_model_path: null
                 }
             ];
 
