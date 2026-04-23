@@ -2,11 +2,7 @@ name: CI_Test_Python_API
 
 on:
   push:
-    paths:
-      - 'PythonApi/**'
   pull_request:
-    paths:
-      - 'PythonApi/**'
   workflow_dispatch:
 
 jobs:
