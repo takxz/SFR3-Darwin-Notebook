@@ -11,9 +11,11 @@ module.exports = function (io, socket) {
         const battle = await store.getBattle(roomId);
         if (!battle) return;
 
-        battle.readyCount = (battle.readyCount || 0) + 1;
+        battle.readyPlayers = battle.readyPlayers || {};
+        battle.readyPlayers[socket.id] = true;
 
-        if (battle.readyCount === 2) {
+        if (Object.keys(battle.readyPlayers).length === 2 && !battle.isStarted) {
+            battle.isStarted = true;
             io.to(roomId).emit('battleStart', { turn: battle.turn, players: battle.players });
             battle.logs.push("Le combat commence !");
         }
