@@ -41,6 +41,5 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          files: ./coverage.xml
+          files: ./PythonApi/coverage.xml
           fail_ci_if_error: true
-        working-directory: PythonApi

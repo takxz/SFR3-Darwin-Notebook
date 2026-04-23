@@ -31,3 +31,8 @@ jobs:
         if: always()
         run: npm run test:coverage
         working-directory: BackEnd
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./BackEnd/coverage/lcov.info
+          fail_ci_if_error: true
