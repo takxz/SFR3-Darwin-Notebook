@@ -35,5 +35,5 @@ jobs:
         if: always()
         with:
           severity: ${{ job.status == 'success' && 'info' || 'error' }}
-          details: 'Le build est terminé avec le statut : ${{ job.status }}'
+          details: 'Le build est terminé avec le statut : ${{ job.status }}, pour le tag : ${{ github.event.inputs.tag_name }}'
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
