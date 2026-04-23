@@ -29,3 +29,11 @@ jobs:
             chmod +x ./setup_linux.sh
 
             ./setup_linux.sh
+        
+      - name: Discord Notification
+        uses: rjstone/discord-webhook-notify@v1      
+        if: always()
+        with:
+          severity: ${{ job.status == 'success' && 'info' || 'error' }}
+          details: 'Le build est terminé avec le statut : ${{ job.status }}'
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
