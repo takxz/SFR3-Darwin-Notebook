@@ -44,13 +44,13 @@ const findProfileById = async (userId) => {
 };
 
 const findPublicProfileById = async (userId) => {
-    const query = 'SELECT id, email, pseudo, player_level, bio_token FROM "PLAYER" WHERE id = $1';
+    const query = 'SELECT id, email, pseudo, player_level, xp, bio_token FROM "PLAYER" WHERE id = $1';
     const { rows } = await db.query(query, [userId]);
     return rows[0] || null;
 };
 
 const getProfileById = async (userId) => {
-    const query = 'SELECT id, email, pseudo, player_level, bio_token, deletion_requested_at FROM "PLAYER" WHERE id = $1';
+    const query = 'SELECT id, email, pseudo, player_level, xp, bio_token, deletion_requested_at FROM "PLAYER" WHERE id = $1';
     const { rows } = await db.query(query, [userId]);
     return rows[0] || null;
 };

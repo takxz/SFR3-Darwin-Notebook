@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, View, Text, StyleSheet, Pressable, Animated } from 'react-native';
-import { Trophy, Star, Coins } from 'lucide-react-native';
+import { Trophy, Star, Coins, PawPrint } from 'lucide-react-native';
 import colors from '@/assets/constants/colors.json';
 
 export const RewardModal = ({ visible, rewards, onClose }) => {
@@ -13,16 +13,28 @@ export const RewardModal = ({ visible, rewards, onClose }) => {
             animationType="fade"
         >
             <View style={styles.overlay}>
-                <View style={styles.modalContainer}>
-                    {/* Header with Trophy */}
+                <View style={[styles.modalContainer, !rewards.isWinner && styles.modalContainerDefeat]}>
+                    {/* Header with Trophy or Skull/Flag */}
                     <View style={styles.header}>
-                        <View style={styles.trophyCircle}>
-                            <Trophy size={40} color={colors.orangeDuel} />
+                        <View style={[styles.trophyCircle, !rewards.isWinner && styles.defeatCircle]}>
+                            {rewards.isWinner ? (
+                                <Trophy size={40} color={colors.orangeDuel} />
+                            ) : (
+                                <View style={{ opacity: 0.6 }}>
+                                    <Trophy size={40} color={colors.marronCuir} />
+                                </View>
+                            )}
                         </View>
-                        <Text style={styles.title}>VICTOIRE !</Text>
+                        <Text style={[styles.title, !rewards.isWinner && styles.titleDefeat]}>
+                            {rewards.isWinner ? "VICTOIRE !" : "DÉFAITE"}
+                        </Text>
                     </View>
 
-                    <Text style={styles.subtitle}>Félicitations Explorateur ! Voici vos récompenses :</Text>
+                    <Text style={styles.subtitle}>
+                        {rewards.isWinner 
+                            ? "Félicitations Explorateur ! Voici vos récompenses :" 
+                            : "Le combat était rude... Voici tout de même vos gains :"}
+                    </Text>
 
                     {/* Reward Rows */}
                     <View style={styles.rewardsList}>
@@ -31,10 +43,34 @@ export const RewardModal = ({ visible, rewards, onClose }) => {
                                 <Star size={24} color={colors.marronCuir} fill={colors.marronCuir} />
                             </View>
                             <View style={styles.rewardTextContainer}>
-                                <Text style={styles.rewardValue}>+{rewards.xp}</Text>
+                                <Text style={styles.rewardValue}>+{rewards.xp} XP</Text>
                                 <Text style={styles.rewardLabel}>Points d'Expérience</Text>
                             </View>
                         </View>
+
+                        {rewards.playerLeveledUp && (
+                            <View style={[styles.rewardItem, styles.levelUpItem]}>
+                                <View style={[styles.iconContainer, { backgroundColor: '#4ade8020' }]}>
+                                    <Star size={24} color="#22c55e" fill="#22c55e" />
+                                </View>
+                                <View style={styles.rewardTextContainer}>
+                                    <Text style={[styles.rewardValue, { color: '#16a34a' }]}>NIVEAU SUPÉRIEUR !</Text>
+                                    <Text style={styles.rewardLabel}>Vous êtes maintenant Niveau {rewards.newPLevel}</Text>
+                                </View>
+                            </View>
+                        )}
+
+                        {rewards.creatureLeveledUp && (
+                            <View style={[styles.rewardItem, styles.levelUpItem]}>
+                                <View style={[styles.iconContainer, { backgroundColor: '#3b82f620' }]}>
+                                    <PawPrint size={24} color="#2563eb" />
+                                </View>
+                                <View style={styles.rewardTextContainer}>
+                                    <Text style={[styles.rewardValue, { color: '#1d4ed8' }]}>ANIMAL LEVEL UP !</Text>
+                                    <Text style={styles.rewardLabel}>Votre compagnon est Niveau {rewards.newCLevel}</Text>
+                                </View>
+                            </View>
+                        )}
 
                         <View style={styles.rewardItem}>
                             <View style={[styles.iconContainer, { backgroundColor: colors.orangeDuel + '20' }]}>
@@ -173,5 +209,19 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         letterSpacing: 1,
+    },
+    levelUpItem: {
+        borderColor: '#4ade80',
+        backgroundColor: '#f0fdf4',
+    },
+    modalContainerDefeat: {
+        borderColor: colors.marronCuir + '50',
+    },
+    defeatCircle: {
+        borderColor: colors.marronCuir + '30',
+        backgroundColor: colors.marronCuir + '05',
+    },
+    titleDefeat: {
+        color: colors.marronCuir + '80',
     },
 });

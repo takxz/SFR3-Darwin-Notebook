@@ -1,6 +1,6 @@
-const db = require('./src/main/config/db');
+const db = require('../src/main/config/db');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 async function checkSchema() {
     console.log("--- DB CONNECTION CHECK ---");

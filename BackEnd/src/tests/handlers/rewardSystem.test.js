@@ -131,13 +131,64 @@ describe('Reward System Functional Test', () => {
         expect(io.to).toHaveBeenCalledWith(winnerId);
         expect(io.emit).toHaveBeenCalledWith('REWARD_GRANTED', expect.objectContaining({
             xp: 50,
-            bioTokens: 10
+            bioTokens: 10,
+            creatureId: winnerCreatureUUID,
+            isWinner: true,
+            creatureLeveledUp: false,
+            playerLeveledUp: false
         }));
 
         // D. Vérification du nettoyage Redis
         expect(store.deleteBattle).toHaveBeenCalledWith(roomId);
         expect(store.updatePlayerBattle).toHaveBeenCalledWith(winnerId, 'false');
         expect(store.updatePlayerBattle).toHaveBeenCalledWith(loserId, 'false');
+    });
+
+    test('should handle Level Up correctly for player and creature', async () => {
+        const battleState = {
+            roomId: roomId,
+            players: {
+                [winnerId]: { hp: 100, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE', creatureId: winnerCreatureUUID, playerId: winnerPlayerUUID },
+                [loserId]: { hp: 5, maxHp: 100, inventory: { potion: 3 }, action: 'IDLE', creatureId: loserCreatureUUID, playerId: 'loser-player-uuid' }
+            },
+            turn: winnerId,
+            logs: []
+        };
+
+        store.getPlayer.mockResolvedValue({ inBattle: roomId });
+        store.getBattle.mockResolvedValue(battleState);
+
+        // Mock DB: Creature has 90 XP (needs 100 for Level 2)
+        // Player has 95 XP (needs 100 for Level 2)
+        db.query.mockResolvedValueOnce({ rows: [] }); // FIGHT
+        
+        // WINNER
+        db.query.mockResolvedValueOnce({ rows: [{ experience: 90, creature_level: 1, stat_pv: 100, stat_atq: 20, stat_def: 10, stat_speed: 10 }] }); // SEL CREATURE
+        db.query.mockResolvedValueOnce({ rowCount: 1 }); // UPD CREATURE
+        db.query.mockResolvedValueOnce({ rows: [{ xp: 95, player_level: 1 }] }); // SEL PLAYER
+        db.query.mockResolvedValueOnce({ rowCount: 1 }); // UPD PLAYER
+
+        // LOSER
+        db.query.mockResolvedValueOnce({ rows: [{ experience: 0, creature_level: 1, stat_pv: 100, stat_atq: 20, stat_def: 10, stat_speed: 10 }] }); // SEL CREATURE
+        db.query.mockResolvedValueOnce({ rowCount: 1 }); // UPD CREATURE
+        db.query.mockResolvedValueOnce({ rows: [{ xp: 0, player_level: 1 }] }); // SEL PLAYER
+        db.query.mockResolvedValueOnce({ rowCount: 1 }); // UPD PLAYER
+
+        await playerActionHandler({ action: 'ATTACK' });
+
+        // Winner gains 50 XP -> both should level up
+        expect(io.emit).toHaveBeenCalledWith('REWARD_GRANTED', expect.objectContaining({
+            creatureLeveledUp: true,
+            playerLeveledUp: true,
+            newCLevel: 2,
+            newPLevel: 2
+        }));
+
+        // Check creature update call (90+50 - 100 = 40 XP, Level 2)
+        expect(db.query).toHaveBeenCalledWith(
+            expect.stringContaining('UPDATE "CREATURE"'),
+            expect.arrayContaining([40, 2])
+        );
     });
 
     test('should log error when database update fails', async () => {

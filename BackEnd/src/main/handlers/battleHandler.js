@@ -131,9 +131,19 @@ module.exports = function (io, socket) {
             const getXpThreshold = (lvl) => 100 + (lvl - 1) * 10;
 
             const processReward = async (pid, cid, isWinner, sid) => {
+                console.log(`[BattleHandler] Starting rewards for Player:${pid}, Creature:${cid}, Winner:${isWinner}`);
                 try {
                     const xpGain = isWinner ? 50 : 10;
                     const bioTokenGain = isWinner ? 10 : 0;
+                    let creatureLeveledUp = false;
+                    let playerLeveledUp = false;
+                    let newCLevel = 0;
+                    let newPLevel = 0;
+
+                    if (!pid || !cid) {
+                        console.error(`[BattleHandler] Missing ID for rewards! PID:${pid}, CID:${cid}`);
+                        return;
+                    }
 
                     // A. Récompense CRÉATURE
                     const creatureData = await db.query(
@@ -145,28 +155,34 @@ module.exports = function (io, socket) {
                         const c = creatureData.rows[0];
                         let newXp = (c.experience || 0) + xpGain;
                         let newLevel = c.creature_level || 1;
+                        console.log(`[BattleHandler] Creature ${cid} current XP: ${c.experience}, adding ${xpGain}`);
                         let newPv = c.stat_pv, newAtq = c.stat_atq, newDef = c.stat_def, newSpd = c.stat_speed;
 
                         while (newXp >= getXpThreshold(newLevel)) {
                             newXp -= getXpThreshold(newLevel);
                             newLevel++;
-                            // Augmentation des stats uniquement pour le vainqueur
+                            creatureLeveledUp = true;
                             if (isWinner) {
                                 newPv += Math.floor(Math.random() * 4) + 2;
                                 newAtq += Math.floor(Math.random() * 4) + 2;
                                 newDef += Math.floor(Math.random() * 4) + 2;
                                 newSpd += Math.floor(Math.random() * 4) + 2;
                             }
+                            console.log(`[BattleHandler] Creature ${cid} leveled up to ${newLevel}!`);
                         }
+                        newCLevel = newLevel;
 
-                        await db.query(
+                        const updateRes = await db.query(
                             `UPDATE "CREATURE" 
                              SET experience = $1, creature_level = $2, 
-                                 victories = victories + $3, defeats = defeats + $4,
-                                 stat_pv = $5, stat_atq = $6, stat_def = $7, stat_speed = $8
+                                  victories = victories + $3, defeats = defeats + $4,
+                                  stat_pv = $5, stat_atq = $6, stat_def = $7, stat_speed = $8
                              WHERE id = $9`,
                             [newXp, newLevel, isWinner ? 1 : 0, isWinner ? 0 : 1, newPv, newAtq, newDef, newSpd, cid]
                         );
+                        console.log(`[BattleHandler] Creature ${cid} updated: ${updateRes.rowCount} row(s)`);
+                    } else {
+                        console.error(`[BattleHandler] Creature ${cid} not found in DB!`);
                     }
 
                     // B. Récompense JOUEUR
@@ -174,11 +190,15 @@ module.exports = function (io, socket) {
                     if (playerData.rows.length > 0) {
                         let pXp = (playerData.rows[0].xp || 0) + xpGain;
                         let pLevel = playerData.rows[0].player_level || 1;
+                        console.log(`[BattleHandler] Player ${pid} current XP: ${playerData.rows[0].xp}, adding ${xpGain}`);
 
                         while (pXp >= getXpThreshold(pLevel)) {
                             pXp -= getXpThreshold(pLevel);
                             pLevel++;
+                            playerLeveledUp = true;
+                            console.log(`[BattleHandler] Player ${pid} leveled up to ${pLevel}!`);
                         }
+                        newPLevel = pLevel;
 
                         await db.query(
                             `UPDATE "PLAYER" 
@@ -187,12 +207,21 @@ module.exports = function (io, socket) {
                              WHERE id = $4`,
                             [pXp, pLevel, bioTokenGain, pid]
                         );
+                        console.log(`[BattleHandler] Player ${pid} stats updated.`);
                     }
 
-                    if (isWinner && sid) {
-                        io.to(sid).emit('REWARD_GRANTED', { xp: xpGain, bioTokens: bioTokenGain });
+                    if (sid) {
+                        io.to(sid).emit('REWARD_GRANTED', { 
+                            xp: xpGain, 
+                            bioTokens: bioTokenGain,
+                            creatureId: cid,
+                            isWinner: isWinner,
+                            creatureLeveledUp,
+                            playerLeveledUp,
+                            newCLevel,
+                            newPLevel
+                        });
                     }
-                    console.log(`[BattleHandler] 🏆 Récompenses traitées pour ${pid}: +${xpGain} XP, +${bioTokenGain} BioTokens`);
                 } catch (err) {
                     console.error(`[BattleHandler] ❌ Erreur récompenses pour ${pid}:`, err.message);
                 }

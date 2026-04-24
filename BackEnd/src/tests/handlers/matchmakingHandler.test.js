@@ -98,6 +98,7 @@ describe('MatchmakingHandler', () => {
         expect(db.query).toHaveBeenCalledWith(expect.stringContaining('FROM "CREATURE"'), [validUUID]);
         expect(store.client.hset).toHaveBeenCalledWith(
             expect.any(String),
+            'playerId', expect.any(String),
             'creatureId', validUUID,
             'nickname', expect.any(String),
             'modelPath', 'Bull',
@@ -115,6 +116,7 @@ describe('MatchmakingHandler', () => {
         expect(db.query).not.toHaveBeenCalled();
         expect(store.client.hset).toHaveBeenCalledWith(
             expect.any(String),
+            'playerId', expect.any(String),
             'creatureId', 51,
             'nickname', expect.any(String),
             'modelPath', 'shark',
@@ -133,6 +135,7 @@ describe('MatchmakingHandler', () => {
 
         expect(store.client.hset).toHaveBeenCalledWith(
             expect.any(String),
+            'playerId', expect.any(String),
             'creatureId', validUUID,
             'nickname', expect.any(String),
             'modelPath', 'Pig',
