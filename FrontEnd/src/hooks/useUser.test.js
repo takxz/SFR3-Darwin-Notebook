@@ -88,7 +88,7 @@ describe('useUser Hook', () => {
     expect(result.current.user).toEqual(mockUser);
     expect(result.current.error).toBeNull();
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://ikdeksmp.fr:3001/api/user/profile',
+      'http://localhost:3001/api/user/profile',
       {
         headers: {
           Authorization: `Bearer ${mockToken}`,
@@ -290,7 +290,7 @@ describe('useUser Hook', () => {
     );
 
     const [url] = global.fetch.mock.calls[0];
-    expect(url).toBe('http://ikdeksmp.fr:3001/api/user/profile');
+    expect(url).toBe('http://localhost:3001/api/user/profile');
   });
 
   it('doit inclure l\'en-tête Authorization avec le token Bearer', async () => {
