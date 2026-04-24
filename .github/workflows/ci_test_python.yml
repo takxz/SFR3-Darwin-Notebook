@@ -30,9 +30,13 @@ jobs:
           pip install -r requirements.txt
 
       - name: Test Python API with pytest
+        # L'ajout de -v (verbose) permet d'avoir le nom de chaque test dans les logs pour un meilleur repérage
         run: |
-          pytest
+          pytest -v
+          
       - name: Get test coverage
+        # if: always() permet de s'assurer d'obtenir le rapport de couverture, même en cas d'échec d'un test
+        if: always()
         run: |
           coverage run -m pytest tests/ --tb=short
           coverage report

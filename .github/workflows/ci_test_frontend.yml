@@ -14,16 +14,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JavaScript environment
+      
+      - name: Set up Node.js environment
         uses: actions/setup-node@v3
         with:
           node-version: 18
-      - name: Install dependencies
-        run: npm install
+          
+      - name: Install dependencies (Strict mode)
+        # npm ci est préféré en CI, il se base sur package-lock.json pour une installation rapide et fiable
+        run: npm ci
         working-directory: FrontEnd
-      - name: Run tests
-        run: npm test
+        
+      - name: Run tests with annotations
+        # Utilisation des reporters Jest pour afficher les erreurs directement en annotations Github
+        run: npm test -- --reporters=default --reporters=github-actions
         working-directory: FrontEnd
+        
       - name: Get test coverage
+        # if: always() permet de générer le rapport de couverture même si un test échoue
+        if: always()
         run: npm run test:coverage
         working-directory: FrontEnd
