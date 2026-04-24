@@ -108,3 +108,104 @@ describe('ImpactParticles', () => {
         expect(() => callback({})).not.toThrow();
     });
 });
+
+// ─── SlashEffect avec mesh défini ────────────────────────────────────────────
+
+describe('SlashEffect - mesh défini via createNodeMock', () => {
+    beforeEach(() => mockUseFrame.mockClear());
+
+    function createWithMesh(active) {
+        const mockMesh = {
+            material: { time: 0, opacity: 0 },
+            scale: { x: 0.5, setScalar: jest.fn() },
+        };
+        let instance;
+        renderer.act(() => {
+            instance = renderer.create(
+                <SlashEffect active={active} position={[0, 0.5, -13]} />,
+                { createNodeMock: (el) => el.type === 'mesh' ? mockMesh : null }
+            );
+        });
+        return { instance, mockMesh };
+    }
+
+    it('exécute le corps du callback quand active=true et mesh défini', () => {
+        const { mockMesh } = createWithMesh(true);
+        const callback = mockUseFrame.mock.calls[0][0];
+        expect(() => callback({ clock: { elapsedTime: 1.5 } })).not.toThrow();
+        expect(mockMesh.material.time).toBe(1.5);
+        expect(mockMesh.scale.setScalar).toHaveBeenCalled();
+    });
+
+    it('exécute le corps du callback quand active=false et mesh défini', () => {
+        const { mockMesh } = createWithMesh(false);
+        const callback = mockUseFrame.mock.calls[0][0];
+        expect(() => callback({ clock: { elapsedTime: 2 } })).not.toThrow();
+        expect(mockMesh.material.time).toBe(2);
+        expect(mockMesh.scale.setScalar).toHaveBeenCalledWith(0.5);
+    });
+
+    it('appelle setScalar avec la valeur lerp en mode actif', () => {
+        const { MathUtils } = require('three');
+        MathUtils.lerp.mockClear();
+        const { mockMesh } = createWithMesh(true);
+        const callback = mockUseFrame.mock.calls[0][0];
+        callback({ clock: { elapsedTime: 1 } });
+        expect(MathUtils.lerp).toHaveBeenCalled();
+    });
+});
+
+// ─── ImpactParticles avec mesh défini ────────────────────────────────────────
+
+describe('ImpactParticles - mesh défini via createNodeMock', () => {
+    const mockPosition = { x: 0, y: 0.5, z: -13 };
+
+    beforeEach(() => mockUseFrame.mockClear());
+
+    function createWithMesh(trigger) {
+        const mockMesh = {
+            setMatrixAt: jest.fn(),
+            instanceMatrix: { needsUpdate: false },
+        };
+        let instance;
+        renderer.act(() => {
+            instance = renderer.create(
+                <ImpactParticles position={mockPosition} trigger={trigger} />,
+                { createNodeMock: (el) => el.type === 'instancedMesh' ? mockMesh : null }
+            );
+        });
+        return { instance, mockMesh };
+    }
+
+    it('exécute le forEach et met à jour instanceMatrix quand trigger=false (particules mortes)', () => {
+        const { mockMesh } = createWithMesh(false);
+        const callback = mockUseFrame.mock.calls[0][0];
+        expect(() => callback({})).not.toThrow();
+        expect(mockMesh.setMatrixAt).toHaveBeenCalled();
+        expect(mockMesh.instanceMatrix.needsUpdate).toBe(true);
+    });
+
+    it('active les particules quand trigger=true (alive=0 → 1)', () => {
+        const { mockMesh } = createWithMesh(true);
+        const callback = mockUseFrame.mock.calls[0][0];
+        expect(() => callback({})).not.toThrow();
+        expect(mockMesh.setMatrixAt).toHaveBeenCalled();
+        expect(mockMesh.instanceMatrix.needsUpdate).toBe(true);
+    });
+
+    it('gère les particules déjà vivantes lors du deuxième appel (alive > 0, trigger=true)', () => {
+        const { mockMesh } = createWithMesh(true);
+        const callback = mockUseFrame.mock.calls[0][0];
+        callback({});
+        mockMesh.setMatrixAt.mockClear();
+        expect(() => callback({})).not.toThrow();
+        expect(mockMesh.setMatrixAt).toHaveBeenCalled();
+    });
+
+    it('appelle setMatrixAt 100 fois (une par particule)', () => {
+        const { mockMesh } = createWithMesh(false);
+        const callback = mockUseFrame.mock.calls[0][0];
+        callback({});
+        expect(mockMesh.setMatrixAt).toHaveBeenCalledTimes(100);
+    });
+});
