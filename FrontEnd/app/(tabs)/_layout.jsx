@@ -1,9 +1,11 @@
 import { Tabs, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Home, Sword, User, Library, Camera } from 'lucide-react-native';
+import { Home, Sword, User, Library, Camera as CameraIcon } from 'lucide-react-native';
 import fr from '@/assets/locales/fr.json';
 import { StyleSheet } from 'react-native';
 import { getToken } from '@/utils/auth';
+import * as Location from 'expo-location';
+import { Camera } from 'expo-camera';
 
 export default function TabLayout() {
     const router = useRouter();
@@ -16,6 +18,17 @@ export default function TabLayout() {
                 router.replace('/login');
                 return;
             }
+
+            // Demande groupée des permissions dès l'arrivée sur l'accueil
+            try {
+                await Promise.all([
+                    Location.requestForegroundPermissionsAsync(),
+                    Camera.requestCameraPermissionsAsync()
+                ]);
+            } catch (err) {
+                console.warn('Erreur demande permissions:', err);
+            }
+
             setIsReady(true);
         };
 
@@ -40,7 +53,7 @@ export default function TabLayout() {
         {
             name: 'camera',
             title: fr.navigationBar.camera,
-            icon: Camera,
+            icon: CameraIcon,
             headerShown: false
         },
         {

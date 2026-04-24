@@ -29,6 +29,12 @@
           "cameraPermission": "L'application a besoin d'accéder à la caméra pour prendre des photos."
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationForegroundPermission": "L'application a besoin d'accéder à votre position pour situer vos découvertes."
+        }
+      ],
       "expo-secure-store"
     ]
   }
