@@ -25,7 +25,7 @@ const LOOK_AT_Z = -10;
 
 export default function Scene({
     hitTrigger, enemyHitTrigger, triggerHit, isSpecialAttack, isBerserkStrike, isFinisher,
-    combo, isIntro, zawarudoProgress, themeColor, stats, opAction, myAction
+    combo, isIntro, zawarudoProgress, themeColor, opAction, myAction, stats, opActionTimer, speedFactor, opSpeedFactor
 }) {
     const meshRef = useRef();
     const impactAnchor = useRef(new THREE.Vector3(0, 0.5, -13));
@@ -46,9 +46,10 @@ export default function Scene({
 
 
     useFrame((state) => {
-        // 1. HIT LOGIC (Correction du cumul de FOV)
-        if (hitTrigger) {
-            shake.current = isSpecialAttack ? 12.0 : 4.0;
+        // 1. HIT LOGIC (Vibrations de caméra)
+        if (hitTrigger || enemyHitTrigger) {
+            const isHeavy = myAction === 'HEAVY_ATTACK' || opAction === 'HEAVY_ATTACK';
+            shake.current = isSpecialAttack ? 18.0 : (isHeavy ? 15.0 : 6.0);
         }
 
         // Lerp du FOV pour éviter le cumul infini
@@ -114,6 +115,7 @@ export default function Scene({
                 isSpecialAttack={isBerserkStrike}
                 isFinisher={isFinisher}
                 modelSource={playerModel}
+                myAction={myAction}
             />
 
             <TargetGolem
@@ -129,8 +131,56 @@ export default function Scene({
             <StunStars active={myAction === 'STUNNED'} position={[0, 4, 10]} />
             <StunStars active={opAction === 'STUNNED'} position={[0, 6, -15]} />
 
-            <ImpactParticles position={impactAnchor.current} trigger={hitTrigger} />
+            <ImpactParticles
+                position={impactAnchor.current}
+                trigger={hitTrigger}
+                color={myAction === 'HEAVY_ATTACK' ? '#ff0000' : '#ffffff'}
+            />
             <SlashEffect active={hitTrigger} position={[0, 0.5, -13]} />
+
+            {/* Effets quand le JOUEUR est frappé */}
+            <ImpactParticles
+                position={[0, 0.5, 8]}
+                trigger={enemyHitTrigger}
+                color={opAction === 'HEAVY_ATTACK' ? '#ff0000' : '#ffffff'}
+            />
+            <SlashEffect active={enemyHitTrigger} position={[0, 0.5, 8]} />
+
+            {/* CERCLE DE PARADE (Attaque Lourde Ennemie) */}
+            <ParryRing action={opAction} timer={opActionTimer} speedFactor={opSpeedFactor} />
         </>
+    );
+}
+
+/**
+ * 🎯 PARRY RING (Indicateur de timing pour l'attaque lourde)
+ */
+function ParryRing({ action, timer, speedFactor = 1, position = [0, 2.5, -13] }) {
+    const meshRef = useRef();
+
+    // Impact scalé par la vitesse (1000ms de base)
+    const impactTime = 1000 * speedFactor;
+    const isActive = action === 'HEAVY_ATTACK' && timer < impactTime;
+
+    useFrame(() => {
+        if (!meshRef.current) return;
+
+        if (isActive) {
+            // Le cercle rétrécit de 0 à impactTime
+            const progress = timer / impactTime;
+            const scale = 5 * (1 - progress);
+            meshRef.current.scale.set(scale, scale, scale);
+            meshRef.current.visible = true;
+            meshRef.current.material.opacity = 0.3 + (0.5 * progress);
+        } else {
+            meshRef.current.visible = false;
+        }
+    });
+
+    return (
+        <mesh ref={meshRef} position={position} rotation={[0, 0, 0]}>
+            <ringGeometry args={[0.85, 1, 64]} />
+            <meshBasicMaterial color="white" transparent opacity={0.8} side={THREE.DoubleSide} />
+        </mesh>
     );
 }

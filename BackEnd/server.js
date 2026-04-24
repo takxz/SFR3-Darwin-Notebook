@@ -47,20 +47,20 @@ io.adapter(createAdapter(pubClient, subClient));
 io.on('connection', async (socket) => {
     console.log(`[Cluster ${process.pid}] User connected:`, socket.id);
 
-    // Ajout en base (await car c'est Redis maintenant)
-    await store.addPlayer(socket.id);
-
-    // Broadcast le compteur de joueurs à tout le réseau (peu importe le cluster)
-    const count = await store.getPlayerCount();
-    io.emit('playerCount', count);
-
-    // Attacher les Handlers
+    // Attacher les Handlers de façon synchrone pour ne rater aucun event
     registerMatchmakingHandlers(io, socket);
     registerBattleHandlers(io, socket);
 
     socket.on('getPlayerCount', async () => {
         socket.emit('playerCount', await store.getPlayerCount());
     });
+
+    // Ajout en base (await car c'est Redis maintenant)
+    await store.addPlayer(socket.id);
+
+    // Broadcast le compteur de joueurs à tout le réseau (peu importe le cluster)
+    const count = await store.getPlayerCount();
+    io.emit('playerCount', count);
 
     socket.on('disconnect', async () => {
         console.log(`[Cluster ${process.pid}] User disconnected:`, socket.id);

@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Animated, Easing, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -60,9 +60,19 @@ const RotatingHalo = ({ intensity = 0.3 }) => {
 /**
  * 🕹️ ANIMATED BATTLE BUTTON COMPONENT
  */
-const BattleButton = ({ children, onPress, disabled, style, colors }) => {
+const BattleButton = ({ children, onPress, disabled, style, colors, progress = 1 }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const glowAnim = useRef(new Animated.Value(0)).current;
+    const progressAnim = useRef(new Animated.Value(progress)).current;
+
+    useEffect(() => {
+        Animated.timing(progressAnim, {
+            toValue: progress,
+            duration: 120, // Légèrement plus long que le tick rate (100ms) pour lisser
+            easing: Easing.linear,
+            useNativeDriver: true,
+        }).start();
+    }, [progress]);
 
     const handlePressIn = () => {
         Animated.parallel([
@@ -83,6 +93,12 @@ const BattleButton = ({ children, onPress, disabled, style, colors }) => {
         outputRange: [0.3, 1.0]
     });
 
+    // Translation du voile vers le haut pour révéler le bouton de bas en haut
+    const translateY = progressAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, -80] // -80 car les boutons font environ 75 de haut
+    });
+
     return (
         <TouchableOpacity
             activeOpacity={1}
@@ -98,19 +114,145 @@ const BattleButton = ({ children, onPress, disabled, style, colors }) => {
                     <LinearGradient colors={colors} style={styles.actionButton}>
                         {children}
                     </LinearGradient>
+
+                    {/* COOLDOWN PROGRESS OVERLAY (Animé fluidement) */}
+                    <Animated.View
+                        pointerEvents="none"
+                        style={[
+                            StyleSheet.absoluteFill,
+                            {
+                                backgroundColor: 'rgba(0,0,0,0.65)',
+                                transform: [{ translateY }],
+                                zIndex: 10
+                            }
+                        ]}
+                    />
                 </View>
             </Animated.View>
         </TouchableOpacity>
     );
 };
 
+/**
+ * 🎨 STROKED TEXT COMPONENT (HACK POUR OUTLINE SOLIDE)
+ */
+const StrokedText = ({ children, text, style, strokeColor = "#FFD700", strokeWidth = 3 }) => {
+    const content = text || children;
+    return (
+        <View style={{ position: 'relative' }}>
+            {/* LES 4 COUCHES DE STROKE */}
+            <Text style={[style, { color: strokeColor, position: 'absolute', top: -strokeWidth, left: -strokeWidth }]}>{content}</Text>
+            <Text style={[style, { color: strokeColor, position: 'absolute', top: -strokeWidth, left: strokeWidth }]}>{content}</Text>
+            <Text style={[style, { color: strokeColor, position: 'absolute', top: strokeWidth, left: -strokeWidth }]}>{content}</Text>
+            <Text style={[style, { color: strokeColor, position: 'absolute', top: strokeWidth, left: strokeWidth }]}>{content}</Text>
+
+            {/* TEXTE PRINCIPAL PAR DESSUS */}
+            <Text style={style}>{content}</Text>
+        </View>
+    );
+};
+
+/**
+ * ⏳ COUNTDOWN OVERLAY
+ */
+const CountdownOverlay = ({ countdown }) => {
+    const scaleAnim = useRef(new Animated.Value(3)).current;
+    const opacityAnim = useRef(new Animated.Value(0)).current;
+
+    const text = countdown > 3000 ? "3" : countdown > 2000 ? "2" : countdown > 1000 ? "1" : "GO !";
+
+    useEffect(() => {
+        if (countdown > 0) {
+            scaleAnim.setValue(4);
+            opacityAnim.setValue(0);
+            Animated.parallel([
+                Animated.spring(scaleAnim, {
+                    toValue: 1,
+                    friction: 3,
+                    tension: 60,
+                    useNativeDriver: true
+                }),
+                Animated.timing(opacityAnim, {
+                    toValue: 1,
+                    duration: 150,
+                    useNativeDriver: true
+                })
+            ]).start();
+        }
+    }, [text]);
+
+    if (countdown <= 0) return null;
+
+    return (
+        <View style={styles.countdownOverlay} pointerEvents="none">
+            <Animated.View style={{ transform: [{ scale: scaleAnim }], opacity: opacityAnim }}>
+                <StrokedText style={styles.countdownText}>{text}</StrokedText>
+            </Animated.View>
+        </View>
+    );
+};
+
+/**
+ * 💥 BATTLE EVENT OVERLAY
+ */
+const BattleEventOverlay = ({ event, myNickname }) => {
+    const [displayEvent, setDisplayEvent] = useState(null);
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const opacityAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (event && event.id) {
+            setDisplayEvent(event);
+            scaleAnim.setValue(1.5);
+            opacityAnim.setValue(1);
+
+            Animated.sequence([
+                Animated.spring(scaleAnim, { toValue: 1, friction: 3, tension: 50, useNativeDriver: true }),
+                Animated.delay(1000),
+                Animated.timing(opacityAnim, { toValue: 0, duration: 300, useNativeDriver: true })
+            ]).start();
+        }
+    }, [event?.id]);
+
+    if (!displayEvent) return null;
+
+    let message = "";
+    let color = "#fff";
+
+    const isMeAttacker = displayEvent.attacker === myNickname;
+
+    if (displayEvent.type === 'DAMAGE') {
+        message = isMeAttacker ? `DÉGÂTS : ${displayEvent.value}` : `TOUCHÉ ! -${displayEvent.value}`;
+        color = isMeAttacker ? "#6bb57c" : "#d14d53";
+    } else if (displayEvent.type === 'PARRY') {
+        message = isMeAttacker ? "PARADE RÉUSSIE !" : "ATTAQUE PARÉE !";
+        color = "#71b5d6";
+    } else if (displayEvent.type === 'INTERRUPT') {
+        message = isMeAttacker ? "INTERRUPTION !" : "INTERROMPU !";
+        color = "#ffaa00";
+    }
+
+    return (
+        <View style={styles.eventOverlay} pointerEvents="none">
+            <Animated.View style={{ transform: [{ scale: scaleAnim }], opacity: opacityAnim }}>
+                <StrokedText style={[styles.eventText, { color }]}>{message}</StrokedText>
+            </Animated.View>
+        </View>
+    );
+};
+
 export const BattleOverlay = ({
     hit, combo, isSpecial, isIntro,
     cinematicAnim, comboScaleAnim,
-    stats, // NOUVEAUX PROPS NETWORK
+    stats, result, // NOUVEAUX PROPS NETWORK
     sendAction, triggerHit, triggerSpecial, onFlee, onQuit,
     isDebugMode
 }) => {
+    // Détermination de la victoire/défaite
+    const isVictory = result ? result.winner === socketService.socket?.id : stats.opHp <= 0;
+    const isGameOver = result || stats.hp <= 0 || stats.opHp <= 0;
+    const isDisconnect = result?.reason === 'DISCONNECT';
+
     return (
         <View style={styles.overlay} pointerEvents="box-none">
             {/* CINEMATIC BARS */}
@@ -137,28 +279,46 @@ export const BattleOverlay = ({
 
             {/* HUD: HEALTH BARS & STATS (NETWORK DRIVEN) */}
             {!isIntro && (
-                <View style={[styles.hudContainer, { top: 60 }]}>
+                <View style={[styles.hudContainer, { top: 30 }]}>
                     {/* BASE STATS TACTICAL READOUT */}
                     <View style={styles.statsReadout}>
-                        <Text style={styles.statText}>ATK <Text style={styles.statValue}>55</Text></Text>
+                        <Text style={styles.statText}>ATK <Text style={styles.statValue}>{stats.atk}</Text></Text>
                         <Text style={styles.statDivider}>|</Text>
-                        <Text style={styles.statText}>DEF <Text style={styles.statValue}>75</Text></Text>
+                        <Text style={styles.statText}>DEF <Text style={styles.statValue}>{stats.def}</Text></Text>
                         <Text style={styles.statDivider}>|</Text>
-                        <Text style={styles.statText}>SPD <Text style={styles.statValue}>40</Text></Text>
-                        <Text style={styles.statDivider}>|</Text>
-                        <Text style={styles.statText}>SPC <Text style={styles.statValue}>60</Text></Text>
+                        <Text style={styles.statText}>SPD <Text style={styles.statValue}>{stats.speed}</Text></Text>
                     </View>
 
                     <View style={styles.healthRow}>
+                        <View style={styles.healthBarWrapper}>                        </View>
                         <View style={styles.healthBarWrapper}>
-                            <View testID='hero-health-bar' style={[styles.healthBar, { width: `${(stats.hp / stats.maxHp) * 100}%`, backgroundColor: '#44ff00' }]} />
-                            <Text style={styles.hpLabel}>{stats.nickname}: {stats.hp} HP</Text>
+                            <View testID='hero-health-bar' style={[styles.healthBar, { width: `${(stats.hp / (stats.maxHp || 100)) * 100}%`, backgroundColor: '#6bb57c' }]} />
+                            <Text style={styles.hpLabel}>{stats.nickname}: {Math.round(stats.hp)} / {stats.maxHp}</Text>
                         </View>
                         <View style={styles.healthBarWrapper}>
-                            <View testID='enemy-health-bar' style={[styles.healthBar, { width: `${(stats.opHp / stats.opMaxHp) * 100}%`, backgroundColor: '#ff4400', alignSelf: 'flex-end' }]} />
-                            <Text style={[styles.hpLabel, { textAlign: 'right' }]}>{stats.opNickname}: {stats.opHp} HP</Text>
+                            <View testID='enemy-health-bar' style={[styles.healthBar, { width: `${(stats.opHp / (stats.opMaxHp || 100)) * 100}%`, backgroundColor: '#a12b2b', alignSelf: 'flex-end' }]} />
+                            <Text style={[styles.hpLabel, { textAlign: 'right' }]}>{stats.opNickname}: {Math.round(stats.opHp)} / {stats.opMaxHp}</Text>
                         </View>
                     </View>
+
+                    {/* FLEE BUTTON (Top Left under health) */}
+                    <TouchableOpacity
+                        style={styles.fleeBtnTop}
+                        onPress={() => {
+                            if (isSpecial || stats.hp <= 0 || stats.opHp <= 0) return;
+                            Alert.alert(
+                                "Abandonner le combat ?",
+                                "Si vous fuyez, vous serez déclaré vaincu. Voulez-vous continuer ?",
+                                [
+                                    { text: "Rester et me battre", style: "cancel" },
+                                    { text: "Fuir", onPress: () => onFlee(), style: "destructive" }
+                                ]
+                            );
+                        }}
+                        disabled={isSpecial || stats.hp <= 0 || stats.opHp <= 0}
+                    >
+                        <Ionicons name="walk-outline" size={22} color="rgba(255,255,255,0.7)" />
+                    </TouchableOpacity>
                 </View>
             )}
 
@@ -178,6 +338,12 @@ export const BattleOverlay = ({
                 </View>
             )}
 
+            {/* START COUNTDOWN */}
+            {!isIntro && <CountdownOverlay countdown={stats.countdown} />}
+
+            {/* BATTLE EVENTS */}
+            {!isIntro && stats.countdown === 0 && <BattleEventOverlay event={stats.lastEvent} myNickname={stats.nickname} />}
+
             {/* ENEMY BADGE */}
             {isIntro && (
                 <Animated.View style={[styles.enemyBadge, { opacity: cinematicAnim }]}>
@@ -195,34 +361,35 @@ export const BattleOverlay = ({
                 )}
             </View>
 
-            {/* ACTION BUTTONS */}
+            {/* ACTION BUTTONS (2x2 GRID) */}
             {!isIntro && (
                 <View style={styles.actionMenuContainer}>
+                    {/* LIGNE 1 */}
                     <View style={styles.actionRow}>
                         <BattleButton
-                            onPress={() => {
-                                triggerHit(); // Client-side prediction: instant animation !
-                                if (!isDebugMode) sendAction('ATTACK');
-                            }}
-                            disabled={isSpecial || stats.hp <= 0 || stats.opHp <= 0 || stats.action !== 'IDLE'}
-                            style={styles.actionBtnTop}
-                            colors={['#d14d53', '#8e1b1b']}
+                            onPress={() => !isDebugMode && sendAction('LIGHT_ATTACK')}
+                            disabled={isSpecial || stats.hp <= 0 || stats.opHp <= 0 || stats.action !== 'IDLE' || stats.lightCooldown > 0 || stats.countdown > 0}
+                            style={styles.gridBtn}
+                            colors={['#d14d53', '#a12b2b']}
+                            progress={stats.lightCooldown > 0 ? 1 - (stats.lightCooldown / 1200) : 1}
                         >
                             <Ionicons name="flash-outline" size={24} color="white" />
-                            <Text style={styles.actionText}>{stats.action === 'STUNNED' ? 'ÉTOURDI' : 'Attaque'}</Text>
+                            <Text style={styles.actionText}>Légère</Text>
                         </BattleButton>
 
                         <BattleButton
-                            onPress={() => !isDebugMode && sendAction('DEFEND')}
-                            disabled={isSpecial || stats.hp <= 0 || stats.opHp <= 0 || stats.action !== 'IDLE'}
-                            style={styles.actionBtnTop}
-                            colors={['#6bb57c', '#2c693b']}
+                            onPress={() => !isDebugMode && sendAction('HEAVY_ATTACK')}
+                            disabled={isSpecial || stats.hp <= 0 || stats.opHp <= 0 || stats.action !== 'IDLE' || stats.heavyCooldown > 0 || stats.countdown > 0}
+                            style={styles.gridBtn}
+                            colors={['#8e1b1b', '#5a0d0d']}
+                            progress={stats.heavyCooldown > 0 ? 1 - (stats.heavyCooldown / 2500) : 1}
                         >
-                            <Ionicons name="shield-outline" size={24} color="white" />
-                            <Text style={styles.actionText}>{stats.action === 'PARRYING' ? 'EN GARDE' : 'Paré'}</Text>
+                            <MaterialCommunityIcons name="gavel" size={24} color="white" />
+                            <Text style={styles.actionText}>Lourde</Text>
                         </BattleButton>
                     </View>
 
+                    {/* LIGNE 2 */}
                     <View style={styles.actionRow}>
                         <BattleButton
                             onPress={() => {
@@ -231,49 +398,42 @@ export const BattleOverlay = ({
                                     sendAction('SPECIAL');
                                 }
                             }}
-                            disabled={isSpecial || stats.hp <= 0 || stats.opHp <= 0 || !stats.specialReady || stats.action !== 'IDLE'}
-                            style={styles.actionBtnTop}
+                            disabled={isSpecial || stats.hp <= 0 || stats.opHp <= 0 || !stats.specialReady || stats.action !== 'IDLE' || stats.countdown > 0}
+                            style={styles.gridBtn}
                             colors={['#71b5d6', '#327094']}
                         >
                             <MaterialCommunityIcons name="weather-windy" size={24} color="white" />
                             <Text style={styles.actionText}>
-                                {stats.specialReady ? "Spécial" : `CHARGE: ${stats.specialCharge}/50`}
+                                {stats.specialReady ? "Spécial" : `${stats.specialCharge}/50`}
                             </Text>
                         </BattleButton>
 
                         <BattleButton
-                            onPress={() => {
-                                if (isSpecial || stats.hp <= 0 || stats.opHp <= 0) return;
-
-                                Alert.alert(
-                                    "Abandonner le combat ?",
-                                    "Si vous fuyez, vous serez déclaré vaincu. Voulez-vous continuer ?",
-                                    [
-                                        { text: "Rester et me battre", style: "cancel" },
-                                        {
-                                            text: "Fuir",
-                                            onPress: () => onFlee(),
-                                            style: "destructive"
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={isSpecial || stats.hp <= 0 || stats.opHp <= 0}
-                            style={styles.actionBtnTop}
-                            colors={['#b87c53', '#69381b']}
+                            onPress={() => !isDebugMode && sendAction('DEFEND')}
+                            disabled={isSpecial || stats.hp <= 0 || stats.opHp <= 0 || stats.action !== 'IDLE' || stats.parryCooldown > 0 || stats.countdown > 0}
+                            style={styles.gridBtn}
+                            colors={['#6bb57c', '#2c693b']}
+                            progress={stats.parryCooldown > 0 ? 1 - (stats.parryCooldown / 3000) : 1}
                         >
-                            <Ionicons name="arrow-back-outline" size={24} color="white" />
-                            <Text style={styles.actionText}>Fuir</Text>
+                            <Ionicons name="shield-outline" size={24} color="white" />
+                            <Text style={styles.actionText}>
+                                {stats.parryCooldown > 0 ? 'RECHARGE' : 'Parer'}
+                            </Text>
                         </BattleButton>
                     </View>
                 </View>
             )}
 
             {/* RESULTS OVERLAY */}
-            {(stats.hp <= 0 || stats.opHp <= 0) && (
+            {isGameOver && (
                 <View style={styles.resultsOverlay}>
-                    <Text style={styles.resultTitle}>{stats.hp <= 0 ? "DÉFAITE" : "VICTOIRE"}</Text>
-                    <Text testID={stats.hp <= 0 ? "defeat-text" : "victory-text"} style={styles.resultSubtext}>{stats.hp <= 0 ? "VOUS AVEZ ÉTÉ VAINCU..." : `${stats.opNickname} A ÉTÉ TERRASSÉ !`}</Text>
+                    <Text style={styles.resultTitle}>{isVictory ? "VICTOIRE" : "DÉFAITE"}</Text>
+                    <Text testID={stats.hp <= 0 ? "defeat-text" : "victory-text"} style={styles.resultSubtext}>
+                        {isDisconnect
+                            ? "L'ADVERSAIRE S'EST DÉCONNECTÉ"
+                            : (isVictory ? `${stats.opNickname} A ÉTÉ TERRASSÉ !` : "VOUS AVEZ ÉTÉ VAINCU...")
+                        }
+                    </Text>
 
                     <BattleButton
                         onPress={onQuit}
@@ -312,10 +472,10 @@ const styles = StyleSheet.create({
     resultTitle: { color: '#fff', fontSize: 52, fontWeight: '900', letterSpacing: 8, textShadowColor: '#ff0000', textShadowRadius: 20 },
     resultSubtext: { color: '#ffaa00', fontSize: 14, fontWeight: 'bold', marginTop: 10, letterSpacing: 4 },
     topInfo: { alignItems: 'center', height: 120, top: 80 },
-    actionMenuContainer: { width: '100%', paddingHorizontal: 15, gap: 10, paddingBottom: 30 },
-    actionRow: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
-    actionBtnTop: { flex: 1, height: 75, position: 'relative' },
-    actionBtnBottom: { width: '45%', height: 75, position: 'relative' },
+    actionMenuContainer: { width: '100%', paddingHorizontal: 20, gap: 12, paddingBottom: 40 },
+    actionRow: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
+    gridBtn: { flex: 1, height: 70, position: 'relative' },
+    fleeBtnTop: { marginTop: 10, padding: 8, alignSelf: 'flex-start', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
     borderBeamContainer: { position: 'absolute', top: -5, left: -5, right: -5, bottom: -5, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
     haloLine: { position: 'absolute', width: 300, height: 300, top: '50%', left: '50%', marginTop: -150, marginLeft: -150, opacity: 0.3 },
     actionButton: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 5, gap: 4, borderRadius: 12, overflow: 'hidden' },
@@ -329,6 +489,24 @@ const styles = StyleSheet.create({
     enemyBadge: { position: 'absolute', top: 100, alignSelf: 'center', backgroundColor: 'rgba(0, 0, 0, 0.75)', paddingHorizontal: 30, paddingVertical: 12, borderRadius: 4, borderLeftWidth: 4, borderLeftColor: '#ff4400', alignItems: 'center', zIndex: 1002 },
     enemyLevel: { color: '#ffaa00', fontSize: 14, fontWeight: 'bold', letterSpacing: 2 },
     enemyName: { color: '#ffffff', fontSize: 24, fontWeight: '900', letterSpacing: 4, marginTop: 4 },
-    quitBtn: { marginTop: 40, width: '70%', height: 60 }
+    quitBtn: { marginTop: 40, width: '70%', height: 60 },
+    countdownOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', zIndex: 3000 },
+    countdownText: {
+        color: '#fff',
+        fontSize: 140,
+        fontWeight: '900',
+        fontStyle: 'italic',
+        letterSpacing: -5,
+        textAlign: 'center',
+        paddingHorizontal: 40,
+    },
+    eventOverlay: { position: 'absolute', top: '40%', width: '100%', alignItems: 'center', zIndex: 2500 },
+    eventText: {
+        fontSize: 34,
+        fontWeight: '900',
+        fontStyle: 'italic',
+        textTransform: 'uppercase',
+        letterSpacing: 2,
+        paddingHorizontal: 10
+    }
 });
-

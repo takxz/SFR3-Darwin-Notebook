@@ -38,7 +38,7 @@ export default function ArenaScreen() {
     const prevOpActionRef = useRef('IDLE');
 
     // ⚔️ NETWORK ORCHESTRATION (CONNEXION VPS)
-    const { stats, findMatch, sendReady, sendAction, abandon, matchStatus } = useBattleNetwork(
+    const { stats, result, findMatch, sendReady, sendAction, abandon, matchStatus } = useBattleNetwork(
         () => {
             console.log("[Arena] MATCH READY! OPENING ARENA...");
             startBattleSequence();
@@ -57,9 +57,19 @@ export default function ArenaScreen() {
                     triggerEnemySpecial();
                 }
 
-                // 2. SI JE ME PRENDS UN COUP (Je deviens 'HIT')
+                // 2. SI JE ME PRENDS UN COUP (Je deviens 'HIT') -> L'ennemi a frappé !
                 if (myPlayer.action === 'HIT' && prevMyActionRef.current !== 'HIT') {
-                    triggerEnemyHit(); // Les dégâts normaux
+                    triggerEnemyHit();
+                }
+
+                // 3. SI L'ADVERSAIRE SE PREND UN COUP (Il devient 'HIT') -> J'ai frappé !
+                if (opPlayer.action === 'HIT' && prevOpActionRef.current !== 'HIT') {
+                    triggerPlayerHit();
+                }
+
+                // 4. SI JE LANCE MON SPÉCIAL (Sync serveur)
+                if (myPlayer.action === 'SPECIAL' && prevMyActionRef.current !== 'SPECIAL') {
+                    triggerSpecial();
                 }
 
                 prevMyActionRef.current = myPlayer.action;
@@ -145,8 +155,11 @@ export default function ArenaScreen() {
                                 isIntro={isIntro}
                                 themeColor="#ff4400"
                                 opAction={stats.opAction}
+                                opActionTimer={stats.opActionTimer}
                                 myAction={stats.action}
-                                stats={stats} // Pass stats to resolve models
+                                stats={stats}
+                                speedFactor={stats.speedFactor}
+                                opSpeedFactor={stats.opSpeedFactor}
                             />
                         </Suspense>
                     </Canvas>
@@ -166,6 +179,7 @@ export default function ArenaScreen() {
                         triggerHit={triggerPlayerHit}
                         triggerSpecial={isIntro ? startBattleSequence : triggerSpecial}
                         stats={stats}
+                        result={result}
                         sendAction={sendAction}
                         onFlee={abandon}
                         onQuit={() => {

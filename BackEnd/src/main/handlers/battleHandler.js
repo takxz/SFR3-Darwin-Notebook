@@ -27,15 +27,44 @@ module.exports = function (io, socket) {
             battle.isStarted = true;
             
             // Initialisation de l'état temps réel
-            Object.keys(battle.players).forEach(pId => {
+            for (const pId of Object.keys(battle.players)) {
                 const p = battle.players[pId];
-                p.action = 'IDLE'; // IDLE, ATTACKING, PARRYING, STUNNED, DEAD
+                
+                // Récupération des vraies stats en base si possible
+                let atk = 50;
+                let def = 30;
+                let speed = 50;
+                let maxHp = 100;
+                
+                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.creatureId);
+                
+                if (isUUID) {
+                    try {
+                        const res = await db.query('SELECT stat_atq, stat_def, stat_pv, stat_speed FROM "CREATURE" WHERE id = $1', [p.creatureId]);
+                        if (res.rows.length > 0) {
+                            atk = res.rows[0].stat_atq || 50;
+                            def = res.rows[0].stat_def || 30;
+                            maxHp = res.rows[0].stat_pv || 100;
+                            speed = res.rows[0].stat_speed || 50;
+                        }
+                    } catch (e) {
+                        console.error(`[Battle] Error fetching stats for ${pId}:`, e.message);
+                    }
+                }
+
+                p.stats = { atk, def, speed };
+                p.maxHp = maxHp;
+                p.hp = maxHp; // Override initial 100
+                p.speedFactor = 50 / speed; // Multiplicateur de durée (ex: speed 100 -> factor 0.5 -> 2x plus rapide)
+                
+                p.action = 'IDLE'; 
                 p.actionTimer = 0;
-                p.specialCharge = 0; // Se remplit en infligeant des dégâts (max 50)
-                p.cooldowns = { attack: 0 };
-            });
+                p.specialCharge = 0; 
+                p.cooldowns = { light: 0, heavy: 0, parry: 0 };
+            }
             
-            battle.logs = ["Le combat commence en temps réel !"];
+            battle.countdown = 4000; // 4 secondes (3, 2, 1, GO!)
+            battle.logs = ["Le combat commence ! Préparez-vous..."];
             io.to(roomId).emit('battleStart', { players: battle.players });
             
             // Démarrage de la boucle autoritaire Serveur
@@ -55,20 +84,33 @@ module.exports = function (io, socket) {
         const myState = battle.players[socket.id];
         if (!myState || myState.hp <= 0) return;
 
+        // On ne peut agir que si le countdown est fini
+        if (battle.countdown > 0) return;
+
         // On ne peut agir que si on est IDLE
         if (myState.action !== 'IDLE') return;
 
-        if (data.action === 'ATTACK') {
-            if (myState.cooldowns.attack <= 0) {
-                myState.action = 'ATTACKING';
+        if (data.action === 'LIGHT_ATTACK') {
+            if (myState.cooldowns.light <= 0) {
+                myState.action = 'LIGHT_ATTACK';
                 myState.actionTimer = 0;
                 myState.attackDealt = false;
-                myState.cooldowns.attack = 2000; // 2s de cooldown
+                myState.cooldowns.light = 1200 * myState.speedFactor; // Cooldown scalé
+            }
+        } else if (data.action === 'HEAVY_ATTACK') {
+            if (myState.cooldowns.heavy <= 0) {
+                myState.action = 'HEAVY_ATTACK';
+                myState.actionTimer = 0;
+                myState.attackDealt = false;
+                myState.cooldowns.heavy = 2500 * myState.speedFactor; // Cooldown scalé
             }
         } else if (data.action === 'DEFEND') { // Bouton Paré
-            myState.action = 'PARRYING';
-            myState.actionTimer = 0;
-            battle.logs.push(`${myState.nickname} se met en garde !`);
+            if (myState.cooldowns.parry <= 0) {
+                myState.action = 'PARRYING';
+                myState.actionTimer = 0;
+                myState.cooldowns.parry = 3000 * myState.speedFactor; // Cooldown scalé
+                battle.logs.push(`${myState.nickname} se met en garde !`);
+            }
         } else if (data.action === 'SPECIAL') {
             if (myState.specialCharge >= 50) {
                 battle.specialActive = true;
@@ -79,6 +121,42 @@ module.exports = function (io, socket) {
                 myState.specialCharge = 0; // Reset après utilisation
                 battle.logs.push(`${myState.nickname} LANCE SON ATTAQUE SPÉCIALE !`);
             }
+        }
+    });
+
+    // Gestion de la déconnexion en plein combat
+    socket.on('disconnect', async () => {
+        const player = await store.getPlayer(socket.id);
+        const roomId = player?.inBattle;
+        if (!roomId || roomId === 'false') return;
+
+        const battle = activeBattles[roomId];
+        if (!battle || battle.ended) return;
+
+        console.log(`[Battle] ⚠️ Déconnexion du joueur ${socket.id} pendant le combat ${roomId}`);
+        
+        // On déclare l'autre joueur vainqueur
+        const pIds = Object.keys(battle.players);
+        const winnerId = pIds.find(id => id !== socket.id);
+        
+        if (winnerId) {
+            const result = {
+                winner: winnerId,
+                loser: socket.id,
+                reason: 'DISCONNECT'
+            };
+            battle.ended = true;
+            
+            // On force les HP du déconnecté à 0 pour l'UI de l'autre
+            battle.players[socket.id].hp = 0;
+            
+            io.to(roomId).emit('gameUpdate', {
+                players: battle.players,
+                logs: [...battle.logs, `${battle.players[socket.id].nickname} a quitté le combat !`],
+                result: result
+            });
+            
+            await handleBattleEnd(roomId, battle, result, io);
         }
     });
 };
@@ -101,9 +179,20 @@ async function updateBattleState(battle, io, roomId) {
     const p1 = battle.players[pIds[0]];
     const p2 = battle.players[pIds[1]];
 
+    // 0. Gérer le countdown de début de match
+    if (battle.countdown > 0) {
+        battle.countdown -= TICK_RATE;
+        if (battle.countdown <= 0) {
+            battle.countdown = 0;
+            battle.logs.push("FIGHT !");
+        }
+    }
+
     // 1. Réduire les cooldowns
     [p1, p2].forEach(p => {
-        if (p.cooldowns.attack > 0) p.cooldowns.attack -= TICK_RATE;
+        if (p.cooldowns.light > 0) p.cooldowns.light -= TICK_RATE;
+        if (p.cooldowns.heavy > 0) p.cooldowns.heavy -= TICK_RATE;
+        if (p.cooldowns.parry > 0) p.cooldowns.parry -= TICK_RATE;
     });
 
     // 2. Gestion de l'Attaque Spéciale (Stoppe le temps)
@@ -115,7 +204,11 @@ async function updateBattleState(battle, io, roomId) {
             const target = battle.players[targetId];
             const attacker = battle.players[battle.specialAttacker];
             
-            const dmg = 30 + Math.floor(Math.random() * 10);
+            // Nouvelle formule Spéciale
+            const baseDmg = attacker.stats.atk * (attacker.stats.atk / (attacker.stats.atk + (target.stats.def * 0.5)));
+            const rng = 0.95 + Math.random() * 0.1;
+            const dmg = Math.floor(baseDmg * rng);
+            
             target.hp = Math.max(0, target.hp - dmg);
             battle.logs.push(`L'attaque spéciale de ${attacker.nickname} inflige ${dmg} PV !`);
             
@@ -141,53 +234,78 @@ async function updateBattleState(battle, io, roomId) {
                 }
             } else if (p.action === 'PARRYING') {
                 p.actionTimer += TICK_RATE;
-                if (p.actionTimer >= 300) { // Durée de parade réduite à 0.3s pour plus de challenge
+                const parryDuration = 600 * p.speedFactor; // Fenêtre de parade scalée
+                if (p.actionTimer >= parryDuration) {
                     p.action = 'IDLE';
                     p.actionTimer = 0;
                 }
-            } else if (p.action === 'ATTACKING') {
+            } else if (p.action === 'LIGHT_ATTACK' || p.action === 'HEAVY_ATTACK') {
                 p.actionTimer += TICK_RATE;
                 
-                // Phase 1 : 0-400ms (vulnérable, recul)
-                // Phase 2 : 400-1000ms (invulnérable, coup en avant)
-                // Dégâts à 1000ms
-                if (p.actionTimer >= 1000 && !p.attackDealt) {
+                const isLight = p.action === 'LIGHT_ATTACK';
+                const impactTime = (isLight ? 300 : 1000) * p.speedFactor;
+                
+                if (p.actionTimer >= impactTime && !p.attackDealt) {
                     p.attackDealt = true;
                     
+                    const baseDegat = p.stats.atk * (p.stats.atk / (p.stats.atk + opponent.stats.def));
+                    
                     if (opponent.action === 'PARRYING') {
-                        // Parade réussie !
                         p.action = 'STUNNED';
                         p.actionTimer = 0;
-                        battle.logs.push(`${opponent.nickname} a paré l'attaque de ${p.nickname} !`);
+                        battle.logs.push(`${opponent.nickname} a paré ${isLight ? "l'attaque légère" : "l'attaque lourde"} de ${p.nickname} !`);
+                        battle.lastEvent = { 
+                            type: 'PARRY', 
+                            attacker: opponent.nickname, 
+                            target: p.nickname,
+                            id: Date.now() + Math.random() 
+                        };
                     } else {
                         // Coup réussi !
-                        const dmg = 15;
-                        opponent.hp = Math.max(0, opponent.hp - dmg);
-                        p.specialCharge = Math.min(50, (p.specialCharge || 0) + dmg); // Charge du spécial
-                        battle.logs.push(`${p.nickname} attaque (-${dmg} PV)`);
+                        const multiplier = isLight ? 0.42 : 1.12;
+                        const rng = 0.9 + Math.random() * 0.2;
+                        const dmg = Math.floor(baseDegat * multiplier * rng);
                         
-                        // Si l'adversaire préparait une attaque (Phase 1 vulnérable < 400ms), elle est annulée
-                        if (opponent.action === 'ATTACKING' && opponent.actionTimer < 400) {
+                        opponent.hp = Math.max(0, opponent.hp - dmg);
+                        p.specialCharge = Math.min(50, (p.specialCharge || 0) + dmg); 
+                        battle.logs.push(`${p.nickname} lance une attaque ${isLight ? 'légère' : 'lourde'} (-${dmg} PV)`);
+                        
+                        battle.lastEvent = { 
+                            type: 'DAMAGE', 
+                            value: dmg, 
+                            attacker: p.nickname, 
+                            target: opponent.nickname,
+                            id: Date.now() + Math.random() 
+                        };
+                        
+                        // Annulation de l'attaque lourde si frappé durant la phase de préparation (40% de son temps d'impact)
+                        const opImpactTime = 1000 * (opponent.speedFactor || 1);
+                        if (opponent.action === 'HEAVY_ATTACK' && opponent.actionTimer < (opImpactTime * 0.4)) {
                             opponent.action = 'IDLE';
                             opponent.actionTimer = 0;
-                            battle.logs.push(`L'attaque de ${opponent.nickname} a été annulée !`);
+                            battle.logs.push(`L'attaque lourde de ${opponent.nickname} a été interrompue !`);
+                            battle.lastEvent = { 
+                                type: 'INTERRUPT', 
+                                attacker: p.nickname, 
+                                target: opponent.nickname,
+                                id: Date.now() + Math.random() 
+                            };
                         }
                         
                         if (opponent.hp <= 0) {
                             opponent.action = 'DEAD';
                             opponent.hp = 0;
                         } else if (opponent.action === 'IDLE') {
-                            opponent.action = 'HIT'; // Optionnel pour UI
+                            opponent.action = 'HIT';
                             setTimeout(() => { if (opponent.action === 'HIT') opponent.action = 'IDLE'; }, 300);
                         }
                     }
                 }
                 
-                if (p.actionTimer >= 1200) { // Fin de l'animation d'attaque complète
-                    if (p.action === 'ATTACKING') {
-                        p.action = 'IDLE';
-                        p.actionTimer = 0;
-                    }
+                const animDuration = isLight ? 500 : 1200;
+                if (p.actionTimer >= animDuration) {
+                    p.action = 'IDLE';
+                    p.actionTimer = 0;
                 }
             }
         });
@@ -208,6 +326,8 @@ async function updateBattleState(battle, io, roomId) {
     io.to(roomId).emit('gameUpdate', {
         players: battle.players,
         logs: battle.logs,
+        countdown: battle.countdown,
+        lastEvent: battle.lastEvent,
         result: result
     });
 

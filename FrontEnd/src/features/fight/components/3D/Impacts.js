@@ -28,7 +28,7 @@ export function SlashEffect({ active, position }) {
     );
 }
 
-export function ImpactParticles({ position, trigger }) {
+export function ImpactParticles({ position, trigger, color = "#ffffff" }) {
     const mesh = useRef();
     const PARTICLE_COUNT = 100; // ON TRIPLE LE NOMBRE !
 
@@ -84,10 +84,9 @@ export function ImpactParticles({ position, trigger }) {
         <instancedMesh ref={mesh} args={[null, null, PARTICLE_COUNT]}>
             <sphereGeometry args={[1, 6, 6]} />
             <meshBasicMaterial 
-                color="#ffffff" 
+                color={color} 
                 transparent 
                 opacity={1.0} 
-                blending={THREE.AdditiveBlending} // EFFET BRILLANT / ÉTINCELLE
                 depthWrite={false}
             />
         </instancedMesh>

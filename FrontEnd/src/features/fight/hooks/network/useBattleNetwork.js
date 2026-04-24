@@ -9,7 +9,14 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
         specialCooldown: 0,
         isStunned: false,
         action: 'IDLE',
-        opAction: 'IDLE'
+        opAction: 'IDLE',
+        countdown: 0,
+        lastEvent: null,
+        speedFactor: 1,
+        opSpeedFactor: 1,
+        atk: 0,
+        def: 0,
+        speed: 0
     });
     const [result, setResult] = useState(null);
     const [matchStatus, setMatchStatus] = useState('idle'); // idle | searching | found | started
@@ -91,9 +98,20 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
                     opLatinName: op?.latinName,
                     specialCharge: me.specialCharge || 0,
                     specialReady: (me.specialCharge || 0) >= 50,
+                    lightCooldown: me.cooldowns?.light || 0,
+                    heavyCooldown: me.cooldowns?.heavy || 0,
+                    parryCooldown: me.cooldowns?.parry || 0,
+                    countdown: update.countdown || 0,
+                    lastEvent: update.lastEvent || null,
                     isStunned: me.action === 'STUNNED',
                     action: me.action,
-                    opAction: op?.action
+                    opAction: op?.action,
+                    opActionTimer: op?.actionTimer || 0,
+                    speedFactor: me.speedFactor || 1,
+                    opSpeedFactor: op?.speedFactor || 1,
+                    atk: me.stats?.atk || 0,
+                    def: me.stats?.def || 0,
+                    speed: me.stats?.speed || 0
                 });
 
                 setTurn(update.turn);

@@ -32,22 +32,35 @@ const TargetGolem = forwardRef(({ attackTrigger, damageTrigger, color, isSpecial
         // ANIMATION D'ATTAQUE FINALE (Phase 2, Dégâts, 1000ms)
         // Priorité haute car c'est l'instant de l'impact
         else if (attackTrigger) {
-            targetZ = -5; // Dash plongeant vers la caméra/le joueur
-            targetY = 2.5; // S'élève en attaquant
-            targetRotX = 0.5; // Plonge en avant
+            const isHeavy = opAction === 'HEAVY_ATTACK';
+            targetZ = isHeavy ? -8 : -11; // Dash plus profond pour l'attaque lourde
+            targetY = isHeavy ? 3.0 : 1.5;
+            targetRotX = isHeavy ? -0.5 : -0.2;
         }
-        // ANIMATION DE PRÉPARATION (Phase 1, vulnérable, 0-400ms)
-        else if (opAction === 'ATTACKING') {
+        // 2. PRÉPARATION ATTAQUE LOURDE (Phase 1, vulnérable, 0-400ms)
+        else if (opAction === 'HEAVY_ATTACK') {
             targetZ = -17; // Recule un peu (telegraph l'attaque)
             targetY = 1.0;
             targetRotX = -0.3; // Se penche en arrière
         }
+        // 3. ATTAQUE LÉGÈRE (Pas de préparation, juste attente de l'impact ou repos)
+        else if (opAction === 'LIGHT_ATTACK') {
+            targetZ = -14.5; // Légère tension vers nous
+            targetY = -1.8;
+            targetRotX = -0.1;
+        }
+        // 4. ANIMATION DE PARADE (Rotation de 15 degrés)
+        else if (opAction === 'PARRYING') {
+            targetRotX = 0.1;
+            targetRotZ = -0.26; // ~15 degrés (inverse car il nous fait face)
+        }
 
-        ref.current.rotation.x = THREE.MathUtils.lerp(ref.current.rotation.x, targetRotX, attackTrigger || damageTrigger || opAction === 'ATTACKING' ? 0.3 : 0.1);
-        ref.current.rotation.z = THREE.MathUtils.lerp(ref.current.rotation.z, targetRotZ, attackTrigger || damageTrigger || opAction === 'ATTACKING' ? 0.3 : 0.1);
-        ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, targetX, attackTrigger || damageTrigger || opAction === 'ATTACKING' ? 0.3 : 0.1);
-        ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, -1.8 + targetY, attackTrigger || damageTrigger || opAction === 'ATTACKING' ? 0.3 : 0.1);
-        ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, targetZ, attackTrigger || damageTrigger || opAction === 'ATTACKING' ? 0.4 : 0.08);
+        const isActive = attackTrigger || damageTrigger || opAction === 'HEAVY_ATTACK' || opAction === 'LIGHT_ATTACK' || opAction === 'PARRYING';
+        ref.current.rotation.x = THREE.MathUtils.lerp(ref.current.rotation.x, targetRotX, isActive ? 0.3 : 0.1);
+        ref.current.rotation.z = THREE.MathUtils.lerp(ref.current.rotation.z, targetRotZ, isActive ? 0.3 : 0.1);
+        ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, targetX, isActive ? 0.3 : 0.1);
+        ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, -1.8 + targetY, isActive ? 0.3 : 0.1);
+        ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, targetZ, isActive ? 0.4 : 0.08);
 
         // GESTION DU FLASH COLORÉ (Orange/Rouge)
         matRefs.current.forEach(mat => {
