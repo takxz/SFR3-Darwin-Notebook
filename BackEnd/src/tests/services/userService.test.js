@@ -4,8 +4,8 @@ const fs = require('fs').promises;
 
 // --- Mocks ---
 jest.mock('../../main/repositories/userRepository', () => ({
-    findProfileById: jest.fn(),
-    findPublicProfileById: jest.fn(),
+    getProfileById: jest.fn(),
+    getPublicProfileById: jest.fn(),
     setDeletionTimestamp: jest.fn(),
     clearDeletionTimestamp: jest.fn(),
     findExpiredUsersWithCreatureScans: jest.fn(),
@@ -29,16 +29,16 @@ describe('userService', () => {
     // 1. getProfile
     // ==========================================
     describe('getProfile', () => {
-        it('doit appeler userRepository.findProfileById et renvoyer le résultat', async () => {
+        it('doit appeler userRepository.getProfileById et renvoyer le résultat', async () => {
             const mockProfile = { id: 1, pseudo: 'TestUser' };
             // Arrange: On dit au mock du repository quoi retourner
-            userRepository.findProfileById.mockResolvedValue(mockProfile);
+            userRepository.getProfileById.mockResolvedValue(mockProfile);
 
             // Act: On appelle la fonction du service
             const result = await userService.getProfile(1);
 
             // Assert: On vérifie que le service a bien appelé le repository et renvoyé la bonne valeur
-            expect(userRepository.findProfileById).toHaveBeenCalledWith(1);
+            expect(userRepository.getProfileById).toHaveBeenCalledWith(1);
             expect(result).toEqual(mockProfile);
         });
     });
@@ -47,13 +47,13 @@ describe('userService', () => {
     // 2. getPublicProfileById
     // ==========================================
     describe('getPublicProfileById', () => {
-        it('doit appeler userRepository.findPublicProfileById et renvoyer le résultat', async () => {
+        it('doit appeler userRepository.getPublicProfileById et renvoyer le résultat', async () => {
             const mockProfile = { id: 2, pseudo: 'PublicUser' };
-            userRepository.findPublicProfileById.mockResolvedValue(mockProfile);
+            userRepository.getPublicProfileById.mockResolvedValue(mockProfile);
 
             const result = await userService.getPublicProfileById(2);
 
-            expect(userRepository.findPublicProfileById).toHaveBeenCalledWith(2);
+            expect(userRepository.getPublicProfileById).toHaveBeenCalledWith(2);
             expect(result).toEqual(mockProfile);
         });
     });
