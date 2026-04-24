@@ -195,4 +195,144 @@ describe('InformationOrganisme Component', () => {
 
     expect(mockAddToDex).toHaveBeenCalledWith(mockData);
   });
+
+  // ----- Couvertures additionnelles -----
+
+  it('shows "Image invalide" when photo has no base64', async () => {
+    const mockOnFinish = jest.fn();
+    const photoNoB64 = { uri: 'file://x.jpg' };
+
+    const { getByText } = render(
+      <InformationOrganisme photo={photoNoB64} onFinish={mockOnFinish} />
+    );
+
+    await waitFor(() => {
+      expect(getByText('Image invalide')).toBeTruthy();
+    });
+    // Aucune requête réseau ne doit être faite quand le base64 manque.
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(mockOnFinish).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows server error when submit response is non-JSON', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 502,
+      text: async () => '<html>Bad Gateway</html>',
+    });
+
+    const { getByText } = render(<InformationOrganisme photo={mockPhoto} onFinish={jest.fn()} />);
+
+    await waitFor(() => {
+      expect(getByText(/Erreur serveur \(502\)/)).toBeTruthy();
+    });
+  });
+
+  it('shows error when submit JSON has no job_id', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ success: true, error: 'pas de job_id' }),
+    });
+
+    const { getByText } = render(<InformationOrganisme photo={mockPhoto} onFinish={jest.fn()} />);
+    await waitFor(() => {
+      expect(getByText('pas de job_id')).toBeTruthy();
+    });
+  });
+
+  it('shows network error on submit failure', async () => {
+    global.fetch.mockRejectedValueOnce(new Error('Network request failed'));
+
+    const { getByText } = render(<InformationOrganisme photo={mockPhoto} onFinish={jest.fn()} />);
+    await waitFor(() => {
+      expect(getByText(/Connexion API impossible/)).toBeTruthy();
+    });
+  });
+
+  it('handles 404 (job expired) during polling', async () => {
+    global.fetch
+      .mockResolvedValueOnce(mockSubmitResponse())
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        text: async () => JSON.stringify({ success: false, error: 'Job introuvable' }),
+      });
+
+    const { getByText } = render(<InformationOrganisme photo={mockPhoto} onFinish={jest.fn()} />);
+    await waitFor(() => {
+      expect(getByText(/Session de reconnaissance expirée/)).toBeTruthy();
+    });
+  });
+
+  it('shows status error message when status response body is not JSON', async () => {
+    global.fetch
+      .mockResolvedValueOnce(mockSubmitResponse())
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => 'not json',
+      });
+
+    const { getByText } = render(<InformationOrganisme photo={mockPhoto} onFinish={jest.fn()} />);
+    await waitFor(() => {
+      expect(getByText(/Statut invalide \(200\)/)).toBeTruthy();
+    });
+  });
+
+  it('shows network error when polling throws Network request failed', async () => {
+    global.fetch
+      .mockResolvedValueOnce(mockSubmitResponse())
+      .mockRejectedValueOnce(new Error('Network request failed'));
+
+    const { getByText } = render(<InformationOrganisme photo={mockPhoto} onFinish={jest.fn()} />);
+    await waitFor(() => {
+      expect(getByText(/Connexion API impossible/)).toBeTruthy();
+    });
+  });
+
+  it('continues polling while status is queued/processing then succeeds', async () => {
+    const mockData = { success: true, common_name: 'Coccinelle' };
+
+    global.fetch
+      .mockResolvedValueOnce(mockSubmitResponse({ status: 'queued' }))
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () =>
+          JSON.stringify({
+            success: true,
+            job_id: JOB_ID,
+            status: 'queued',
+            queue: { position: 2, queued_total: 2, processing_total: 8, max_workers: 8 },
+          }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () =>
+          JSON.stringify({
+            success: true,
+            job_id: JOB_ID,
+            status: 'processing',
+            queue: { position: 0, queued_total: 0, processing_total: 8, max_workers: 8 },
+          }),
+      })
+      .mockResolvedValueOnce(mockStatusDone(mockData));
+
+    const { getByText } = render(<InformationOrganisme photo={mockPhoto} onFinish={jest.fn()} />);
+
+    await waitFor(
+      () => {
+        expect(getByText('Coccinelle')).toBeTruthy();
+      },
+      { timeout: 8000 }
+    );
+    expect(global.fetch).toHaveBeenCalledTimes(4);
+  }, 10000);
+
+  it('returns null when no photo is provided (early exit)', () => {
+    const { toJSON } = render(<InformationOrganisme photo={null} />);
+    expect(toJSON()).toBeNull();
+  });
 });

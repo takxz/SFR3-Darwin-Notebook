@@ -73,4 +73,30 @@ describe('WaitingComponent', () => {
     const { getByTestId } = render(<WaitingComponent />);
     expect(getByTestId('waiting-component')).toBeTruthy();
   });
+
+  it("queueInfo sans position ni processing_total: tombe sur les défauts à 0", () => {
+    const queueInfo = { max_workers: 8 }; // pas de position, pas de processing_total
+    const { getByText, getAllByTestId } = render(
+      <WaitingComponent status="queued" queueInfo={queueInfo} />
+    );
+    // position=0 → on tombe sur "queued_only_yours" (pos <= 1).
+    expect(getByText(fr.waitingScreen.queued_only_yours)).toBeTruthy();
+    // 8 slots, tous libres car processing_total tombe à 0.
+    expect(getAllByTestId('queue-slot')).toHaveLength(8);
+    // Le label "0/8 agents occupés" doit s'afficher.
+    expect(getByText('0/8 agents occupés')).toBeTruthy();
+  });
+
+  it("queueInfo avec max_workers=0: pas de jauge affichée", () => {
+    const queueInfo = { position: 1, queued_total: 1, processing_total: 0, max_workers: 0 };
+    const { queryByTestId } = render(<WaitingComponent status="queued" queueInfo={queueInfo} />);
+    expect(queryByTestId('queue-meter')).toBeNull();
+  });
+
+  it("queueInfo sans queued_total: la position sert de total dans le libellé", () => {
+    // position=4, total absent → total = pos = 4.
+    const queueInfo = { position: 4, processing_total: 8, max_workers: 8 };
+    const { getByText } = render(<WaitingComponent status="queued" queueInfo={queueInfo} />);
+    expect(getByText('Position 4 sur 4')).toBeTruthy();
+  });
 });
