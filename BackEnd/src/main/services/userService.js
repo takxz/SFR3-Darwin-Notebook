@@ -6,7 +6,7 @@ const UPLOADS_DIR = path.join(__dirname, '../../uploads');
 
 const purgeExpiredAccounts = async () => {
     try {
-        const purgeData = await userRepository.findExpiredUsersWithCreatures();
+        const purgeData = await userRepository.findExpiredUsers();
 
         if (purgeData.length === 0) {
             console.log('[RGPD] Aucun compte expiré à purger.');
@@ -30,9 +30,8 @@ const purgeExpiredAccounts = async () => {
 
         const userIdsArray = Array.from(userIdsToDelete);
         if (userIdsArray.length > 0) {
-            await userRepository.deleteCreaturesByUserIds(userIdsArray);
             await userRepository.deleteUsersByIds(userIdsArray);
-            console.log(`[RGPD] ${userIdsArray.length} comptes utilisateurs supprimés définitivement.`);
+            console.log(`[RGPD] ${userIdsArray.length} comptes utilisateurs (et leurs données associées) supprimés définitivement.`);
         }
 
     } catch (err) {
@@ -52,9 +51,19 @@ const getProfile = async (userId) => {
     return userRepository.findProfileById(userId);
 };
 
+/**
+ * Récupère le profil public d'un utilisateur par son ID.
+ * @param {number} userId - L'ID de l'utilisateur.
+ * @returns {Promise<object|null>} Le profil public de l'utilisateur.
+ */
+const getPublicProfileById = async (userId) => {
+    return userRepository.findPublicProfileById(userId);
+};
+
 module.exports = {
     purgeExpiredAccounts,
     requestAccountDeletion,
     cancelAccountDeletion,
     getProfile,
+    getPublicProfileById,
 };

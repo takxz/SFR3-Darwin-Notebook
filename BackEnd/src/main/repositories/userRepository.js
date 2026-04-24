@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-const findExpiredUsersWithCreatures = async () => {
+const findExpiredUsers = async () => {
     const query = `
         SELECT
             p.id AS user_id,
@@ -15,11 +15,6 @@ const findExpiredUsersWithCreatures = async () => {
     `;
     const { rows } = await db.query(query);
     return rows;
-};
-
-const deleteCreaturesByUserIds = async (userIds) => {
-    if (userIds.length === 0) return;
-    await db.query('DELETE FROM public."CREATURE" WHERE player_id = ANY($1::int[])', [userIds]);
 };
 
 const deleteUsersByIds = async (userIds) => {
@@ -49,8 +44,7 @@ const findProfileById = async (userId) => {
 };
 
 module.exports = {
-    findExpiredUsersWithCreatures,
-    deleteCreaturesByUserIds,
+    findExpiredUsers,
     deleteUsersByIds,
     setDeletionTimestamp,
     clearDeletionTimestamp,

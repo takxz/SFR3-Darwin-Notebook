@@ -1,5 +1,5 @@
 const db = require('../config/db');
-const userService = require('../services/userService'); // Import correct du nouveau service
+const userService = require('../services/userService');
 
 exports.purgeExpiredAccounts = async () => {
     await userService.purgeExpiredAccounts();
@@ -7,8 +7,7 @@ exports.purgeExpiredAccounts = async () => {
 
 exports.deleteAccount = async (req, res) => {
     try {
-        const userId = req.user.id;
-        await userService.requestAccountDeletion(userId); // Appel au nouveau service
+        await userService.requestAccountDeletion(req.user.id);
         res.status(200).json({ message: "Votre compte sera supprimé définitivement dans 30 jours." });
     } catch (err) {
         console.error('Erreur lors de la demande de suppression du compte:', err);
@@ -18,8 +17,7 @@ exports.deleteAccount = async (req, res) => {
 
 exports.cancelDeleteAccount = async (req, res) => {
     try {
-        const userId = req.user.id;
-        await userService.cancelAccountDeletion(userId); // Appel au nouveau service
+        await userService.cancelAccountDeletion(req.user.id);
         res.status(200).json({ message: "Demande de suppression annulée." });
     } catch (err) {
         console.error('Erreur lors de l\'annulation de la suppression:', err);
@@ -49,29 +47,20 @@ exports.getProfile = async (req, res) => {
     }
 };
 
-// Obtenir le profil public de n'importe quel utilisateur par son ID
 exports.getUserById = async (req, res) => {
     try {
         const targetId = req.params.id;
-        // Cette fonction n'a pas encore été refactorisée pour utiliser le service.
-        // Elle appelle directement la base de données.
-        const result = await db.query(
-            'SELECT id, pseudo, player_level, bio_token FROM "PLAYER" WHERE id = $1',
-            [targetId]
-        );
-
-        if (result.rows.length === 0) {
+        const userProfile = await userService.getPublicProfileById(targetId);
+        if (!userProfile) {
             return res.status(404).json({ error: "Utilisateur non trouvé." });
         }
-
-        res.json(result.rows[0]);
+        res.json(userProfile);
     } catch (err) {
         console.error('Erreur lors de la récupération du profil public:', err);
         res.status(500).json({ error: "Erreur interne du serveur." });
     }
 };
 
-// Ajouter une créature à un utilisateur (gère aussi l'upload d'image)
 exports.addCreature = async (req, res) => {
     try {
         const { 
