@@ -17,10 +17,10 @@ module.exports = {
       interpreter: '/home/darwinnotbook/SFR3-Darwin-Notebook/PythonApi/venv/bin/python',
     },
     {
-      name: 'darwin-expo-develop',
+      name: 'darwin-expo-production',
       cwd: './FrontEnd',
       script: 'npx',
-      args: 'expo start --no-dev',
+      args: 'expo start --no-dev --minify',
       env: {
         EXPO_PUBLIC_API_URL: 'http://37.59.111.34:5002',
         EXPO_PUBLIC_USER_API_URL: 'http://37.59.111.34:3001',
