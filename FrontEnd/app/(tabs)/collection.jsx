@@ -12,9 +12,9 @@ const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http:/
 const FALLBACK_IMAGE = null;
 
 const SPECIES_OPTIONS = [
-    { key: 'all', label: 'Tous' },
-    { key: 'fauna', label: 'Faune' },
-    { key: 'flora', label: 'Flore' },
+    { key: 'all', label: fr.collectionScreen.filter_all },
+    { key: 'fauna', label: fr.collectionScreen.filter_fauna },
+    { key: 'flora', label: fr.collectionScreen.filter_flora },
 ];
 
 async function parseResponseBody(response) {
@@ -45,13 +45,13 @@ function normalizeRarity(value) {
 }
 
 function normalizeWeight(value) {
-    if (value === null || value === undefined || value === '') return 'Inconnu';
+    if (value === null || value === undefined || value === '') return fr.collectionScreen.unknown_value;
     const asNumber = Number(value);
     return Number.isFinite(asNumber) ? `${asNumber} kg` : String(value);
 }
 
 function normalizeLifespan(value) {
-    if (value === null || value === undefined || value === '') return 'Inconnu';
+    if (value === null || value === undefined || value === '') return fr.collectionScreen.unknown_value;
     const asNumber = Number(value);
     return Number.isFinite(asNumber) ? `${asNumber} ans` : String(value);
 }
@@ -64,7 +64,7 @@ function normalizeCreature(creature) {
 
     return {
         id: String(creature?.id ?? `${creature?.player_id || 'player'}-${creature?.species_id || Date.now()}`),
-        name: creature?.gamification_name || creature?.species_name || creature?.name || 'Creature inconnue',
+        name: creature?.gamification_name || creature?.species_name || creature?.name || fr.collectionScreen.unknown_creature,
         scientificName: creature?.species_name || creature?.scientific_name || '',
         image: creature?.scan_url || creature?.image_url || creature?.image || FALLBACK_IMAGE,
         type: creature?.species_type || (isFlora ? 'Plante' : type),

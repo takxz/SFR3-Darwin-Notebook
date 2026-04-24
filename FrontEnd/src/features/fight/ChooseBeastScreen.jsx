@@ -34,7 +34,7 @@ function normalizeCreature(creature) {
     
     return {
         id: String(creature?.id),
-        name: creature?.gamification_name || creature?.species_name || "Inconnue",
+        name: creature?.gamification_name || creature?.species_name || fr.chooseBeastScreen.unknown_creature,
         image: creature?.scan_url || creature?.image_url || null,
         hp: isNaN(hp) ? 100 : hp,
         maxHp: Number(creature?.stat_pv ?? 100) || 100,
@@ -56,7 +56,7 @@ export default function ChooseBeastScreen() {
     const loadCollection = async () => {
         try {
             const token = await getToken();
-            if (!token) throw new Error("Non authentifié");
+            if (!token) throw new Error(fr.chooseBeastScreen.error_unauthenticated);
 
             // 1. Get Profile
             const profileRes = await fetch(`${USER_API_URL}/api/user/profile`, {
@@ -65,14 +65,14 @@ export default function ChooseBeastScreen() {
             const profile = await profileRes.json();
             const userId = profile?.id;
 
-            if (!userId) throw new Error("Utilisateur introuvable");
+            if (!userId) throw new Error(fr.chooseBeastScreen.error_user_not_found);
 
             // 2. Get Creatures
             const res = await fetch(`${USER_API_URL}/api/user/${userId}/creatures`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
-            if (!res.ok) throw new Error("Erreur réseau");
+            if (!res.ok) throw new Error(fr.chooseBeastScreen.error_network);
             
             const data = await res.json();
             const normalized = (data || []).map(normalizeCreature);
@@ -122,12 +122,10 @@ export default function ChooseBeastScreen() {
                 </View>
                 <View style={styles.emptyContainer}>
                     <AlertCircle size={64} color="#97572B" />
-                    <Text style={styles.emptyTitle}>Collection Vide</Text>
-                    <Text style={styles.emptyText}>
-                        Vous devez capturer au moins une créature avant de pouvoir lancer un duel.
-                    </Text>
+                    <Text style={styles.emptyTitle}>{fr.chooseBeastScreen.empty_title}</Text>
+                    <Text style={styles.emptyText}>{fr.chooseBeastScreen.empty_text}</Text>
                     <Pressable style={styles.captureButton} onPress={() => router.push("/(tabs)/camera")}>
-                        <Text style={styles.captureButtonText}>Aller chasser !</Text>
+                        <Text style={styles.captureButtonText}>{fr.chooseBeastScreen.empty_cta}</Text>
                     </Pressable>
                 </View>
             </View>
@@ -442,4 +440,4 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '700',
     },
-});
+});
