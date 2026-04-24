@@ -6,13 +6,13 @@ import * as THREE from 'three';
 import { FBX_ASSETS } from '../../constants/FightAssets';
 
 
-const PlayerCharacter = ({ attackTrigger, damageTrigger, isSpecialAttack, isFinisher }) => {
+const PlayerCharacter = ({ attackTrigger, damageTrigger, isSpecialAttack, isFinisher, modelSource }) => {
     const groupRef = useRef();
     const hitStop = useRef(0);
 
     const model = useMemo(() => {
-        return useFBX(FBX_ASSETS.HERO).clone();
-    }, []);
+        return useFBX(modelSource || require('@/assets/fight/models/Pig.fbx')).clone();
+    }, [modelSource]);
 
     useEffect(() => {
         if (model) {
