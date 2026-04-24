@@ -49,11 +49,11 @@ const cancelAccountDeletion = async (userId) => {
 };
 
 const getProfile = async (userId) => {
-    return userRepository.findProfileById(userId);
+    return userRepository.getProfileById(userId);
 };
 
 const getPublicProfileById = async (userId) => {
-    return userRepository.findPublicProfileById(userId);
+    return userRepository.getPublicProfileById(userId);
 };
 
 module.exports = {
