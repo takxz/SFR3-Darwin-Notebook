@@ -6,7 +6,8 @@ const UPLOADS_DIR = path.join(__dirname, '../../uploads');
 
 const purgeExpiredAccounts = async () => {
     try {
-        const purgeData = await userRepository.findExpiredUsers();
+        // On appelle la fonction avec son nouveau nom, plus explicite
+        const purgeData = await userRepository.findExpiredUsersWithCreatureScans();
 
         if (purgeData.length === 0) {
             console.log('[RGPD] Aucun compte expiré à purger.');
@@ -51,11 +52,6 @@ const getProfile = async (userId) => {
     return userRepository.findProfileById(userId);
 };
 
-/**
- * Récupère le profil public d'un utilisateur par son ID.
- * @param {number} userId - L'ID de l'utilisateur.
- * @returns {Promise<object|null>} Le profil public de l'utilisateur.
- */
 const getPublicProfileById = async (userId) => {
     return userRepository.findPublicProfileById(userId);
 };

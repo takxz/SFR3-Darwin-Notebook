@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-const findExpiredUsers = async () => {
+const findExpiredUsersWithCreatureScans = async () => {
     const query = `
         SELECT
             p.id AS user_id,
@@ -37,16 +37,16 @@ const clearDeletionTimestamp = async (userId) => {
     );
 };
 
-const findProfileById = async (userId) => {
+const getPublicProfileById = async (userId) => {
     const query = 'SELECT id, email, pseudo, player_level, bio_token FROM "PLAYER" WHERE id = $1';
     const { rows } = await db.query(query, [userId]);
     return rows[0] || null;
 };
 
 module.exports = {
-    findExpiredUsers,
+    findExpiredUsersWithCreatureScans, // Nom mis à jour
     deleteUsersByIds,
     setDeletionTimestamp,
     clearDeletionTimestamp,
-    findProfileById,
+    getPublicProfileById,
 };

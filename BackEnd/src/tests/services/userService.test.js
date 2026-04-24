@@ -3,14 +3,12 @@ const userRepository = require('../../main/repositories/userRepository');
 const fs = require('fs').promises;
 
 // --- Mocks ---
-// On utilise maintenant un "factory mock" pour définir explicitement l'implémentation
-// de nos dépendances. C'est plus robuste que l'auto-mocking.
 jest.mock('../../main/repositories/userRepository', () => ({
     findProfileById: jest.fn(),
     findPublicProfileById: jest.fn(),
     setDeletionTimestamp: jest.fn(),
     clearDeletionTimestamp: jest.fn(),
-    findExpiredUsersWithCreatures: jest.fn(),
+    findExpiredUsersWithCreatureScans: jest.fn(),
     deleteUsersByIds: jest.fn(),
 }));
 
@@ -98,13 +96,15 @@ describe('userService', () => {
                 { user_id: 3, scan_url: null },
                 { user_id: 4, scan_url: 'image4.jpg' },
             ];
-            userRepository.findExpiredUsers.mockResolvedValue(mockPurgeData);
+            // On utilise le nom de fonction correct
+            userRepository.findExpiredUsersWithCreatureScans.mockResolvedValue(mockPurgeData);
             fs.unlink.mockResolvedValue();
             userRepository.deleteUsersByIds.mockResolvedValue();
 
             await userService.purgeExpiredAccounts();
 
-            expect(userRepository.findExpiredUsers).toHaveBeenCalledTimes(1);
+            // On vérifie l'appel à la bonne fonction
+            expect(userRepository.findExpiredUsersWithCreatureScans).toHaveBeenCalledTimes(1);
             
             expect(fs.unlink).toHaveBeenCalledTimes(3);
             expect(fs.unlink).toHaveBeenCalledWith(expect.stringContaining('image1.jpg'));
@@ -118,8 +118,8 @@ describe('userService', () => {
         });
 
         it('ne doit rien faire si aucun utilisateur n\'est à purger', async () => {
-            // Arrange: Le repository ne retourne aucun utilisateur
-            userRepository.findExpiredUsers.mockResolvedValue([]);
+            // On utilise le nom de fonction correct
+            userRepository.findExpiredUsersWithCreatureScans.mockResolvedValue([]);
 
             // Act
             await userService.purgeExpiredAccounts();
