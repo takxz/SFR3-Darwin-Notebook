@@ -17,6 +17,7 @@ import { useUser } from '@/hooks/useUser';
 import { NavigationIndependentTree } from '@react-navigation/native';
 
 import { MatchmakingScreen } from '@/features/fight/components/UI/MatchmakingScreen';
+import { RewardModal } from '@/features/fight/components/UI/RewardModal';
 
 export default function ArenaScreen() {
     const router = useRouter();
@@ -35,7 +36,7 @@ export default function ArenaScreen() {
     } = useBattleManager(setSceneReady);
 
     // ⚔️ NETWORK ORCHESTRATION (CONNEXION VPS)
-    const { stats, turn, isMyTurn, findMatch, sendReady, sendAction, abandon, matchStatus } = useBattleNetwork(
+    const { stats, turn, isMyTurn, findMatch, sendReady, sendAction, abandon, matchStatus, rewards, setRewards } = useBattleNetwork(
         // On Battle Start (Le serveur dit que les 2 joueurs sont là !)
         () => {
             console.log("[Arena] MATCH READY! OPENING ARENA...");
@@ -87,6 +88,7 @@ export default function ArenaScreen() {
         if (user && matchStatus === 'idle') {
             findMatch({
                 nickname: user.pseudo || `Player_${socketService.socket?.id?.substr(0, 4)}`,
+                playerId: user.id,
                 creatureId: finalCreatureId
             });
         }
@@ -175,6 +177,15 @@ export default function ArenaScreen() {
                         }}
                     />
                 )}
+
+                <RewardModal 
+                    visible={!!rewards} 
+                    rewards={rewards} 
+                    onClose={() => {
+                        setRewards(null);
+                        router.replace('/fight');
+                    }} 
+                />
             </View>
         </NavigationIndependentTree>
     );

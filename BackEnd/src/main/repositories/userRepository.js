@@ -37,6 +37,12 @@ const clearDeletionTimestamp = async (userId) => {
     );
 };
 
+const findProfileById = async (userId) => {
+    const query = 'SELECT id, email, pseudo, player_level, xp, bio_token FROM "PLAYER" WHERE id = $1';
+    const { rows } = await db.query(query, [userId]);
+    return rows[0] || null;
+};
+
 const getPublicProfileById = async (userId) => {
     const query = 'SELECT id, email, pseudo, player_level, bio_token FROM "PLAYER" WHERE id = $1';
     const { rows } = await db.query(query, [userId]);
@@ -52,6 +58,7 @@ const getProfileById = async (userId) => {
 module.exports = {
     findExpiredUsersWithCreatureScans, // Nom mis à jour
     deleteUsersByIds,
+    findProfileById,
     setDeletionTimestamp,
     clearDeletionTimestamp,
     getPublicProfileById,

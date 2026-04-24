@@ -7,8 +7,10 @@ import { getToken } from "@/utils/auth";
 import colors from "@/assets/constants/colors";
 import fr from "@/assets/locales/fr.json";
 import { styles } from "./MapButton.styles";
+import Constants from 'expo-constants';
 
-const USER_API_URL = 'http://ikdeksmp.fr:3001';
+const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http://${expoHost}:3001` : 'http://localhost:3001');
 
 function parseGpsLocation(gpsString) {
     if (!gpsString || typeof gpsString !== 'string') return null;

@@ -77,14 +77,27 @@ export function AnimalCard({
           <View style={styles.typeBadge}>
             <TypeIcon size={14} color={typeColor} strokeWidth={2.5} />
           </View>
+
+          {/* Level Badge */}
+          <View style={styles.levelBadge}>
+            <Text style={styles.levelText}>Lv.{animal.level || 1}</Text>
+          </View>
         </View>
       </View>
 
       {/* Info */}
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>
-          {animal.name}
-        </Text>
+        <View style={styles.nameRow}>
+          <Text style={styles.name} numberOfLines={1}>
+            {animal.name}
+          </Text>
+          {/* Win/Loss Stats */}
+          <View style={styles.battleStats}>
+            <Text style={styles.battleStatsText}>
+              {animal.victories || 0}W - {animal.defeats || 0}L
+            </Text>
+          </View>
+        </View>
 
         {/* Rarity Stars */}
         <View style={styles.stars}>
@@ -96,6 +109,14 @@ export function AnimalCard({
               fill={i < animal.rarity ? "#fbbf24" : "transparent"}
             />
           ))}
+        </View>
+
+        {/* XP Bar */}
+        <View style={styles.xpMiniContainer}>
+          <View style={styles.xpMiniTrack}>
+            <View style={[styles.xpMiniFill, { width: `${(animal.experience / (animal.xpThreshold || 100)) * 100}%` }]} />
+          </View>
+          <Text style={styles.xpMiniText}>{animal.experience || 0} / {animal.xpThreshold || 100} XP</Text>
         </View>
 
         {/* Max HP - Hidden for plants (Plante) */}
@@ -149,15 +170,46 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.1)",
   },
+  levelBadge: {
+    position: "absolute",
+    bottom: 8,
+    left: 8,
+    backgroundColor: "rgba(151,87,43,0.9)",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  levelText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "800",
+  },
   info: {
     padding: 12,
     paddingTop: 4,
-    gap: 8,
+    gap: 4,
+  },
+  nameRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   name: {
     fontSize: 14,
     fontWeight: "bold",
     color: "#97572B",
+    flex: 1,
+  },
+  battleStats: {
+    backgroundColor: "rgba(151,87,43,0.1)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  battleStatsText: {
+    fontSize: 9,
+    fontWeight: "bold",
+    color: "rgba(151,87,43,0.6)",
   },
   stars: {
     flexDirection: "row",
@@ -210,5 +262,25 @@ const styles = StyleSheet.create({
   hpFill: {
     height: "100%",
     borderRadius: 9999,
+  },
+  xpMiniContainer: {
+    marginTop: 4,
+    gap: 4,
+  },
+  xpMiniTrack: {
+    height: 4,
+    backgroundColor: "rgba(151,87,43,0.1)",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  xpMiniFill: {
+    height: "100%",
+    backgroundColor: "#90AAA1",
+    borderRadius: 2,
+  },
+  xpMiniText: {
+    fontSize: 9,
+    fontWeight: "600",
+    color: "rgba(151,87,43,0.6)",
   },
 });

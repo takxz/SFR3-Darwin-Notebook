@@ -5,6 +5,10 @@ import Input from '@/components/inputs/Inputs';
 import colors from '@/assets/constants/colors';
 import { saveToken, getToken } from '@/utils/auth';
 import fr from '@/assets/locales/fr.json';
+import Constants from 'expo-constants';
+
+const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const AUTH_API_URL = process.env.EXPO_PUBLIC_AUTH_API_URL || (expoHost ? `http://${expoHost}:3001` : 'http://localhost:3001');
 
 export default function Register() {
     const router = useRouter();
@@ -49,7 +53,7 @@ export default function Register() {
         }
 
         try {
-            const response = await fetch('http://ikdeksmp.fr:12000/api/auth/register', {
+            const response = await fetch(`${AUTH_API_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

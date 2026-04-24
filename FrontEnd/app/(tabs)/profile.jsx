@@ -1,10 +1,11 @@
 import { View, Text, Image, ScrollView, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import SpotlightTooltip from '@/components/SpotlightTooltip';
 import { useSpotlight } from '@/hooks/useSpotlight';
 import * as SecureStore from 'expo-secure-store';
-import { Settings, Award, Camera } from 'lucide-react-native';
+import { Settings, Award, Camera, Coins } from 'lucide-react-native';
 import { clearToken, getToken } from '@/utils/auth';
 import { useUser } from '@/hooks/useUser';
 import { SettingsModal } from '../../src/features/profil/modals/SettingsModal';
@@ -12,53 +13,68 @@ import { DeleteConfirmModal } from '../../src/features/profil/modals/DeleteConfi
 import { DescriptionEditModal } from '../../src/features/profil/modals/DescriptionEditModal';
 import { styles } from '../../src/features/profil/modals/profilStyles';
 import fr from '@/assets/locales/fr.json';
+import Constants from 'expo-constants';
+
+const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http://${expoHost}:3001` : 'http://localhost:3001');
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const { user, loading, error } = useUser();
-  const { visible, targetLayout, ref, onLayout, dismiss } = useSpotlight('profile_settings', user?.id);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
-  const [description, setDescription] = useState(fr.profileScreen2.default_description);
-  const [savingDescription, setSavingDescription] = useState(false);
+    const router = useRouter();
+    const { user, loading, error, refresh } = useUser();
 
-  const avatarUri = user?.bio_token?.startsWith('http')
-    ? user.bio_token
-    : 'https://via.placeholder.com/100';
-  const playerLevel = user?.player_level ?? user?.playerLevel ?? 1;
-  const displayName = user?.pseudo || user?.email || 'Profil';
+    // Actualiser les données quand on arrive sur l'onglet Profil
+    useFocusEffect(
+        useCallback(() => {
+            refresh(false); // On refresh sans l'overlay de chargement pour plus de fluidité
+        }, [refresh])
+    );
+    const { visible, targetLayout, ref, onLayout, dismiss } = useSpotlight('profile_settings', user?.id);
+    const [showSettings, setShowSettings] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+    const [description, setDescription] = useState(fr.profileScreen2.default_description);
+    const [savingDescription, setSavingDescription] = useState(false);
 
-  useEffect(() => {
-    const loadDescription = async () => {
-      if (!user?.id) return;
-      const stored = await SecureStore.getItemAsync(`profileDescription_${user.id}`);
-      if (stored) {
-        setDescription(stored);
-      }
+    const avatarUri = user?.bio_token?.startsWith('http')
+        ? user.bio_token
+        : 'https://via.placeholder.com/100';
+    const playerLevel = user?.player_level ?? user?.playerLevel ?? 1;
+    const displayName = user?.pseudo || user?.email || 'Profil';
+    const xp = user?.xp || 0;
+    const currentLevelThreshold = 100 + (playerLevel - 1) * 10;
+    const xpProgress = xp / currentLevelThreshold;
+    const bioTokens = user?.bio_token || 0;
+
+    useEffect(() => {
+        const loadDescription = async () => {
+            if (!user?.id) return;
+            const stored = await SecureStore.getItemAsync(`profileDescription_${user.id}`);
+            if (stored) {
+                setDescription(stored);
+            }
+        };
+        loadDescription();
+    }, [user]);
+
+    const handleLogout = async () => {
+        await clearToken();
+        setShowSettings(false);
+        router.replace('/login');
     };
-    loadDescription();
-  }, [user]);
 
-  const handleLogout = async () => {
-    await clearToken();
-    setShowSettings(false);
-    router.replace('/login');
-  };
+    const saveDescription = async () => {
+        if (!user?.id) return;
+        setSavingDescription(true);
+        await SecureStore.setItemAsync(`profileDescription_${user.id}`, description);
+        setSavingDescription(false);
+        setShowDescriptionModal(false);
+        Alert.alert(fr.profileScreen2.saved_title, fr.profileScreen2.saved_message);
+    };
 
-  const saveDescription = async () => {
-    if (!user?.id) return;
-    setSavingDescription(true);
-    await SecureStore.setItemAsync(`profileDescription_${user.id}`, description);
-    setSavingDescription(false);
-    setShowDescriptionModal(false);
-    Alert.alert(fr.profileScreen2.saved_title, fr.profileScreen2.saved_message);
-  };
-
-  const confirmDeleteAccount = async () => {
-    try {
-      const token = await getToken();
-      const response = await fetch('http://ikdeksmp.fr:3001/api/user/profile', {
+    const confirmDeleteAccount = async () => {
+        try {
+            const token = await getToken();
+            const response = await fetch(`${USER_API_URL}/api/user/profile`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -138,6 +154,24 @@ export default function ProfilePage() {
 
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{displayName}</Text>
+
+            {/* BioTokens */}
+            <View style={styles.bioTokenContainer}>
+              <Coins size={16} color="#97572B" />
+              <Text style={styles.bioTokenText}>{bioTokens} BioTokens</Text>
+            </View>
+
+            {/* Player XP Bar */}
+            <View style={styles.xpContainer}>
+              <View style={styles.xpHeader}>
+                <Text style={styles.xpLabel}>Progression XP</Text>
+                <Text style={styles.xpValue}>{xp} / {currentLevelThreshold}</Text>
+              </View>
+              <View style={styles.xpBarTrack}>
+                <View style={[styles.xpBarFill, { width: `${xpProgress * 100}%` }]} />
+              </View>
+            </View>
+
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>0</Text>

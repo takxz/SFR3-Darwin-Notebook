@@ -196,7 +196,24 @@ describe('BattleHandler', () => {
             store.getBattle.mockResolvedValue(battle);
 
             const db = require('../../main/config/db');
-            db.query.mockResolvedValue({ rows: [{ player_id: 'user-1' }] });
+            db.query
+                .mockResolvedValueOnce({}) // INSERT INTO FIGHT
+                // --- GAGNANT ---
+                .mockResolvedValueOnce({ rows: [{ 
+                    experience: 0, creature_level: 1, 
+                    stat_pv: 100, stat_atq: 20, stat_def: 10, stat_speed: 10
+                }] }) // SELECT CREATURE
+                .mockResolvedValueOnce({}) // UPDATE CREATURE
+                .mockResolvedValueOnce({ rows: [{ xp: 0, player_level: 1 }] }) // SELECT PLAYER
+                .mockResolvedValueOnce({}) // UPDATE PLAYER
+                // --- PERDANT ---
+                .mockResolvedValueOnce({ rows: [{ 
+                    experience: 0, creature_level: 1, 
+                    stat_pv: 100, stat_atq: 20, stat_def: 10, stat_speed: 10
+                }] }) // SELECT CREATURE
+                .mockResolvedValueOnce({}) // UPDATE CREATURE
+                .mockResolvedValueOnce({ rows: [{ xp: 0, player_level: 1 }] }) // SELECT PLAYER
+                .mockResolvedValueOnce({}); // UPDATE PLAYER
 
             await playerActionHandler({ action: 'ATTACK' });
 
@@ -212,8 +229,8 @@ describe('BattleHandler', () => {
 
             // Check if rewards were granted
             expect(db.query).toHaveBeenCalledWith(
-                expect.stringContaining('UPDATE "CREATURE" SET experience = experience + $1'),
-                [50, '00000000-0000-0000-0000-000000000001']
+                expect.stringContaining('UPDATE "CREATURE"'),
+                expect.arrayContaining([50, 1, '00000000-0000-0000-0000-000000000001'])
             );
         });
     });

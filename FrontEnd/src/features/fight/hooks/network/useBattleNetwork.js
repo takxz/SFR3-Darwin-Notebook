@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import socketService from '@/services/SocketService';
 
 export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
@@ -11,6 +12,7 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
     const [turn, setTurn] = useState(null);
     const [result, setResult] = useState(null);
     // NEW: state for Matchmaking UI tracking
+    const [rewards, setRewards] = useState(null);
     const [matchStatus, setMatchStatus] = useState('idle'); // idle | searching | found | started
 
     useEffect(() => {
@@ -85,7 +87,7 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
                     hp: me.hp,
                     maxHp: me.maxHp || 100,
                     opHp: op?.hp || 0,
-                    opMaxHp: op?.maxHp || 100,
+                    opMaxHp: op?.opMaxHp || 100, // Correction typo ici opMaxHp
                     nickname: me.nickname || 'Hero',
                     opNickname: op?.nickname || 'Opponent',
                     modelPath: me.modelPath,
@@ -107,7 +109,13 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
             }
         });
 
-        // 3. Gestion des déconnexions (Si l'adversaire fuit/crash)
+        // 3. Gestion des récompenses
+        socketService.on('REWARD_GRANTED', (data) => {
+            console.log('[BattleNetwork] Reward Granted:', data);
+            setRewards(data);
+        });
+
+        // 4. Gestion des déconnexions (Si l'adversaire fuit/crash)
         socketService.on('playerDisconnected', () => {
             console.log('[BattleNetwork] Opponent disconnected');
             // Si l'adversaire part, on considère qu'on a gagné par forfait
@@ -120,6 +128,7 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
             socketService.off('playerDisconnected');
             socketService.off('waitingForMatch');
             socketService.off('matchFound');
+            socketService.off('REWARD_GRANTED');
         };
     }, []);
 
@@ -151,6 +160,8 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
         stats,
         turn,
         result,
+        rewards,
+        setRewards,
         matchStatus, // <--- EXPOSED
         isMyTurn: turn === socketService.socket?.id,
         findMatch,

@@ -121,14 +121,71 @@ describe('userController', () => {
     // ==========================================
 
     describe('addCreature', () => {
-        it('doit insérer une créature (201)', async () => {
-            const mockSpecies = { id: 1, name: 'Souris', base_stat_atq: 10 };
+        beforeEach(() => {
+            req.body = { species_id: 1, gamification_name: 'Pikachu' };
+            req.user.id = 'uuid-123'; // Fallback par défaut
+        });
+
+        it('doit insérer une créature avec les stats de base de l\'espèce (201)', async () => {
+            const mockSpecies = { id: 1, name: 'Souris', base_stat_atq: 10, rarity: 'Commun' };
             const mockCreature = { id: 100, gamification_name: 'Pikachu' };
+            const mockPlayer = { xp: 0, player_level: 1 };
+
+            // Chainage des mocks : 
+            // 1. SELECT species
+            // 2. INSERT creature
+            // 3. SELECT player (pour XP)
+            // 4. UPDATE player (XP reward)
             db.query
                 .mockResolvedValueOnce({ rows: [mockSpecies] })
-                .mockResolvedValueOnce({ rows: [mockCreature] });
+                .mockResolvedValueOnce({ rows: [mockCreature] })
+                .mockResolvedValueOnce({ rows: [mockPlayer] })
+                .mockResolvedValueOnce({});
+
             await userController.addCreature(req, res);
-            expect(db.query).toHaveBeenCalledTimes(2);
+
+            expect(db.query).toHaveBeenCalledTimes(4);
+            expect(res.status).toHaveBeenCalledWith(201);
+            expect(res.json).toHaveBeenCalledWith(mockCreature);
+        });
+
+        it('doit insérer uniquement le nom de fichier si un fichier (req.file) est fourni', async () => {
+            req.file = { filename: 'scan123.jpg' };
+            db.query
+                .mockResolvedValueOnce({ rows: [{ id: 1, rarity: 'Commun' }] })
+                .mockResolvedValueOnce({ rows: [{ scan_url: 'scan123.jpg' }] })
+                .mockResolvedValueOnce({ rows: [{ xp: 0, player_level: 1 }] })
+                .mockResolvedValueOnce({});
+
+            await userController.addCreature(req, res);
+
+            // Vérification des arguments passés à la requête d'insertion (2ème appel)
+            const insertQueryArgs = db.query.mock.calls[1][1];
+            expect(insertQueryArgs).toContain('scan123.jpg');
+            expect(insertQueryArgs).not.toContain('http://localhost:3001/uploads/scan123.jpg');
+        });
+
+        it('doit créer une nouvelle espèce et insérer la créature si l\'espèce parente est introuvable', async () => {
+            req.body = {
+                species_id: 999,
+                gamification_name: 'Pikachu',
+                scientific_name: 'Mus musculus'
+            };
+
+            const mockNewSpecies = { id: 101, name: 'Pikachu', base_stat_atq: 10, rarity: 'Commun' };
+            const mockCreature = { id: 100, gamification_name: 'Pikachu', species_id: 101 };
+
+            db.query
+                .mockResolvedValueOnce({ rows: [] }) // latin_name not found
+                .mockResolvedValueOnce({ rows: [] }) // species_id not found
+                .mockResolvedValueOnce({ rows: [mockNewSpecies] }) // species created
+                .mockResolvedValueOnce({ rows: [mockCreature] }) // creature inserted
+                .mockResolvedValueOnce({ rows: [{ xp: 0, player_level: 1 }] }) // select player
+                .mockResolvedValueOnce({}); // update player
+
+            await userController.addCreature(req, res);
+
+            expect(db.query).toHaveBeenCalledTimes(6); 
             expect(res.status).toHaveBeenCalledWith(201);
             expect(res.json).toHaveBeenCalledWith(mockCreature);
         });

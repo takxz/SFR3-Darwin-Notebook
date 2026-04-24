@@ -9,9 +9,13 @@ services:
       context: ./BackEnd
     ports:
       - "3001:3001"
+    env_file:
+      - .env
     environment:
       - REDIS_HOST=redis
       - PORT=3001
+      - JWT_SECRET=darwin_notebook_secret_key_2024
+      - DB_HOST=${DB_HOST}
     depends_on:
       - redis
 

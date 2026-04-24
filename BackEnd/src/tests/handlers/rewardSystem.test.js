@@ -70,16 +70,38 @@ describe('Reward System Functional Test', () => {
         store.getPlayer.mockResolvedValue({ inBattle: roomId });
         store.getBattle.mockResolvedValue(battleState);
         
-        // Mock des réponses DB
-        // 1ère requête : Insertion FIGHT (Historique)
+        // Mock des réponses DB (9 requêtes au total pour gagnant + perdant)
+        // 1. Insertion FIGHT (Historique)
         db.query.mockResolvedValueOnce({ rows: [] });
         
-        // 2ème requête : MàJ CREATURE et récupération du player_id
+        // --- GAGNANT ---
+        // 2. SELECT CREATURE (gagnant)
         db.query.mockResolvedValueOnce({
-            rows: [{ player_id: winnerPlayerUUID }]
+            rows: [{ 
+                experience: 0, creature_level: 1, 
+                stat_pv: 100, stat_atq: 20, stat_def: 10, stat_speed: 10
+            }]
         });
-        
-        // 2ème requête : MàJ PLAYER (bioTokens et XP)
+        // 3. UPDATE CREATURE (gagnant)
+        db.query.mockResolvedValueOnce({ rows: [] });
+        // 4. SELECT PLAYER (gagnant)
+        db.query.mockResolvedValueOnce({ rows: [{ xp: 0, player_level: 1 }] });
+        // 5. UPDATE PLAYER (gagnant)
+        db.query.mockResolvedValueOnce({ rows: [] });
+
+        // --- PERDANT ---
+        // 6. SELECT CREATURE (perdant)
+        db.query.mockResolvedValueOnce({
+            rows: [{ 
+                experience: 0, creature_level: 1, 
+                stat_pv: 100, stat_atq: 20, stat_def: 10, stat_speed: 10
+            }]
+        });
+        // 7. UPDATE CREATURE (perdant)
+        db.query.mockResolvedValueOnce({ rows: [] });
+        // 8. SELECT PLAYER (perdant)
+        db.query.mockResolvedValueOnce({ rows: [{ xp: 0, player_level: 1 }] });
+        // 9. UPDATE PLAYER (perdant)
         db.query.mockResolvedValueOnce({ rows: [] });
 
         // 2. Action du joueur (Attaque fatale)
@@ -90,13 +112,13 @@ describe('Reward System Functional Test', () => {
         // A. Vérification de l'update de la créature (Expérience)
         expect(db.query).toHaveBeenCalledWith(
             expect.stringContaining('UPDATE "CREATURE"'),
-            expect.arrayContaining([50, winnerCreatureUUID])
+            expect.arrayContaining([50, 1, winnerCreatureUUID])
         );
 
         // B. Vérification de l'update du joueur (XP et BioTokens avec CAST)
         expect(db.query).toHaveBeenCalledWith(
             expect.stringContaining('UPDATE "PLAYER"'),
-            expect.arrayContaining([50, 10, winnerPlayerUUID])
+            expect.arrayContaining([50, 1, 10, winnerPlayerUUID])
         );
         
         const playerQuery = db.query.mock.calls.find(call => call[call.length - 1] === winnerPlayerUUID || call[0].includes('UPDATE "PLAYER"'))[0];
@@ -107,10 +129,10 @@ describe('Reward System Functional Test', () => {
         // C. Vérification de l'émission Socket.io REWARD_GRANTED
         // Note: io.to().emit()
         expect(io.to).toHaveBeenCalledWith(winnerId);
-        expect(io.emit).toHaveBeenCalledWith('REWARD_GRANTED', {
+        expect(io.emit).toHaveBeenCalledWith('REWARD_GRANTED', expect.objectContaining({
             xp: 50,
             bioTokens: 10
-        });
+        }));
 
         // D. Vérification du nettoyage Redis
         expect(store.deleteBattle).toHaveBeenCalledWith(roomId);
@@ -141,7 +163,7 @@ describe('Reward System Functional Test', () => {
         await playerActionHandler({ action: 'ATTACK' });
 
         expect(consoleSpy).toHaveBeenCalledWith(
-            expect.stringContaining("❌ Erreur SQL"),
+            expect.stringContaining("Erreur récompenses pour"),
             expect.stringContaining("Connexion perdue")
         );
 
