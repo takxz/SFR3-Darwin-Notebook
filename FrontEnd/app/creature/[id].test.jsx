@@ -142,7 +142,7 @@ function setupFetch({ plants = [], creatureDetails = null, profileId = '42' } = 
 // dans le scope act — évitant les avertissements "not wrapped in act".
 async function renderAndFlush(ui) {
     const result = render(ui);
-    await act(async () => {});
+    await new Promise(resolve => setTimeout(resolve, 0));
     return result;
 }
 
