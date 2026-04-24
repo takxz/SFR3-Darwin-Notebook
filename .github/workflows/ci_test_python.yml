@@ -33,11 +33,18 @@ jobs:
         # L'ajout de -v (verbose) permet d'avoir le nom de chaque test dans les logs pour un meilleur repérage
         run: |
           pytest -v
-          
+
       - name: Get test coverage
         # if: always() permet de s'assurer d'obtenir le rapport de couverture, même en cas d'échec d'un test
         if: always()
         run: |
-          coverage run -m pytest tests/ --tb=short
+          coverage run -m pytest --tb=short
           coverage report
+          coverage xml
         working-directory: PythonApi
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./PythonApi/coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
