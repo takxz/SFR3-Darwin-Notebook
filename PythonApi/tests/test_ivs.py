@@ -1,17 +1,19 @@
+import pytest
 from app.ivs import distribute_ivs, iv_total_from_global_score
 
-def test_iv_total_from_global_score_bounds():
-    """Total IVs = 0..25 selon score 0..100"""
-    assert iv_total_from_global_score(0.0) == 0
-    assert iv_total_from_global_score(50.0) == 12  # 25 * 50/100
-    assert iv_total_from_global_score(100.0) == 25
-    assert iv_total_from_global_score(200.0) == 25  # clamp
-    assert iv_total_from_global_score(-10.0) == 0   # clamp
-    assert iv_total_from_global_score(None) == 0    # invalid
+@pytest.mark.parametrize("score,max_total,expected", [
+    (0.0, 25, 0),
+    (50.0, 25, 12),
+    (100.0, 25, 25),
+    (200.0, 25, 25),
+    (-10.0, 25, 0),
+    (None, 25, 0),
+    (100.0, 31, 31),
+    (50.0, 31, 16),
+])
+def test_iv_total_from_global_score_bounds(score, max_total, expected):
+    assert iv_total_from_global_score(score, max_total=max_total) == expected
 
-def test_iv_total_from_global_score_custom_max():
-    assert iv_total_from_global_score(100.0, max_total=31) == 31
-    assert iv_total_from_global_score(50.0, max_total=31) == 16
 
 def test_distribute_ivs_structure_and_total():
     """Vérifie structure + total = iv_total_from_global_score"""
