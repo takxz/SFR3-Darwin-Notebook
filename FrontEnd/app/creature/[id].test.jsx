@@ -164,7 +164,8 @@ describe('CreatureDetailsPage', () => {
         });
 
         it('doit se rendre sans erreur', async () => {
-            await renderAndFlush(<CreatureDetailsPage />);
+            const { toJSON } = await renderAndFlush(<CreatureDetailsPage />);
+            expect(toJSON()).not.toBeNull();
         });
 
         it('doit afficher le nom de la créature', async () => {
@@ -267,7 +268,8 @@ describe('CreatureDetailsPage', () => {
         });
 
         it('doit se rendre sans erreur', async () => {
-            await renderAndFlush(<CreatureDetailsPage />);
+            const { toJSON } = await renderAndFlush(<CreatureDetailsPage />);
+            expect(toJSON()).not.toBeNull();
         });
 
         it('doit afficher le nom de la plante', async () => {
