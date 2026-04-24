@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 import socketService from '@/services/SocketService';
+import fr from '@/assets/locales/fr.json';
 
 export const MatchmakingScreen = ({ onCancel }) => {
     const router = useRouter();
@@ -76,8 +77,8 @@ export const MatchmakingScreen = ({ onCancel }) => {
                 </View>
 
                 {/* Texts */}
-                <Text style={styles.title}>Recherche d'adversaire.</Text>
-                <Text style={styles.subtitle}>Connexion au réseau de combat</Text>
+                <Text style={styles.title}>{fr.matchmakingScreen.title}</Text>
+                <Text style={styles.subtitle}>{fr.matchmakingScreen.subtitle}</Text>
 
                 {/* Progress Bar */}
                 <View style={styles.progressBarContainer}>
@@ -99,13 +100,13 @@ export const MatchmakingScreen = ({ onCancel }) => {
                 {/* Cancel Button */}
                 <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
                     <X size={18} color="#ffffff" />
-                    <Text style={styles.cancelButtonText}>ANNULER</Text>
+                    <Text style={styles.cancelButtonText}>{fr.matchmakingScreen.cancel}</Text>
                 </TouchableOpacity>
             </View>
 
             {/* Tip */}
             <Text style={styles.tipText}>
-                Astuce : Assurez-vous d'avoir sélectionné votre{'\n'}meilleur animal pour ce combat !
+                {fr.matchmakingScreen.tip}
             </Text>
         </LinearGradient>
     );

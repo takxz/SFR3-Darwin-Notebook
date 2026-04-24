@@ -4,19 +4,19 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, Map, Star, ChevronRight, Coins } from "lucide-react-native";
 import fr from "@/assets/locales/fr.json";
 
-const mockLevels = [
-    { id: 1, name: "Forêt", description: "Combattez les vides dans la fôret", stars: 0, maxStars: 3, unlocked: true, reward: 100 },
-    { id: 2, name: "Rivière", description: "Explorez les écosystèmes aquatiques", stars: 0, maxStars: 3, unlocked: false, reward: 150 },
-    { id: 3, name: "Col de montagne", description: "Escaladez les sommets", stars: 0, maxStars: 3, unlocked: false, reward: 200 },
-    { id: 4, name: "Oasis du désert", description: "Trouvez la vie dans le désert", stars: 0, maxStars: 3, unlocked: false, reward: 250 },
-    { id: 5, name: "Récif corallien", description: "Plongez dans l'océan", stars: 0, maxStars: 3, unlocked: false, reward: 300 },
-    { id: 6, name: "Toundra arctique", description: "Affrontez le nord gelé", stars: 0, maxStars: 3, unlocked: false, reward: 350 },
+const getMockLevels = () => [
+    { id: 1, name: fr.campaignScreen.level_forest_name, description: fr.campaignScreen.level_forest_desc, stars: 0, maxStars: 3, unlocked: true, reward: 100 },
+    { id: 2, name: fr.campaignScreen.level_river_name, description: fr.campaignScreen.level_river_desc, stars: 0, maxStars: 3, unlocked: false, reward: 150 },
+    { id: 3, name: fr.campaignScreen.level_mountain_name, description: fr.campaignScreen.level_mountain_desc, stars: 0, maxStars: 3, unlocked: false, reward: 200 },
+    { id: 4, name: fr.campaignScreen.level_desert_name, description: fr.campaignScreen.level_desert_desc, stars: 0, maxStars: 3, unlocked: false, reward: 250 },
+    { id: 5, name: fr.campaignScreen.level_reef_name, description: fr.campaignScreen.level_reef_desc, stars: 0, maxStars: 3, unlocked: false, reward: 300 },
+    { id: 6, name: fr.campaignScreen.level_tundra_name, description: fr.campaignScreen.level_tundra_desc, stars: 0, maxStars: 3, unlocked: false, reward: 350 },
 ];
 
 export default function CampaignScreen() {
     const router = useRouter();
     const progressAnim = useRef(new Animated.Value(0)).current;
-    const [levels, setLevels] = useState(mockLevels);
+    const [levels, setLevels] = useState(getMockLevels());
 
     const totalStars = levels.reduce((sum, level) => sum + level.stars, 0);
     const completedLevels = levels.filter(level => level.stars > 0).length;
@@ -71,7 +71,7 @@ export default function CampaignScreen() {
             {!item.unlocked && (
                 <View style={styles.lockedOverlay}>
                     <View style={styles.lockedBadge}>
-                        <Text style={styles.lockedText}>LOCKED</Text>
+                        <Text style={styles.lockedText}>{fr.campaignScreen.locked}</Text>
                     </View>
                 </View>
             )}
@@ -87,7 +87,7 @@ export default function CampaignScreen() {
 
                 <View style={styles.titleContainer}>
                     <Map size={16} color="#97572B" />
-                    <Text style={styles.title}>CAMPAGNE</Text>
+                    <Text style={styles.title}>{fr.campaignScreen.title}</Text>
                 </View>
 
                 <View style={styles.starsCount}>
@@ -98,7 +98,7 @@ export default function CampaignScreen() {
 
             <View style={styles.progressSection}>
                 <View style={styles.progressHeader}>
-                    <Text style={styles.progressLabel}>PROGRESSION</Text>
+                    <Text style={styles.progressLabel}>{fr.campaignScreen.progress_label}</Text>
                     <View style={styles.progressInfo}>
                         <Text style={styles.progressPercent}>{completedLevels}/{levels.length}</Text>
                         <View style={styles.coinsBadge}>

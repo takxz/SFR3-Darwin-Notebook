@@ -1,49 +1,14 @@
 const db = require('../config/db');
-const fs = require('fs');
-const path = require('path');
-
-const UPLOADS_DIR = path.join(__dirname, '../../uploads');
-
-async function purgePlayerData(userId) {
-    const creatures = await db.query('SELECT scan_url FROM public."CREATURE" WHERE player_id = $1', [userId]);
-    for (const creature of creatures.rows) {
-        if (creature.scan_url) {
-            const filename = creature.scan_url.split('/uploads/').pop();
-            if (filename) {
-                const filePath = path.join(UPLOADS_DIR, filename);
-                if (fs.existsSync(filePath)) {
-                    fs.unlinkSync(filePath);
-                }
-            }
-        }
-    }
-    await db.query('DELETE FROM public."PLAYER" WHERE id = $1', [userId]);
-}
+const userService = require('../services/userService');
 
 exports.purgeExpiredAccounts = async () => {
-    try {
-        await db.query(`ALTER TABLE public."PLAYER" ADD COLUMN IF NOT EXISTS deletion_requested_at TIMESTAMPTZ`);
-        const result = await db.query(
-            `SELECT id FROM public."PLAYER" WHERE deletion_requested_at IS NOT NULL AND deletion_requested_at <= NOW() - INTERVAL '30 days'`
-        );
-        for (const row of result.rows) {
-            await purgePlayerData(row.id);
-            console.log(`[RGPD] Compte ${row.id} supprimé définitivement.`);
-        }
-    } catch (err) {
-        console.error('[RGPD] Erreur purge comptes expirés:', err);
-    }
+    await userService.purgeExpiredAccounts();
 };
 
 exports.deleteAccount = async (req, res) => {
     try {
-        const userId = req.user.id;
-        await db.query(`ALTER TABLE public."PLAYER" ADD COLUMN IF NOT EXISTS deletion_requested_at TIMESTAMPTZ`);
-        await db.query(
-            `UPDATE public."PLAYER" SET deletion_requested_at = NOW() WHERE id = $1`,
-            [userId]
-        );
-        res.status(200).json({ message: "Votre compte sera supprimé définitivement dans 30 jours. Vous pouvez annuler cette demande en vous reconnectant." });
+        await userService.requestAccountDeletion(req.user.id);
+        res.status(200).json({ message: "Votre compte sera supprimé définitivement dans 30 jours." });
     } catch (err) {
         console.error('Erreur lors de la demande de suppression du compte:', err);
         res.status(500).json({ error: "Erreur interne du serveur." });
@@ -52,11 +17,7 @@ exports.deleteAccount = async (req, res) => {
 
 exports.cancelDeleteAccount = async (req, res) => {
     try {
-        const userId = req.user.id;
-        await db.query(
-            `UPDATE public."PLAYER" SET deletion_requested_at = NULL WHERE id = $1`,
-            [userId]
-        );
+        await userService.cancelAccountDeletion(req.user.id);
         res.status(200).json({ message: "Demande de suppression annulée." });
     } catch (err) {
         console.error('Erreur lors de l\'annulation de la suppression:', err);
@@ -75,47 +36,31 @@ const buildScanUrl = (req, storedValue) => {
 
 exports.getProfile = async (req, res) => {
     try {
-        // req.user.id vient du middleware d'authentification
-        const userId = req.user.id;
-
-        const result = await db.query(
-            'SELECT id, email, pseudo, player_level, bio_token FROM "PLAYER" WHERE id = $1',
-            [userId]
-        );
-
-        if (result.rows.length === 0) {
+        const userProfile = await userService.getProfile(req.user.id);
+        if (!userProfile) {
             return res.status(404).json({ error: "Utilisateur non trouvé." });
         }
-
-        res.json(result.rows[0]);
+        res.json(userProfile);
     } catch (err) {
         console.error('Erreur lors de la récupération du profil:', err);
         res.status(500).json({ error: "Erreur interne du serveur." });
     }
 };
 
-// Obtenir le profil public de n'importe quel utilisateur par son ID
 exports.getUserById = async (req, res) => {
     try {
         const targetId = req.params.id;
-
-        const result = await db.query(
-            'SELECT id, pseudo, player_level, bio_token FROM "PLAYER" WHERE id = $1',
-            [targetId]
-        );
-
-        if (result.rows.length === 0) {
+        const userProfile = await userService.getPublicProfileById(targetId);
+        if (!userProfile) {
             return res.status(404).json({ error: "Utilisateur non trouvé." });
         }
-
-        res.json(result.rows[0]);
+        res.json(userProfile);
     } catch (err) {
         console.error('Erreur lors de la récupération du profil public:', err);
         res.status(500).json({ error: "Erreur interne du serveur." });
     }
 };
 
-// Ajouter une créature à un utilisateur (gère aussi l'upload d'image)
 exports.addCreature = async (req, res) => {
     try {
         const { 
@@ -158,12 +103,8 @@ exports.addCreature = async (req, res) => {
                     [
                         scientific_name || 'Inconnu',
                         gamification_name || 'Inconnu',
-                        'Inconnu', 
-                        'Commun', 
-                        stat_atq || 10, 
-                        stat_def || 10, 
-                        stat_pv || 10, 
-                        stat_speed || 10,
+                        'Inconnu', 'Commun',
+                        stat_atq || 10, stat_def || 10, stat_pv || 10, stat_speed || 10,
                     ]
                 );
                 species = insertSpecies.rows[0];
@@ -265,8 +206,7 @@ exports.getUserCreatures = async (req, res) => {
         // On itère sur chaque ligne SQL pour enrichir avec l'URL du modèle
         // Note: Chemin relatif, le front sait que c'est /models/{model_path}
         const creaturesWithModels = result.rows.map(creature => ({
-            ...creature, // On conserve l'intégralité des données d'origine (id, stats, etc.)
-            // URL relative au domaine (optimisé pour cache HTTP et CDN)
+            ...creature,
             model_url: creature.species_model_path ? `/models/${creature.species_model_path}` : null
         }));
 
@@ -299,7 +239,12 @@ exports.getUserPlants = async (req, res) => {
 
         const result = await db.query(query, [userId]);
 
-        res.json(result.rows);
+        const plantsWithUrls = result.rows.map(row => ({
+            ...row,
+            scan_url: buildScanUrl(req, row.scan_url)
+        }));
+
+        res.json(plantsWithUrls);
     } catch (err) {
         console.error('Erreur lors de la récupération des plantes:', err);
         res.status(500).json({ error: "Erreur lors de la récupération des plantes." });
@@ -339,6 +284,7 @@ exports.getUserCreatureDetails = async(req, res) => {
          // Assemblage de l'objet de retour
          const creatureDetails = {
              ...creature,
+             scan_url: buildScanUrl(req, creature.scan_url),
              model_url: creature.species_model_path ? `/models/${creature.species_model_path}` : null
          };
 
@@ -392,7 +338,7 @@ exports.linkPlantToCreature = async (req, res) => {
             plant.stat_atq || 0,
             plant.stat_def || 0,
             plant.stat_speed || 0,
-            creatureId, 
+            creatureId,
             userId
         ]);
 
@@ -440,7 +386,7 @@ exports.unlinkPlantFromCreature = async (req, res) => {
             }
         }
 
-        // 3. Remove the link and rollback the stats 
+        // 3. Remove the link and rollback the stats
         const query = `
             UPDATE "CREATURE"
             SET 
@@ -458,7 +404,7 @@ exports.unlinkPlantFromCreature = async (req, res) => {
             baseStatAtq,
             baseStatDef,
             baseStatSpeed,
-            creatureId, 
+            creatureId,
             userId
         ]);
 
