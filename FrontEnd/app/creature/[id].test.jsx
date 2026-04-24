@@ -163,11 +163,6 @@ describe('CreatureDetailsPage', () => {
             setupFetch();
         });
 
-        it('doit se rendre sans erreur', async () => {
-            const { toJSON } = await renderAndFlush(<CreatureDetailsPage />);
-            expect(toJSON()).not.toBeNull();
-        });
-
         it('doit afficher le nom de la créature', async () => {
             await renderAndFlush(<CreatureDetailsPage />);
             expect(screen.getByText('Lion')).toBeTruthy();
