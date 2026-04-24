@@ -266,6 +266,7 @@ exports.getUserCreatures = async (req, res) => {
         // Note: Chemin relatif, le front sait que c'est /models/{model_path}
         const creaturesWithModels = result.rows.map(creature => ({
             ...creature, // On conserve l'intégralité des données d'origine (id, stats, etc.)
+            scan_url: buildScanUrl(req, creature.scan_url),
             // URL relative au domaine (optimisé pour cache HTTP et CDN)
             model_url: creature.species_model_path ? `/models/${creature.species_model_path}` : null
         }));
@@ -299,7 +300,12 @@ exports.getUserPlants = async (req, res) => {
 
         const result = await db.query(query, [userId]);
 
-        res.json(result.rows);
+        const plantsWithUrls = result.rows.map(row => ({
+            ...row,
+            scan_url: buildScanUrl(req, row.scan_url)
+        }));
+
+        res.json(plantsWithUrls);
     } catch (err) {
         console.error('Erreur lors de la récupération des plantes:', err);
         res.status(500).json({ error: "Erreur lors de la récupération des plantes." });
@@ -339,6 +345,7 @@ exports.getUserCreatureDetails = async(req, res) => {
          // Assemblage de l'objet de retour
          const creatureDetails = {
              ...creature,
+             scan_url: buildScanUrl(req, creature.scan_url),
              model_url: creature.species_model_path ? `/models/${creature.species_model_path}` : null
          };
 
