@@ -56,16 +56,13 @@ export default function ProfilePage() {
   };
 
   const confirmDeleteAccount = async () => {
-    console.log('[DELETE] bouton appuyé');
     try {
       const token = await getToken();
       const response = await fetch('http://ikdeksmp.fr:3001/api/user/profile', {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log('[DELETE] status:', response.status);
       const body = await response.json();
-      console.log('[DELETE] body:', JSON.stringify(body));
       if (!response.ok) {
         Alert.alert(fr.profileScreen2.error_title, body?.error || fr.profileScreen2.error_delete);
         return;
@@ -78,7 +75,7 @@ export default function ProfilePage() {
         [{ text: fr.profileScreen2.delete_scheduled_ok, onPress: async () => { await clearToken(); router.replace('/login'); } }]
       );
     } catch (e) {
-      console.log('[DELETE] erreur:', e.message);
+      console.error('[DELETE] erreur:', e.message);
       Alert.alert(fr.profileScreen2.error_title, fr.profileScreen2.error_generic);
     }
   };
