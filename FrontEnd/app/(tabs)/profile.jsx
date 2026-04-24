@@ -74,7 +74,8 @@ export default function ProfilePage() {
         fr.profileScreen2.delete_scheduled_message,
         [{ text: fr.profileScreen2.delete_scheduled_ok, onPress: async () => { await clearToken(); router.replace('/login'); } }]
       );
-    } catch {
+    } catch (e) {
+      console.error('[DELETE] erreur:', e.message);
       Alert.alert(fr.profileScreen2.error_title, fr.profileScreen2.error_generic);
     }
   };
@@ -207,7 +208,7 @@ export default function ProfilePage() {
         visible={showSettings}
         onClose={() => setShowSettings(false)}
         onLogout={handleLogout}
-        onDeleteAccount={() => setShowDeleteConfirm(true)}
+        onDeleteAccount={() => { setShowSettings(false); setTimeout(() => setShowDeleteConfirm(true), 300); }}
       />
 
       <DeleteConfirmModal
