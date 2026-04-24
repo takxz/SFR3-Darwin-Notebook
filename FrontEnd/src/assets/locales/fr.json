@@ -10,7 +10,12 @@
         "header_title": "Page d'accueil"
     },
     "collectionScreen": {
-        "header_title": "Collection"
+        "header_title": "Collection",
+        "filter_all": "Tous",
+        "filter_fauna": "Faune",
+        "filter_flora": "Flore",
+        "unknown_value": "Inconnu",
+        "unknown_creature": "Creature inconnue"
     },
     "cameraScreen": {
         "ask_permission_desc": "Nous avons besoin de votre permission pour utiliser la caméra",
@@ -78,7 +83,14 @@
         "back": "Retour",
         "title": "CHOISIR VOTRE BÊTE",
         "subtitle": "Sélectionnez l'animal qui vous représentera au combat",
-        "start_battle": "COMMENCER LE DUEL"
+        "start_battle": "COMMENCER LE DUEL",
+        "empty_title": "Collection Vide",
+        "empty_text": "Vous devez capturer au moins une créature avant de pouvoir lancer un duel.",
+        "empty_cta": "Aller chasser !",
+        "unknown_creature": "Inconnue",
+        "error_unauthenticated": "Non authentifié",
+        "error_user_not_found": "Utilisateur introuvable",
+        "error_network": "Erreur réseau"
     },
     "indexScreen": {
         "dataLoading": "Chargement des données...",
@@ -99,6 +111,93 @@
     },
     "emptyCollectionScreen": {
         "text": "Aucune créature disponible dans cette catégorie pour le moment."
+    },
+    "profileScreen2": {
+        "title": "Profil",
+        "loading": "Chargement...",
+        "error_loading": "Erreur lors du chargement du profil.",
+        "reconnect": "Se reconnecter",
+        "saved_title": "Enregistré",
+        "saved_message": "Votre description a été mise à jour.",
+        "error_title": "Erreur",
+        "error_delete": "Impossible de supprimer le compte. Veuillez réessayer.",
+        "error_generic": "Une erreur est survenue. Veuillez réessayer.",
+        "delete_scheduled_title": "Demande enregistrée",
+        "delete_scheduled_message": "Votre compte sera supprimé définitivement dans 30 jours. Pour annuler, reconnectez-vous simplement.",
+        "delete_scheduled_ok": "OK",
+        "stat_captures": "Capturés",
+        "stat_followers": "Abonnés",
+        "stat_following": "Abonnements",
+        "badge_hunter": "Expert\nChasseur",
+        "badge_shooter": "Tireur\nd'élite",
+        "change_description": "Changer la description",
+        "best_captures_title": "Mes meilleures captures",
+        "best_captures_count": "0 publications",
+        "no_capture": "Vous n'avez encore aucune capture.",
+        "default_description": "Chasseur de la nature | Photographe animalier"
+    },
+    "settingsModal": {
+        "title": "Paramètres",
+        "section_account": "Compte",
+        "section_general": "Général",
+        "section_actions": "Actions",
+        "section_about": "À propos",
+        "item_edit_profile": "Modifier le profil",
+        "item_privacy": "Confidentialité",
+        "item_notifications": "Notifications",
+        "item_security": "Sécurité",
+        "item_help": "Aide & Support",
+        "item_logout": "Se déconnecter",
+        "item_delete_account": "Supprimer le compte"
+    },
+    "deleteConfirmModal": {
+        "title": "Supprimer le compte ?",
+        "message": "Cette action est irréversible. Toutes vos données, captures et progrès seront définitivement supprimés.",
+        "cancel": "Annuler",
+        "confirm": "Supprimer"
+    },
+    "descriptionEditModal": {
+        "title": "Modifier la description",
+        "label": "Votre description",
+        "placeholder": "Écris ta description ici...",
+        "saving": "Enregistrement...",
+        "save": "Enregistrer"
+    },
+    "matchmakingScreen": {
+        "title": "Recherche d'adversaire.",
+        "subtitle": "Connexion au réseau de combat",
+        "cancel": "ANNULER",
+        "tip": "Astuce : Assurez-vous d'avoir sélectionné votre\nmeilleur animal pour ce combat !"
+    },
+    "campaignScreen": {
+        "title": "CAMPAGNE",
+        "progress_label": "PROGRESSION",
+        "locked": "LOCKED",
+        "level_forest_name": "Forêt",
+        "level_forest_desc": "Combattez les vides dans la fôret",
+        "level_river_name": "Rivière",
+        "level_river_desc": "Explorez les écosystèmes aquatiques",
+        "level_mountain_name": "Col de montagne",
+        "level_mountain_desc": "Escaladez les sommets",
+        "level_desert_name": "Oasis du désert",
+        "level_desert_desc": "Trouvez la vie dans le désert",
+        "level_reef_name": "Récif corallien",
+        "level_reef_desc": "Plongez dans l'océan",
+        "level_tundra_name": "Toundra arctique",
+        "level_tundra_desc": "Affrontez le nord gelé"
+    },
+    "informationOrganismeScreen": {
+        "unknown_name": "Nom inconnu",
+        "sharpness_label": "Netteté :",
+        "battle_stats_title": "Statistique de la créature"
+    },
+    "cinematicScreen": {
+        "slide1": "Pendant des siècles, le monde a prospéré en parfaite harmonie, un âge d'or où la nature et la technologie ne faisaient qu'un.",
+        "slide2": "Puis vint l'Erosion. Des entités connues sous le nom de 'Vides' sont descendues sur Terre, cherchant à effacer la réalité.",
+        "slide3": "Face à ce cataclysme, les Observateurs sont apparus. Leur mission : scanner, documenter et préserver l'essence même de la vie.",
+        "slide4": "Grâce à leurs appareils, ils matérialisent et sauvegardes les créatures disparues pour repousser le Vide.",
+        "finale": "À toi de jouer",
+        "skip": "Passer >>"
     },
     "tutorial": {
         "dismiss": "Compris !",

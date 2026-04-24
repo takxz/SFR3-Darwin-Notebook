@@ -5,7 +5,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
 
 // Route protégée pour obtenir son propre profil
-router.get('/profile', authMiddleware, userController.getProfile);
+router.get('/profile', authMiddleware, userController.getUserById);
 
 // Route pour supprimer son propre compte (délai de rétention 30 jours)
 router.delete('/profile', authMiddleware, userController.deleteAccount);
@@ -14,6 +14,8 @@ router.delete('/profile', authMiddleware, userController.deleteAccount);
 router.post('/profile/cancel-deletion', authMiddleware, userController.cancelDeleteAccount);
 
 // Route pour obtenir le profil public de quelqu'un d'autre
+// Exactement pareil que la route get /profile
+// A vérifier avant de supprimer
 router.get('/:id', authMiddleware, userController.getUserById);
 
 // Route pour ajouter une créature à l'utilisateur connecté avec upload d'image
