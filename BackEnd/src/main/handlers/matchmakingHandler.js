@@ -1,3 +1,4 @@
+const db = require('../config/db');
 const { store } = require('../store/redisStore');
 
 module.exports = function(io, socket) {
@@ -9,9 +10,46 @@ module.exports = function(io, socket) {
         const creatureId = data?.creatureId || 1;
         const nickname = data?.nickname || `Player_${socket.id.substr(0, 4)}`;
         
+        // Récupérer le modelPath depuis la BDD
+        let modelPath = 'Pig'; 
+        let animalType = 'Mamifère';
+        let latinName = '';
+        try {
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(creatureId);
+            
+            let query = '';
+            let params = [];
+            
+            if (isUUID) {
+                // Joueur normal: on cherche sa créature spécifique
+                const query = `
+                    SELECT s.model_path, s.type, s.latin_name 
+                    FROM "CREATURE" c 
+                    JOIN "SPECIES" s ON c.species_id = s.id 
+                    WHERE c.id = $1
+                `;
+                const result = await db.query(query, [creatureId]);
+                if (result.rows.length > 0) {
+                    modelPath = result.rows[0].model_path || 'Pig';
+                    animalType = result.rows[0].type || 'Inconnu';
+                    latinName = result.rows[0].latin_name || '';
+                }
+            } else {
+                // Bot d'entraînement : On simule directement un Requin
+                modelPath = 'shark';
+                animalType = 'Poisson';
+                latinName = 'Selachimorpha';
+            }
+        } catch (err) {
+            console.error('[Matchmaking] Erreur DB get model_path:', err.message);
+        }
+
         await store.client.hset(`${store.PREFIX}player:${socket.id}`, 
             'creatureId', creatureId,
-            'nickname', nickname
+            'nickname', nickname,
+            'modelPath', modelPath,
+            'animalType', animalType,
+            'latinName', latinName
         );
 
         const queueLength = await store.getQueueLength();
@@ -30,6 +68,9 @@ module.exports = function(io, socket) {
             const opData = await store.getPlayer(opponentId);
             const opCreatureId = opData?.creatureId || 1;
             const opNickname = opData?.nickname || `Player_${opponentId.substr(0, 4)}`;
+            const opModelPath = opData?.modelPath || 'Pig';
+            const opAnimalType = opData?.animalType || 'Inconnu';
+            const opLatinName = opData?.latinName || '';
 
             const roomId = `battle_${opponentId}_${socket.id}`;
             const battleState = {
@@ -41,6 +82,9 @@ module.exports = function(io, socket) {
                         action: 'IDLE', 
                         creatureId: opCreatureId,
                         nickname: opNickname,
+                        modelPath: opModelPath,
+                        animalType: opAnimalType,
+                        latinName: opLatinName,
                         specialCooldown: 5
                     },
                     [socket.id]: { 
@@ -49,6 +93,9 @@ module.exports = function(io, socket) {
                         action: 'IDLE', 
                         creatureId: creatureId,
                         nickname: nickname,
+                        modelPath: modelPath,
+                        animalType: animalType,
+                        latinName: latinName,
                         specialCooldown: 5
                     }
                 },

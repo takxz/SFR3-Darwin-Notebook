@@ -37,6 +37,12 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
                     ...prev,
                     nickname: me.nickname || 'Hero',
                     opNickname: op?.nickname || 'Opponent',
+                    modelPath: me.modelPath,
+                    animalType: me.animalType,
+                    latinName: me.latinName,
+                    opModelPath: op?.modelPath,
+                    opAnimalType: op?.animalType,
+                    opLatinName: op?.latinName,
                     specialCooldown: me.specialCooldown !== undefined ? me.specialCooldown : 5
                 }));
             }
@@ -82,6 +88,12 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
                     opMaxHp: op?.maxHp || 100,
                     nickname: me.nickname || 'Hero',
                     opNickname: op?.nickname || 'Opponent',
+                    modelPath: me.modelPath,
+                    animalType: me.animalType,
+                    latinName: me.latinName,
+                    opModelPath: op?.modelPath,
+                    opAnimalType: op?.animalType,
+                    opLatinName: op?.latinName,
                     specialCooldown: me.specialCooldown !== undefined ? me.specialCooldown : 5
                 });
 

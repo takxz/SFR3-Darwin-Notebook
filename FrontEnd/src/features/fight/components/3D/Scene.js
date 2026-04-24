@@ -11,6 +11,7 @@ import TargetGolem from './TargetGolem';
 
 import { ImpactParticles, SlashEffect } from './Impacts';
 import { CombatEnvironment, CombatSkybox } from '../Environment/Level';
+import { getModelForCreature } from '../../constants/FightAssets';
 
 // --- RÉGLAGES CAMÉRA ORBITALE ---
 const CAMERA_DISTANCE = 50;  // Recul (Rayon)
@@ -24,7 +25,7 @@ const LOOK_AT_Z = -10;
 
 export default function Scene({ 
     hitTrigger, enemyHitTrigger, triggerHit, isSpecialAttack, isBerserkStrike, isFinisher,
-    combo, isIntro, zawarudoProgress, themeColor 
+    combo, isIntro, zawarudoProgress, themeColor, stats
 }) {
     const meshRef = useRef();
     const impactAnchor = useRef(new THREE.Vector3(0, 0.5, -13));
@@ -91,6 +92,9 @@ export default function Scene({
         );
     });
 
+    const playerModel = getModelForCreature(stats?.modelPath, stats?.animalType, stats?.latinName);
+    const enemyModel = getModelForCreature(stats?.opModelPath, stats?.opAnimalType, stats?.opLatinName);
+
     return (
         <>
             {/* Pushed the fog way back so it doesn't swallow the edges of the map in darkness */}
@@ -109,6 +113,7 @@ export default function Scene({
                 damageTrigger={enemyHitTrigger} 
                 isSpecialAttack={isBerserkStrike}
                 isFinisher={isFinisher} 
+                modelSource={playerModel}
             />
 
             <TargetGolem
@@ -117,6 +122,7 @@ export default function Scene({
                 attackTrigger={enemyHitTrigger}
                 isSpecialAttack={isSpecialAttack}
                 color={themeColor}
+                modelSource={enemyModel}
             />
 
             <ImpactParticles position={impactAnchor.current} trigger={hitTrigger} />

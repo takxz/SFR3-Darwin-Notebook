@@ -77,6 +77,9 @@ export default function ArenaScreen() {
         }
     }, [turn, isIntro]);
 
+    const { beastId, creatureId } = useLocalSearchParams();
+    const finalCreatureId = beastId || creatureId || 1;
+
     const { user } = useUser();
 
     // AUTO-JOIN MATCHMAKING (Dès que l'app est chargée)
@@ -84,10 +87,10 @@ export default function ArenaScreen() {
         if (user && matchStatus === 'idle') {
             findMatch({
                 nickname: user.pseudo || `Player_${socketService.socket?.id?.substr(0, 4)}`,
-                creatureId: 1 // TODO: Get from router params or state
+                creatureId: finalCreatureId
             });
         }
-    }, [user, matchStatus]);
+    }, [user, matchStatus, finalCreatureId]);
 
     // ENVOI DE PLAYER READY UNE FOIS CHARGÉ
     useEffect(() => {
@@ -142,6 +145,7 @@ export default function ArenaScreen() {
                                 combo={combo}
                                 isIntro={isIntro}
                                 themeColor="#ff4400"
+                                stats={stats} // Pass stats to resolve models
                             />
                         </Suspense>
                     </Canvas>
