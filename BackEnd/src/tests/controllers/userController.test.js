@@ -210,7 +210,7 @@ describe('userController', () => {
                     id: 'c-1',
                     species_name: 'Alpaca',
                     species_model_path: 'alpaca',
-                    scan_url: 'scan1.jpg', // scan_url est renvoyé tel quel de la DB
+                    scan_url: 'http://localhost:3001/uploads/scan1.jpg', // URL publique reconstruite par buildScanUrl
                     model_url: '/models/alpaca' // model_url est généré
                 },
                 {
@@ -247,7 +247,8 @@ describe('userController', () => {
                 {
                     id: 'c-2',
                     species_name: 'Fougère',
-                    species_model_path: null
+                    species_model_path: null,
+                    scan_url: null // ajouté par buildScanUrl (null car absent de la DB)
                 }
             ];
 
@@ -395,7 +396,7 @@ describe('userController', () => {
                 id: 'c-99',
                 species_name: 'Lion',
                 species_model_path: 'lion',
-                scan_url: 'lion_scan.jpg', // scan_url est renvoyé tel quel de la DB
+                scan_url: 'http://localhost:3001/uploads/lion_scan.jpg', // URL publique reconstruite par buildScanUrl
                 model_url: '/models/lion' // model_url est généré
             };
 
