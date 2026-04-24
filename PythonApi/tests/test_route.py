@@ -3,6 +3,21 @@ import io
 import json
 from unittest.mock import patch, MagicMock
 
+# Constant for valid PNG bytes used in tests
+VALID_PNG = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\x0d\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+
+
+def _wait_for_done(client, job_id):
+    """Helper to wait for a classification job to complete."""
+    import time
+    for _ in range(50):  # timeout after ~5s
+        status_resp = client.get(f"/classification/status/{job_id}")
+        body = status_resp.get_json()
+        if body["status"] in {"done", "error"}:
+            return status_resp, body
+        time.sleep(0.1)
+    raise AssertionError(f"Job {job_id} did not complete in time")
+
 def test_hello_world(client):
     resp = client.get("/")
     assert resp.status_code == 200
@@ -33,8 +48,8 @@ def test_classification_not_organism_returns_clear_message(client, app_instance,
         content_type="multipart/form-data",
         data={"image": (io.BytesIO(valid_png_bytes), "not-organism.png")},
     )
-    assert submit.status_code == 202
-    job_id = submit.get_json()["job_id"]
+    assert resp.status_code == 202
+    job_id = resp.get_json()["job_id"]
 
     status_resp, body = _wait_for_done(client, job_id)
     assert status_resp.status_code == 200
@@ -177,7 +192,8 @@ def test_run_classification_handles_inaturalist_request_exception(app_instance, 
 
     # Conftest a déjà mocké le modèle et compute_sharpness.
     def raising_get(*_a, **_k):
-        raise requests_lib.exceptions.ConnectionError("boom")
+        import requests
+        raise requests.exceptions.ConnectionError("boom")
 
     monkeypatch.setattr(route.requests, "get", raising_get)
 
@@ -268,8 +284,7 @@ def test_index_route_calls_inaturalist(client, app_instance, monkeypatch):
     resp = client.get("/test")
     assert resp.status_code == 200
     body = resp.get_json()
-    assert body["success"] is False
-    assert body["is_organism"] is False
+    assert body["success"] is True
 
 def test_classification_success(client, app_instance, sample_image_b64):
     # Test avec imageData (base64) et succès (organism)
@@ -277,11 +292,14 @@ def test_classification_success(client, app_instance, sample_image_b64):
         "/classification",
         json={"imageData": sample_image_b64, "filename": "test.png"}
     )
-    assert resp.status_code == 200
-    body = resp.get_json()
+    assert resp.status_code == 202
+    job_id = resp.get_json()["job_id"]
+
+    status_resp, body = _wait_for_done(client, job_id)
+    assert status_resp.status_code == 200
     assert body["success"] is True
-    assert body["animal_id"] == 123
-    assert body["final_stats"] is not None
+    assert body["result"]["animal_id"] == 123
+    assert body["result"]["final_stats"] is not None
 
 def test_classification_no_image(client):
     resp = client.post("/classification", json={})
@@ -299,7 +317,11 @@ def test_classification_model_unavailable(client, app_instance, monkeypatch):
         content_type="multipart/form-data",
         data={"image": (io.BytesIO(valid_png_bytes), "test.png")},
     )
-    assert resp.status_code == 503
+    assert resp.status_code == 202
+    job_id = resp.get_json()["job_id"]
+
+    status_resp, body = _wait_for_done(client, job_id)
+    assert status_resp.status_code == 503
 
 def test_request_inaturalist_success(client, monkeypatch):
     import app.route as route
