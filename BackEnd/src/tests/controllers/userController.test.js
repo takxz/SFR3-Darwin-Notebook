@@ -160,4 +160,109 @@ describe('userController', () => {
             expect(res.json).toHaveBeenCalledWith(expectedPayload);
         });
     });
+
+    // ==========================================
+    // 11. linkPlantToCreature
+    // ==========================================
+    describe('linkPlantToCreature', () => {
+        beforeEach(() => {
+            req.params = { id: 'uuid-123', creatureid: 'c-1' };
+            req.body = { plantLinkId: 'p-1' };
+        });
+
+        it('doit lier une plante et augmenter les stats (200)', async () => {
+            const mockPlant = { stat_pv: 5, stat_atq: 2, stat_def: 1, stat_speed: 0 };
+            const mockUpdatedCreature = { id: 'c-1', plant_link_id: 'p-1', stat_pv: 15 };
+
+            db.query
+                .mockResolvedValueOnce({ rows: [mockPlant] }) // SELECT plant
+                .mockResolvedValueOnce({ rows: [mockUpdatedCreature] }); // UPDATE creature
+
+            await userController.linkPlantToCreature(req, res);
+
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                message: "Plante liée avec succès.",
+                creature: mockUpdatedCreature
+            }));
+        });
+
+        it('doit renvoyer 400 si plantLinkId est absent', async () => {
+            req.body.plantLinkId = undefined;
+            await userController.linkPlantToCreature(req, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+        });
+
+        it('doit renvoyer 404 si la plante n\'existe pas', async () => {
+            db.query.mockResolvedValueOnce({ rows: [] });
+            await userController.linkPlantToCreature(req, res);
+            expect(res.status).toHaveBeenCalledWith(404);
+            expect(res.json).toHaveBeenCalledWith({ error: "Plante introuvable." });
+        });
+
+        it('doit renvoyer 500 en cas d\'erreur DB', async () => {
+            db.query.mockRejectedValue(new Error('DB failure'));
+            await userController.linkPlantToCreature(req, res);
+            expect(res.status).toHaveBeenCalledWith(500);
+        });
+    });
+
+    // ==========================================
+    // 12. unlinkPlantFromCreature
+    // ==========================================
+    describe('unlinkPlantFromCreature', () => {
+        beforeEach(() => {
+            req.params = { id: 'uuid-123', creatureid: 'c-1' };
+        });
+
+        it('doit retirer la plante et remettre les stats de base (200)', async () => {
+            const mockCreature = { id: 'c-1', species_id: 10 };
+            const mockBaseStats = { base_stat_pv: 10, base_stat_atq: 5, base_stat_def: 5, base_stat_speed: 5 };
+            const mockUpdatedCreature = { id: 'c-1', plant_link_id: null, stat_pv: 10 };
+
+            db.query
+                .mockResolvedValueOnce({ rows: [mockCreature] }) // SELECT creature
+                .mockResolvedValueOnce({ rows: [mockBaseStats] }) // SELECT species base stats
+                .mockResolvedValueOnce({ rows: [mockUpdatedCreature] }); // UPDATE creature
+
+            await userController.unlinkPlantFromCreature(req, res);
+
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                message: "Plante retirée avec succès."
+            }));
+        });
+
+        it('doit renvoyer 404 si la créature est introuvable', async () => {
+            db.query.mockResolvedValueOnce({ rows: [] });
+            await userController.unlinkPlantFromCreature(req, res);
+            expect(res.status).toHaveBeenCalledWith(404);
+        });
+    });
+
+    // ==========================================
+    // 13. getLastCapturedCreatures
+    // ==========================================
+    describe('getLastCapturedCreatures', () => {
+        it('doit renvoyer les 5 dernières créatures avec URLs formattées', async () => {
+            const mockRows = [
+                { pseudo: 'Walid', gamification_name: 'Chat', scan_url: 'chat.jpg' }
+            ];
+            db.query.mockResolvedValue({ rows: mockRows });
+
+            await userController.getLastCapturedCreatures(req, res);
+
+            expect(res.json).toHaveBeenCalledWith([
+                expect.objectContaining({
+                    pseudo: 'Walid',
+                    scan_url: expect.stringContaining('/uploads/chat.jpg')
+                })
+            ]);
+        });
+
+        it('doit renvoyer 500 en cas d\'erreur DB', async () => {
+            db.query.mockRejectedValue(new Error('DB error'));
+            await userController.getLastCapturedCreatures(req, res);
+            expect(res.status).toHaveBeenCalledWith(500);
+        });
+    });
 });
+

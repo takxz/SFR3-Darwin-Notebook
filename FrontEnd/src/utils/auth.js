@@ -23,3 +23,15 @@ export async function getToken() {
 export async function clearToken() {
   await SecureStore.deleteItemAsync(TOKEN_KEY);
 }
+
+export async function getUserIdFromToken() {
+  try {
+    const token = await getToken();
+    if (!token) return null;
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload));
+    return decoded.id || decoded.sub || null;
+  } catch {
+    return null;
+  }
+}

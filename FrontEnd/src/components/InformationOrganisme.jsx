@@ -107,14 +107,14 @@ export default function InformationOrganisme({ photo, onClose, addToDex, onFinis
           <>
             <Image source={{ uri: `data:image/jpeg;base64,${photo.base64}` }} style={styles.image} />
             <View style={styles.mainContainerTitle}>
-              <Text style={styles.title}>{result.common_name || 'Nom inconnu'}</Text>
+              <Text style={styles.title}>{result.common_name || fr.informationOrganismeScreen.unknown_name}</Text>
               <Text style={styles.subtitle}>{result.scientific_name || ''}</Text>
             </View>
             <View style={styles.sharpnessBadge}>
-              <Text style={styles.sharpnessLabel}>Netteté :</Text>
+              <Text style={styles.sharpnessLabel}>{fr.informationOrganismeScreen.sharpness_label}</Text>
               <Text style={styles.sharpnessValue}>{result.sharpness_rank || '-'}</Text>
             </View>
-            <Text style={styles.battleStatsTitle}>Statistique de la créature</Text>
+            <Text style={styles.battleStatsTitle}>{fr.informationOrganismeScreen.battle_stats_title}</Text>
             <View style={styles.hrLine} />
             <View style={styles.gap} />
             <View style={styles.mainContainer}>

@@ -43,4 +43,5 @@ torchvision
 
 pytest==8.4.2
 pytest-cov==6.3.0
-
+pytest-github-actions-annotate-failures==0.2.0
+pytest-sugar==1.0.0
