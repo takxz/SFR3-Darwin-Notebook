@@ -290,7 +290,6 @@ export const BattleOverlay = ({
                     </View>
 
                     <View style={styles.healthRow}>
-                        <View style={styles.healthBarWrapper}>                        </View>
                         <View style={styles.healthBarWrapper}>
                             <View testID='hero-health-bar' style={[styles.healthBar, { width: `${(stats.hp / (stats.maxHp || 100)) * 100}%`, backgroundColor: '#6bb57c' }]} />
                             <Text style={styles.hpLabel}>{stats.nickname}: {Math.round(stats.hp)} / {stats.maxHp}</Text>
