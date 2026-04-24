@@ -207,6 +207,7 @@ exports.getUserCreatures = async (req, res) => {
         // Note: Chemin relatif, le front sait que c'est /models/{model_path}
         const creaturesWithModels = result.rows.map(creature => ({
             ...creature,
+            scan_url: buildScanUrl(req, creature.scan_url),
             model_url: creature.species_model_path ? `/models/${creature.species_model_path}` : null
         }));
 
