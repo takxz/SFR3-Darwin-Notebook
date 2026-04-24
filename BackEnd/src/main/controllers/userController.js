@@ -103,7 +103,7 @@ exports.addCreature = async (req, res) => {
                     [
                         scientific_name || 'Inconnu',
                         gamification_name || 'Inconnu',
-                        'Inconnu', 'Commun', 
+                        'Inconnu', 'Commun',
                         stat_atq || 10, stat_def || 10, stat_pv || 10, stat_speed || 10,
                     ]
                 );
@@ -239,7 +239,12 @@ exports.getUserPlants = async (req, res) => {
 
         const result = await db.query(query, [userId]);
 
-        res.json(result.rows);
+        const plantsWithUrls = result.rows.map(row => ({
+            ...row,
+            scan_url: buildScanUrl(req, row.scan_url)
+        }));
+
+        res.json(plantsWithUrls);
     } catch (err) {
         console.error('Erreur lors de la récupération des plantes:', err);
         res.status(500).json({ error: "Erreur lors de la récupération des plantes." });
@@ -279,6 +284,7 @@ exports.getUserCreatureDetails = async(req, res) => {
          // Assemblage de l'objet de retour
          const creatureDetails = {
              ...creature,
+             scan_url: buildScanUrl(req, creature.scan_url),
              model_url: creature.species_model_path ? `/models/${creature.species_model_path}` : null
          };
 
