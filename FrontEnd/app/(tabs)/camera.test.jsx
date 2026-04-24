@@ -29,6 +29,10 @@ jest.mock('../../src/assets/locales/fr.json', () => ({
         ask_permission_desc: 'Autoriser la caméra',
         button_permission_desc: 'Accorder la permission',
     },
+    tutorial: {
+        camera: 'Appuyez ici pour photographier un animal.',
+        dismiss: 'Compris !',
+    },
 }));
 
 jest.mock('../../src/utils/auth.js', () => ({

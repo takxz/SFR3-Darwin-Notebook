@@ -17,7 +17,32 @@ jest.mock('@/assets/locales/fr.json', () => ({
     mapRetry: 'Réessayer',
     mapCreaturesFound: 'créatures trouvées',
   },
+  tutorial: {
+    map: 'Ce bouton ouvre la carte interactive.',
+    dismiss: 'Compris !',
+  },
 }));
+
+jest.mock('@/hooks/useSpotlight', () => ({
+  useSpotlight: () => ({
+    visible: false,
+    targetLayout: null,
+    ref: { current: null },
+    onLayout: jest.fn(),
+    dismiss: jest.fn(),
+  }),
+}));
+
+jest.mock('@/hooks/useUserId', () => ({
+  useUserId: () => 'test-user-id',
+}));
+
+jest.mock('@/components/SpotlightTooltip', () => {
+  const { View } = require('react-native');
+  return function MockSpotlightTooltip() {
+    return <View testID="spotlight-tooltip" />;
+  };
+});
 
 jest.mock('@/assets/constants/colors', () => ({
   default: {
