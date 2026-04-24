@@ -43,10 +43,17 @@ const getPublicProfileById = async (userId) => {
     return rows[0] || null;
 };
 
+const getProfileById = async (userId) => {
+    const query = 'SELECT id, email, pseudo, player_level, bio_token, deletion_requested_at FROM "PLAYER" WHERE id = $1';
+    const { rows } = await db.query(query, [userId]);
+    return rows[0] || null;
+};
+
 module.exports = {
     findExpiredUsersWithCreatureScans, // Nom mis à jour
     deleteUsersByIds,
     setDeletionTimestamp,
     clearDeletionTimestamp,
     getPublicProfileById,
+    getProfileById,
 };

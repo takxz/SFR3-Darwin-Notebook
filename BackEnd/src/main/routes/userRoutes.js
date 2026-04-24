@@ -5,7 +5,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
 
 // Route protégée pour obtenir son propre profil
-router.get('/profile', authMiddleware, userController.getUserById);
+router.get('/profile', authMiddleware, userController.getProfile);
 
 // Route pour supprimer son propre compte (délai de rétention 30 jours)
 router.delete('/profile', authMiddleware, userController.deleteAccount);
