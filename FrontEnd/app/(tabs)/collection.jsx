@@ -81,6 +81,11 @@ function normalizeCreature(creature) {
         atk: Number(creature?.stat_atq ?? creature?.atk ?? 0),
         def: Number(creature?.stat_def ?? creature?.def ?? 0),
         spd: Number(creature?.stat_speed ?? creature?.spd ?? 0),
+        level: Number(creature?.creature_level ?? 1),
+        experience: Number(creature?.experience ?? 0),
+        xpThreshold: 100 + (Number(creature?.creature_level ?? 1) - 1) * 10,
+        victories: Number(creature?.victories ?? 0),
+        defeats: Number(creature?.defeats ?? 0),
     };
 }
 

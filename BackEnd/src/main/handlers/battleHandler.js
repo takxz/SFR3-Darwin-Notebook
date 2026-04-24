@@ -128,43 +128,112 @@ module.exports = function (io, socket) {
             }
 
             // 2. Attribution des récompenses (XP / BioTokens)
-            const winnerCreatureId = battle.players[result.winner]?.creatureId;
-            // Regex plus souple pour accepter tous les UUID (v1-v5) et les formats de test
-            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(winnerCreatureId);
+            const getXpThreshold = (lvl) => 100 + (lvl - 1) * 10;
 
-            if (winnerCreatureId && isUUID) {
+            const processReward = async (pid, cid, isWinner, sid) => {
+                console.log(`[BattleHandler] Starting rewards for Player:${pid}, Creature:${cid}, Winner:${isWinner}`);
                 try {
-                    const xpGain = 50;
-                    const bioTokenGain = 10;
+                    const xpGain = isWinner ? 50 : 10;
+                    const bioTokenGain = isWinner ? 10 : 0;
+                    let creatureLeveledUp = false;
+                    let playerLeveledUp = false;
+                    let newCLevel = 0;
+                    let newPLevel = 0;
 
-                    // 1. Mettre à jour l'XP de la CREATURE
-                    const creatureResult = await db.query(
-                        `UPDATE "CREATURE" SET experience = experience + $1 WHERE id = $2 RETURNING player_id`,
-                        [xpGain, winnerCreatureId]
-                    );
-
-                    if (creatureResult.rows.length > 0) {
-                        const playerId = creatureResult.rows[0].player_id;
-
-                        // 2. Mettre à jour l'XP et les BioTokens du PLAYER
-                        await db.query(
-                            `UPDATE "PLAYER" 
-                             SET xp = xp + $1,
-                                 bio_token = CAST(COALESCE(NULLIF(bio_token, ''), '0')::int + $2 AS varchar)
-                             WHERE id = $3`,
-                            [xpGain, bioTokenGain, playerId]
-                        );
-
-                        console.log(`[BattleHandler] ✅ Récompenses accordées à ${playerId}`);
+                    if (!pid || !cid) {
+                        console.error(`[BattleHandler] Missing ID for rewards! PID:${pid}, CID:${cid}`);
+                        return;
                     }
 
-                    io.to(result.winner).emit('REWARD_GRANTED', { xp: xpGain, bioTokens: bioTokenGain });
+                    // A. Récompense CRÉATURE
+                    const creatureData = await db.query(
+                        'SELECT experience, creature_level, stat_pv, stat_atq, stat_def, stat_speed FROM "CREATURE" WHERE id = $1',
+                        [cid]
+                    );
 
+                    if (creatureData.rows.length > 0) {
+                        const c = creatureData.rows[0];
+                        let newXp = (c.experience || 0) + xpGain;
+                        let newLevel = c.creature_level || 1;
+                        console.log(`[BattleHandler] Creature ${cid} current XP: ${c.experience}, adding ${xpGain}`);
+                        let newPv = c.stat_pv, newAtq = c.stat_atq, newDef = c.stat_def, newSpd = c.stat_speed;
+
+                        while (newXp >= getXpThreshold(newLevel)) {
+                            newXp -= getXpThreshold(newLevel);
+                            newLevel++;
+                            creatureLeveledUp = true;
+                            if (isWinner) {
+                                newPv += Math.floor(Math.random() * 4) + 2;
+                                newAtq += Math.floor(Math.random() * 4) + 2;
+                                newDef += Math.floor(Math.random() * 4) + 2;
+                                newSpd += Math.floor(Math.random() * 4) + 2;
+                            }
+                            console.log(`[BattleHandler] Creature ${cid} leveled up to ${newLevel}!`);
+                        }
+                        newCLevel = newLevel;
+
+                        const updateRes = await db.query(
+                            `UPDATE "CREATURE" 
+                             SET experience = $1, creature_level = $2, 
+                                  victories = victories + $3, defeats = defeats + $4,
+                                  stat_pv = $5, stat_atq = $6, stat_def = $7, stat_speed = $8
+                             WHERE id = $9`,
+                            [newXp, newLevel, isWinner ? 1 : 0, isWinner ? 0 : 1, newPv, newAtq, newDef, newSpd, cid]
+                        );
+                        console.log(`[BattleHandler] Creature ${cid} updated: ${updateRes.rowCount} row(s)`);
+                    } else {
+                        console.error(`[BattleHandler] Creature ${cid} not found in DB!`);
+                    }
+
+                    // B. Récompense JOUEUR
+                    const playerData = await db.query('SELECT xp, player_level FROM "PLAYER" WHERE id = $1', [pid]);
+                    if (playerData.rows.length > 0) {
+                        let pXp = (playerData.rows[0].xp || 0) + xpGain;
+                        let pLevel = playerData.rows[0].player_level || 1;
+                        console.log(`[BattleHandler] Player ${pid} current XP: ${playerData.rows[0].xp}, adding ${xpGain}`);
+
+                        while (pXp >= getXpThreshold(pLevel)) {
+                            pXp -= getXpThreshold(pLevel);
+                            pLevel++;
+                            playerLeveledUp = true;
+                            console.log(`[BattleHandler] Player ${pid} leveled up to ${pLevel}!`);
+                        }
+                        newPLevel = pLevel;
+
+                        await db.query(
+                            `UPDATE "PLAYER" 
+                             SET xp = $1, player_level = $2,
+                                 bio_token = CAST(COALESCE(NULLIF(bio_token, ''), '0')::int + $3 AS varchar)
+                             WHERE id = $4`,
+                            [pXp, pLevel, bioTokenGain, pid]
+                        );
+                        console.log(`[BattleHandler] Player ${pid} stats updated.`);
+                    }
+
+                    if (sid) {
+                        io.to(sid).emit('REWARD_GRANTED', { 
+                            xp: xpGain, 
+                            bioTokens: bioTokenGain,
+                            creatureId: cid,
+                            isWinner: isWinner,
+                            creatureLeveledUp,
+                            playerLeveledUp,
+                            newCLevel,
+                            newPLevel
+                        });
+                    }
                 } catch (err) {
-                    console.error("[BattleHandler] ❌ Erreur SQL récompenses:", err.message);
+                    console.error(`[BattleHandler] ❌ Erreur récompenses pour ${pid}:`, err.message);
                 }
-            } else if (winnerCreatureId) {
-                console.warn(`[BattleHandler] ⚠️ ID créature invalide (pas un UUID): ${winnerCreatureId}. Récompenses créature ignorées.`);
+            };
+
+            if (result.winner) {
+                const winner = battle.players[result.winner];
+                if (winner) await processReward(winner.playerId, winner.creatureId, true, result.winner);
+            }
+            if (result.loser) {
+                const loser = battle.players[result.loser];
+                if (loser) await processReward(loser.playerId, loser.creatureId, false, result.loser);
             }
 
             await store.deleteBattle(roomId);

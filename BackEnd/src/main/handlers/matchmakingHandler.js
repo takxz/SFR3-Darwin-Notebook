@@ -6,9 +6,22 @@ module.exports = function(io, socket) {
     socket.on('findMatch', async (data) => {
         console.log(`[Cluster ${process.pid}] User ${socket.id} looking for match...`);
         
-        // Sauvegarder la creature et le pseudo utilisés pour ce combat
-        const creatureId = data?.creatureId || 1;
+        const playerId = data?.playerId;
+        let creatureId = data?.creatureId;
         const nickname = data?.nickname || `Player_${socket.id.substr(0, 4)}`;
+
+        // Si creatureId est '1' ou manquant, on essaie de trouver une vraie créature en base
+        if ((!creatureId || creatureId === 1 || creatureId === '1') && playerId) {
+            try {
+                const res = await db.query('SELECT id FROM "CREATURE" WHERE player_id = $1 LIMIT 1', [playerId]);
+                if (res.rows.length > 0) {
+                    creatureId = res.rows[0].id;
+                    console.log(`[Matchmaking] Utilisation de la créature ${creatureId} pour le joueur ${playerId}`);
+                }
+            } catch (err) {
+                console.error('[Matchmaking] Erreur lors de la récupération d\'une créature:', err.message);
+            }
+        }
         
         // Récupérer le modelPath depuis la BDD
         let modelPath = 'Pig'; 
@@ -45,11 +58,12 @@ module.exports = function(io, socket) {
         }
 
         await store.client.hset(`${store.PREFIX}player:${socket.id}`, 
-            'creatureId', creatureId,
-            'nickname', nickname,
-            'modelPath', modelPath,
-            'animalType', animalType,
-            'latinName', latinName
+            'playerId', playerId || '',
+            'creatureId', creatureId || '',
+            'nickname', nickname || '',
+            'modelPath', modelPath || 'Pig',
+            'animalType', animalType || 'Inconnu',
+            'latinName', latinName || ''
         );
 
         const queueLength = await store.getQueueLength();
@@ -81,6 +95,7 @@ module.exports = function(io, socket) {
                         inventory: { potion: 3 }, 
                         action: 'IDLE', 
                         creatureId: opCreatureId,
+                        playerId: opData?.playerId,
                         nickname: opNickname,
                         modelPath: opModelPath,
                         animalType: opAnimalType,
@@ -92,6 +107,7 @@ module.exports = function(io, socket) {
                         inventory: { potion: 3 }, 
                         action: 'IDLE', 
                         creatureId: creatureId,
+                        playerId: playerId,
                         nickname: nickname,
                         modelPath: modelPath,
                         animalType: animalType,

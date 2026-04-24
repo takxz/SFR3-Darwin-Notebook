@@ -146,7 +146,57 @@ exports.addCreature = async (req, res) => {
             stat_speed || species.base_stat_speed
         ]);
 
-        res.status(201).json(result.rows[0]);
+        const newCreature = result.rows[0];
+
+        // 3. Récompense pour le joueur (XP modulée par rareté et qualité de scan)
+        try {
+            const baseXp = 20;
+            const rarityMapping = {
+                'Commun': 1.0,
+                'Rare': 1.5,
+                'Epique': 2.0,
+                'Légendaire': 3.0,
+                'Inconnu': 1.0
+            };
+            
+            const multiplier = rarityMapping[species.rarity] || 1.0;
+            const quality = scan_quality || 0.8;
+            const bioTokenGain = 5; 
+            const captureXp = Math.max(20, Math.round(baseXp * multiplier * quality));
+
+            console.log(`[UserController] Reward for ${userId}: base 20 * rarity ${multiplier} * quality ${quality} = ${captureXp} XP, +${bioTokenGain} BioTokens`);
+
+            const playerData = await db.query('SELECT xp, player_level, bio_token FROM "PLAYER" WHERE id = $1', [userId]);
+            
+            if (playerData.rows.length > 0) {
+                let { xp, player_level, bio_token } = playerData.rows[0];
+                xp = (xp || 0) + captureXp;
+                let level = player_level || 1;
+
+                const getThreshold = (l) => 100 + (l - 1) * 10;
+                
+                while (xp >= getThreshold(level)) {
+                    xp -= getThreshold(level);
+                    level++;
+                    console.log(`[UserController] Player ${userId} leveled up to ${level}!`);
+                }
+
+                await db.query(
+                    `UPDATE "PLAYER" 
+                     SET xp = $1, player_level = $2,
+                         bio_token = CAST(COALESCE(NULLIF(bio_token, ''), '0')::int + $3 AS varchar)
+                     WHERE id = $4`,
+                    [xp, level, bioTokenGain, userId]
+                );
+                console.log(`[UserController] ✅ Stats joueur mises à jour pour ${userId}`);
+            } else {
+                console.warn(`[UserController] ⚠️ Joueur ${userId} non trouvé lors de l'attribution des récompenses`);
+            }
+        } catch (xpErr) {
+            console.error('[UserController] ❌ Erreur lors de l\'attribution de l\'XP capture:', xpErr.message);
+        }
+
+        res.status(201).json(newCreature);
     } catch (err) {
         console.error('Erreur lors de l\'ajout de la créature:', err);
         res.status(500).json({ error: "Erreur lors de l'ajout de la créature." });

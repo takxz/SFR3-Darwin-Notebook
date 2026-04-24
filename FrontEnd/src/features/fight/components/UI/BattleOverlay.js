@@ -280,21 +280,7 @@ export const BattleOverlay = ({
                 </View>
             )}
 
-            {/* RESULTS OVERLAY */}
-            {(stats.hp <= 0 || stats.opHp <= 0) && (
-                <View style={styles.resultsOverlay}>
-                    <Text style={styles.resultTitle}>{stats.hp <= 0 ? "DÉFAITE" : "VICTOIRE"}</Text>
-                    <Text testID={stats.hp <= 0 ? "defeat-text" : "victory-text"} style={styles.resultSubtext}>{stats.hp <= 0 ? "VOUS AVEZ ÉTÉ VAINCU..." : `${stats.opNickname} A ÉTÉ TERRASSÉ !`}</Text>
-
-                    <BattleButton
-                        onPress={onQuit}
-                        style={styles.quitBtn}
-                        colors={['#ffffff', '#aaaaaa']}
-                    >
-                        <Text style={[styles.actionText, { color: '#000', marginTop: 0 }]}>RETOURNER AU MENU</Text>
-                    </BattleButton>
-                </View>
-            )}
+            {/* RESULTS OVERLAY REMOVED - NOW HANDLED BY REWARDMODAL */}
         </View>
     );
 };

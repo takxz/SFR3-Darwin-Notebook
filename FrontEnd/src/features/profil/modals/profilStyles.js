@@ -127,6 +127,53 @@ export const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginTop: 4,
   },
+  bioTokenContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#97572B20',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    gap: 6,
+  },
+  bioTokenText: {
+    color: '#97572B',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  xpContainer: {
+    marginTop: 16,
+    width: '100%',
+  },
+  xpHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  xpLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#97572B70',
+    textTransform: 'uppercase',
+  },
+  xpValue: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#97572B',
+  },
+  xpBarTrack: {
+    height: 8,
+    backgroundColor: '#97572B15',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  xpBarFill: {
+    height: '100%',
+    backgroundColor: '#97572B',
+    borderRadius: 4,
+  },
   badgesContainer: {
     gap: 16,
   },

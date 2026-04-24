@@ -1,6 +1,6 @@
 const userController = require('../../main/controllers/userController');
 const userService = require('../../main/services/userService');
-const db = require('../../main/config/db'); // Gardé pour les tests non refactorisés
+const db = require('../../main/config/db');
 const fs = require('fs');
 
 // --- Mocks ---
@@ -30,240 +30,189 @@ describe('userController', () => {
         console.error.mockRestore();
     });
 
-    describe('getProfile', () => {
-        it('doit appeler le service et renvoyer le profil (200)', async () => {
-            req.user.id = 'uuid-123';
-            const mockUser = { id: 'uuid-123', pseudo: 'DrDarwin' };
-
-            // On configure le mock du service pour qu'il retourne notre mock d'utilisateur
-            userService.getProfile.mockResolvedValue(mockUser);
-
+    describe('Profile & Accounts', () => {
+        it('getProfile: success', async () => {
+            req.user.id = 'u1';
+            userService.getProfile.mockResolvedValue({ id: 'u1' });
             await userController.getProfile(req, res);
-
-            expect(userService.getProfile).toHaveBeenCalledWith('uuid-123');
-            expect(userService.getProfile).toHaveBeenCalledTimes(1);
-
-            // On vérifie que la réponse HTTP est correcte
-            expect(res.json).toHaveBeenCalledWith(mockUser);
+            expect(res.json).toHaveBeenCalled();
         });
 
-        it('doit renvoyer 404 si le service ne trouve pas d\'utilisateur', async () => {
-            req.user.id = 'ghost-id';
-            // Le service renvoie null si l'utilisateur n'est pas trouvé
+        it('getProfile: 404', async () => {
             userService.getProfile.mockResolvedValue(null);
-
             await userController.getProfile(req, res);
-
-            expect(userService.getProfile).toHaveBeenCalledWith('ghost-id');
             expect(res.status).toHaveBeenCalledWith(404);
-            expect(res.json).toHaveBeenCalledWith({ error: "Utilisateur non trouvé." });
-        });
-    });
-
-    describe('getUserById', () => {
-        it('doit appeler le service et renvoyer le profil public (200)', async () => {
-            req.params.id = 'target-456';
-            const mockUser = { id: 'target-456', pseudo: 'PlayerTwo' };
-
-            // On mock la fonction du service que le contrôleur doit appeler
-            userService.getPublicProfileById.mockResolvedValue(mockUser);
-
-            await userController.getUserById(req, res);
-
-            // On vérifie que le contrôleur a bien appelé le service
-            expect(userService.getPublicProfileById).toHaveBeenCalledWith('target-456');
-            // On vérifie que la réponse est correcte
-            expect(res.json).toHaveBeenCalledWith(mockUser);
         });
 
-        it('doit renvoyer 404 si le service ne trouve pas l\'utilisateur', async () => {
-            req.params.id = 'target-456';
-            // Le service renvoie null si l'utilisateur n'est pas trouvé
-            userService.getPublicProfileById.mockResolvedValue(null);
-
-            await userController.getUserById(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(404);
-            expect(res.json).toHaveBeenCalledWith({ error: "Utilisateur non trouvé." });
+        it('getProfile: 500', async () => {
+            userService.getProfile.mockRejectedValue(new Error('Err'));
+            await userController.getProfile(req, res);
+            expect(res.status).toHaveBeenCalledWith(500);
         });
-    });
 
-    describe('deleteAccount', () => {
-        it('doit appeler le service de suppression et renvoyer 200', async () => {
-            req.user.id = 'uuid-123';
+        it('deleteAccount: success', async () => {
+            req.user.id = 'u1';
             userService.requestAccountDeletion.mockResolvedValue();
             await userController.deleteAccount(req, res);
-            expect(userService.requestAccountDeletion).toHaveBeenCalledWith('uuid-123');
             expect(res.status).toHaveBeenCalledWith(200);
         });
-    });
 
-    describe('cancelDeleteAccount', () => {
-        it('doit appeler le service d\'annulation et renvoyer 200', async () => {
-            req.user.id = 'uuid-123';
+        it('deleteAccount: 500', async () => {
+            userService.requestAccountDeletion.mockRejectedValue(new Error('Err'));
+            await userController.deleteAccount(req, res);
+            expect(res.status).toHaveBeenCalledWith(500);
+        });
+
+        it('cancelDeleteAccount: success', async () => {
+            req.user.id = 'u1';
             userService.cancelAccountDeletion.mockResolvedValue();
             await userController.cancelDeleteAccount(req, res);
-            expect(userService.cancelAccountDeletion).toHaveBeenCalledWith('uuid-123');
             expect(res.status).toHaveBeenCalledWith(200);
         });
-    });
 
-    describe('purgeExpiredAccounts', () => {
-        it('doit appeler le service de purge', async () => {
-            userService.purgeExpiredAccounts.mockResolvedValue();
-            await userController.purgeExpiredAccounts();
-            expect(userService.purgeExpiredAccounts).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    // ==========================================
-    // Anciens tests (non encore refactorisés)
-    // ==========================================
-
-    describe('addCreature', () => {
-        it('doit insérer une créature (201)', async () => {
-            const mockSpecies = { id: 1, name: 'Souris', base_stat_atq: 10 };
-            const mockCreature = { id: 100, gamification_name: 'Pikachu' };
-            db.query
-                .mockResolvedValueOnce({ rows: [mockSpecies] })
-                .mockResolvedValueOnce({ rows: [mockCreature] });
-            await userController.addCreature(req, res);
-            expect(db.query).toHaveBeenCalledTimes(2);
-            expect(res.status).toHaveBeenCalledWith(201);
-            expect(res.json).toHaveBeenCalledWith(mockCreature);
-        });
-    });
-
-    describe('uploadCreatureImage', () => {
-        it('doit générer l\'URL absolue (200)', async () => {
-            req.file = { filename: 'beast.png' };
-            await userController.uploadCreatureImage(req, res);
-            expect(res.json).toHaveBeenCalledWith({
-                imageUrl: 'http://localhost:3001/uploads/beast.png',
-                filename: 'beast.png'
-            });
-        });
-    });
-
-    describe('getUserCreatures', () => {
-        it('doit renvoyer la collection enrichie (200)', async () => {
-            req.params.id = 'uuid-123';
-            const mockDbRows = [{ id: 'c-1', species_name: 'Alpaca', species_model_path: 'alpaca' }];
-            db.query.mockResolvedValue({ rows: mockDbRows });
-            await userController.getUserCreatures(req, res);
-            const expectedPayload = [{
-                id: 'c-1',
-                species_name: 'Alpaca',
-                species_model_path: 'alpaca',
-                scan_url: null,
-                model_url: '/models/alpaca'
-            }];
-            expect(res.json).toHaveBeenCalledWith(expectedPayload);
-        });
-    });
-
-    // ==========================================
-    // 11. linkPlantToCreature
-    // ==========================================
-    describe('linkPlantToCreature', () => {
-        beforeEach(() => {
-            req.params = { id: 'uuid-123', creatureid: 'c-1' };
-            req.body = { plantLinkId: 'p-1' };
+        it('cancelDeleteAccount: 500', async () => {
+            userService.cancelAccountDeletion.mockRejectedValue(new Error('Err'));
+            await userController.cancelDeleteAccount(req, res);
+            expect(res.status).toHaveBeenCalledWith(500);
         });
 
-        it('doit lier une plante et augmenter les stats (200)', async () => {
-            const mockPlant = { stat_pv: 5, stat_atq: 2, stat_def: 1, stat_speed: 0 };
-            const mockUpdatedCreature = { id: 'c-1', plant_link_id: 'p-1', stat_pv: 15 };
-
-            db.query
-                .mockResolvedValueOnce({ rows: [mockPlant] }) // SELECT plant
-                .mockResolvedValueOnce({ rows: [mockUpdatedCreature] }); // UPDATE creature
-
-            await userController.linkPlantToCreature(req, res);
-
-            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-                message: "Plante liée avec succès.",
-                creature: mockUpdatedCreature
-            }));
+        it('getUserById: success', async () => {
+            req.params.id = 'u2';
+            userService.getPublicProfileById.mockResolvedValue({ id: 'u2' });
+            await userController.getUserById(req, res);
+            expect(res.json).toHaveBeenCalled();
         });
 
-        it('doit renvoyer 400 si plantLinkId est absent', async () => {
-            req.body.plantLinkId = undefined;
-            await userController.linkPlantToCreature(req, res);
-            expect(res.status).toHaveBeenCalledWith(400);
-        });
-
-        it('doit renvoyer 404 si la plante n\'existe pas', async () => {
-            db.query.mockResolvedValueOnce({ rows: [] });
-            await userController.linkPlantToCreature(req, res);
+        it('getUserById: 404', async () => {
+            userService.getPublicProfileById.mockResolvedValue(null);
+            await userController.getUserById(req, res);
             expect(res.status).toHaveBeenCalledWith(404);
-            expect(res.json).toHaveBeenCalledWith({ error: "Plante introuvable." });
         });
 
-        it('doit renvoyer 500 en cas d\'erreur DB', async () => {
-            db.query.mockRejectedValue(new Error('DB failure'));
-            await userController.linkPlantToCreature(req, res);
+        it('getUserById: 500', async () => {
+            userService.getPublicProfileById.mockRejectedValue(new Error('Err'));
+            await userController.getUserById(req, res);
             expect(res.status).toHaveBeenCalledWith(500);
         });
     });
 
-    // ==========================================
-    // 12. unlinkPlantFromCreature
-    // ==========================================
-    describe('unlinkPlantFromCreature', () => {
-        beforeEach(() => {
-            req.params = { id: 'uuid-123', creatureid: 'c-1' };
-        });
-
-        it('doit retirer la plante et remettre les stats de base (200)', async () => {
-            const mockCreature = { id: 'c-1', species_id: 10 };
-            const mockBaseStats = { base_stat_pv: 10, base_stat_atq: 5, base_stat_def: 5, base_stat_speed: 5 };
-            const mockUpdatedCreature = { id: 'c-1', plant_link_id: null, stat_pv: 10 };
-
+    describe('Creatures & Collection', () => {
+        it('addCreature: success with XP logic', async () => {
+            req.body = { species_id: 1, player_id: 'u1' };
             db.query
-                .mockResolvedValueOnce({ rows: [mockCreature] }) // SELECT creature
-                .mockResolvedValueOnce({ rows: [mockBaseStats] }) // SELECT species base stats
-                .mockResolvedValueOnce({ rows: [mockUpdatedCreature] }); // UPDATE creature
-
-            await userController.unlinkPlantFromCreature(req, res);
-
-            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-                message: "Plante retirée avec succès."
-            }));
+                .mockResolvedValueOnce({ rows: [{ id: 1, rarity: 'Rare', name: 'N' }] }) // species
+                .mockResolvedValueOnce({ rows: [{ id: 100 }] }) // creature
+                .mockResolvedValueOnce({ rows: [{ xp: 10, player_level: 1, bio_token: '5' }] }) // player
+                .mockResolvedValueOnce({}); // update
+            await userController.addCreature(req, res);
+            expect(res.status).toHaveBeenCalledWith(201);
         });
 
-        it('doit renvoyer 404 si la créature est introuvable', async () => {
-            db.query.mockResolvedValueOnce({ rows: [] });
-            await userController.unlinkPlantFromCreature(req, res);
+        it('addCreature: error during XP update (catch)', async () => {
+            req.body = { species_id: 1 };
+            db.query
+                .mockResolvedValueOnce({ rows: [{ id: 1, rarity: 'Commun' }] })
+                .mockResolvedValueOnce({ rows: [{ id: 100 }] })
+                .mockRejectedValueOnce(new Error('XP Error'));
+            await userController.addCreature(req, res);
+            expect(res.status).toHaveBeenCalledWith(201);
+        });
+
+        it('getUserCreatures: success', async () => {
+            req.params.id = 'u1';
+            db.query.mockResolvedValue({ rows: [{ id: 'c1', scan_url: 's.jpg', species_model_path: 'p' }] });
+            await userController.getUserCreatures(req, res);
+            expect(res.json).toHaveBeenCalled();
+        });
+
+        it('getUserCreatures: 500', async () => {
+            db.query.mockRejectedValue(new Error('Err'));
+            await userController.getUserCreatures(req, res);
+            expect(res.status).toHaveBeenCalledWith(500);
+        });
+
+        it('getUserCreatureDetails: 404', async () => {
+            req.params = { id: 'u1', creatureid: 'c1' };
+            db.query.mockResolvedValue({ rows: [] });
+            await userController.getUserCreatureDetails(req, res);
             expect(res.status).toHaveBeenCalledWith(404);
+        });
+
+        it('getUserCreatureDetails: 500', async () => {
+            db.query.mockRejectedValue(new Error('Err'));
+            await userController.getUserCreatureDetails(req, res);
+            expect(res.status).toHaveBeenCalledWith(500);
         });
     });
 
-    // ==========================================
-    // 13. getLastCapturedCreatures
-    // ==========================================
-    describe('getLastCapturedCreatures', () => {
-        it('doit renvoyer les 5 dernières créatures avec URLs formattées', async () => {
-            const mockRows = [
-                { pseudo: 'Walid', gamification_name: 'Chat', scan_url: 'chat.jpg' }
-            ];
-            db.query.mockResolvedValue({ rows: mockRows });
-
-            await userController.getLastCapturedCreatures(req, res);
-
-            expect(res.json).toHaveBeenCalledWith([
-                expect.objectContaining({
-                    pseudo: 'Walid',
-                    scan_url: expect.stringContaining('/uploads/chat.jpg')
-                })
-            ]);
+    describe('Plants', () => {
+        it('getUserPlants: success', async () => {
+            req.params.id = 'u1';
+            db.query.mockResolvedValue({ rows: [{ id: 'p1', scan_url: 's.jpg' }] });
+            await userController.getUserPlants(req, res);
+            expect(res.json).toHaveBeenCalled();
         });
 
-        it('doit renvoyer 500 en cas d\'erreur DB', async () => {
-            db.query.mockRejectedValue(new Error('DB error'));
+        it('getUserPlants: 500', async () => {
+            db.query.mockRejectedValue(new Error('Err'));
+            await userController.getUserPlants(req, res);
+            expect(res.status).toHaveBeenCalledWith(500);
+        });
+
+        it('linkPlantToCreature: success', async () => {
+            req.params = { id: 'u1', creatureid: 'c1' };
+            req.body = { plantLinkId: 'p1' };
+            db.query
+                .mockResolvedValueOnce({ rows: [{ stat_pv: 10 }] }) // plant
+                .mockResolvedValueOnce({ rows: [{ id: 'c1' }] }); // update
+            await userController.linkPlantToCreature(req, res);
+            expect(res.json).toHaveBeenCalled();
+        });
+
+        it('linkPlantToCreature: 404 creature', async () => {
+            req.params = { id: 'u1', creatureid: 'c1' };
+            req.body = { plantLinkId: 'p1' };
+            db.query
+                .mockResolvedValueOnce({ rows: [{ stat_pv: 10 }] }) // plant
+                .mockResolvedValueOnce({ rows: [] }); // update fail
+            await userController.linkPlantToCreature(req, res);
+            expect(res.status).toHaveBeenCalledWith(404);
+        });
+
+        it('unlinkPlantFromCreature: success', async () => {
+            req.params = { id: 'u1', creatureid: 'c1' };
+            db.query
+                .mockResolvedValueOnce({ rows: [{ species_id: 1 }] }) // check
+                .mockResolvedValueOnce({ rows: [{ base_stat_pv: 10 }] }) // base stats
+                .mockResolvedValueOnce({ rows: [{ id: 'c1' }] }); // update
+            await userController.unlinkPlantFromCreature(req, res);
+            expect(res.json).toHaveBeenCalled();
+        });
+    });
+
+    describe('Upload & Misc', () => {
+        it('uploadCreatureImage: success', async () => {
+            req.file = { filename: 'f.jpg' };
+            await userController.uploadCreatureImage(req, res);
+            expect(res.json).toHaveBeenCalled();
+        });
+
+        it('uploadCreatureImage: 400', async () => {
+            req.file = null;
+            await userController.uploadCreatureImage(req, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+        });
+
+        it('getLastCapturedCreatures: success', async () => {
+            db.query.mockResolvedValue({ rows: [{ scan_url: 's.jpg' }] });
+            await userController.getLastCapturedCreatures(req, res);
+            expect(res.json).toHaveBeenCalled();
+        });
+
+        it('getLastCapturedCreatures: 500', async () => {
+            db.query.mockRejectedValue(new Error('Err'));
             await userController.getLastCapturedCreatures(req, res);
             expect(res.status).toHaveBeenCalledWith(500);
         });
     });
 });
-

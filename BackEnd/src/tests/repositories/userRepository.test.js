@@ -13,18 +13,59 @@ describe('userRepository', () => {
     });
 
     // ==========================================
-    // 1. getPublicProfileById
+    // 1. findPublicProfileById
     // ==========================================
-    describe('getPublicProfileById', () => {
+    describe('findPublicProfileById', () => {
         it('doit appeler db.query avec le bon ID utilisateur', async () => {
             const userId = 1;
             db.query.mockResolvedValue({ rows: [{ id: 1 }] });
 
-            await userRepository.getPublicProfileById(userId);
+            await userRepository.findPublicProfileById(userId);
 
             expect(db.query).toHaveBeenCalledTimes(1);
-            // On vérifie que le paramètre est bien passé, sans se soucier de la requête exacte.
             expect(db.query).toHaveBeenCalledWith(expect.any(String), [userId]);
+        });
+
+        it('doit retourner null si aucun utilisateur trouvé', async () => {
+            db.query.mockResolvedValue({ rows: [] });
+            const profile = await userRepository.findPublicProfileById(999);
+            expect(profile).toBeNull();
+        });
+    });
+
+    describe('getProfileById', () => {
+        it('doit appeler db.query et retourner le profil', async () => {
+            const userId = 2;
+            db.query.mockResolvedValue({ rows: [{ id: 2, pseudo: 'test' }] });
+
+            const profile = await userRepository.getProfileById(userId);
+
+            expect(profile.pseudo).toBe('test');
+            expect(db.query).toHaveBeenCalledWith(expect.any(String), [userId]);
+        });
+
+        it('doit retourner null si aucun utilisateur trouvé', async () => {
+            db.query.mockResolvedValue({ rows: [] });
+            const profile = await userRepository.getProfileById(999);
+            expect(profile).toBeNull();
+        });
+    });
+
+    describe('findProfileById', () => {
+        it('doit appeler db.query et retourner le profil', async () => {
+            const userId = 3;
+            db.query.mockResolvedValue({ rows: [{ id: 3, pseudo: 'test3' }] });
+
+            const profile = await userRepository.findProfileById(userId);
+
+            expect(profile.pseudo).toBe('test3');
+            expect(db.query).toHaveBeenCalledWith(expect.any(String), [userId]);
+        });
+
+        it('doit retourner null si aucun utilisateur trouvé', async () => {
+            db.query.mockResolvedValue({ rows: [] });
+            const profile = await userRepository.findProfileById(999);
+            expect(profile).toBeNull();
         });
     });
 

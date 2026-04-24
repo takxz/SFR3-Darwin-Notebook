@@ -140,30 +140,7 @@ describe('BattleOverlay', () => {
         });
     });
 
-    describe('Résultats', () => {
-        it('doit afficher DÉFAITE quand hp <= 0', () => {
-            render(<BattleOverlay {...makeProps({ isIntro: false, stats: { ...defaultStats, hp: 0 } })} />);
-            expect(screen.getByText('DÉFAITE')).toBeTruthy();
-            expect(screen.getByTestId('defeat-text')).toBeTruthy();
-        });
-
-        it('doit afficher VICTOIRE quand opHp <= 0', () => {
-            render(<BattleOverlay {...makeProps({ isIntro: false, stats: { ...defaultStats, opHp: 0 } })} />);
-            expect(screen.getByText('VICTOIRE')).toBeTruthy();
-            expect(screen.getByTestId('victory-text')).toBeTruthy();
-        });
-
-        it('ne doit pas afficher les résultats quand les deux joueurs sont en vie', () => {
-            render(<BattleOverlay {...makeProps({ isIntro: false })} />);
-            expect(screen.queryByText('DÉFAITE')).toBeNull();
-            expect(screen.queryByText('VICTOIRE')).toBeNull();
-        });
-
-        it('doit afficher le bouton retour menu après le combat', () => {
-            render(<BattleOverlay {...makeProps({ isIntro: false, stats: { ...defaultStats, hp: 0 } })} />);
-            expect(screen.getByText('RETOURNER AU MENU')).toBeTruthy();
-        });
-    });
+    // Les tests de résultats ont été supprimés car ils sont maintenant gérés par RewardModal
 
     describe('Actions', () => {
         it('doit appeler sendAction("ATTACK") quand Attaque est pressé', () => {
@@ -185,13 +162,6 @@ describe('BattleOverlay', () => {
             render(<BattleOverlay {...makeProps({ isIntro: false, isMyTurn: true, sendAction })} />);
             fireEvent.press(screen.getByText('Passer'));
             expect(sendAction).toHaveBeenCalledWith('HEAL');
-        });
-
-        it('doit appeler onQuit quand RETOURNER AU MENU est pressé', () => {
-            const onQuit = jest.fn();
-            render(<BattleOverlay {...makeProps({ isIntro: false, stats: { ...defaultStats, hp: 0 }, onQuit })} />);
-            fireEvent.press(screen.getByText('RETOURNER AU MENU'));
-            expect(onQuit).toHaveBeenCalled();
         });
     });
 });
