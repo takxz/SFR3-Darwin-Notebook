@@ -153,6 +153,7 @@ export default function WaitingComponent({ status = 'processing', queueInfo = nu
                             {slots.map((busy, idx) => (
                                 <View
                                     key={idx}
+                                    testID="queue-slot"
                                     style={[styles.slot, busy ? styles.slotBusy : styles.slotFree]}
                                 />
                             ))}

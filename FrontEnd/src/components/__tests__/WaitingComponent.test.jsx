@@ -65,11 +65,8 @@ describe('WaitingComponent', () => {
 
   it("état queued affiche autant de slots que max_workers et marque les occupés", () => {
     const queueInfo = { position: 2, queued_total: 2, processing_total: 3, max_workers: 8 };
-    const { getByTestId } = render(<WaitingComponent status="queued" queueInfo={queueInfo} />);
-    const meter = getByTestId('queue-meter');
-    // 8 enfants dans la barre (les 8 slots).
-    const slotsRow = meter.children[0];
-    expect(slotsRow.children).toHaveLength(8);
+    const { getAllByTestId } = render(<WaitingComponent status="queued" queueInfo={queueInfo} />);
+    expect(getAllByTestId('queue-slot')).toHaveLength(8);
   });
 
   it('rend le testID waiting-component', () => {
