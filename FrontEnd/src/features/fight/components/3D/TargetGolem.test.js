@@ -49,7 +49,9 @@ const mockMesh = {
 
 const mockModel = {
     traverse: jest.fn((cb) => cb(mockMesh)),
+    clone: jest.fn(),
 };
+mockModel.clone.mockReturnValue(mockModel);
 
 jest.mock('@react-three/drei/native', () => ({
     useFBX: jest.fn(() => mockModel),

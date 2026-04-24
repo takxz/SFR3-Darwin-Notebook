@@ -39,7 +39,7 @@ describe('SocketService', () => {
     it('doit créer une connexion socket avec les bonnes options', () => {
       socketService.connect();
 
-      expect(io).toHaveBeenCalledWith('http://localhost:3001', {
+      expect(io).toHaveBeenCalledWith('http://10.213.251.138:3001', {
         transports: ['websocket'],
         autoConnect: true,
         reconnection: true,
@@ -61,7 +61,7 @@ describe('SocketService', () => {
     it('doit logger lors de la connexion', () => {
       socketService.connect();
 
-      expect(console.log).toHaveBeenCalledWith('[SocketService] Connecting to http://localhost:3001...');
+      expect(console.log).toHaveBeenCalledWith('[SocketService] Connecting to http://10.213.251.138:3001...');
     });
 
     it('doit gérer l\'événement connect et logger l\'ID du socket', () => {
@@ -114,7 +114,7 @@ describe('SocketService', () => {
       socketService.connect();
 
       const [url] = io.mock.calls[0];
-      expect(url).toBe('http://localhost:3001');
+      expect(url).toBe('http://10.213.251.138:3001');
     });
   });
 
