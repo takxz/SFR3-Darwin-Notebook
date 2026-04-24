@@ -155,6 +155,7 @@ describe('userController', () => {
                 id: 'c-1',
                 species_name: 'Alpaca',
                 species_model_path: 'alpaca',
+                scan_url: null,
                 model_url: '/models/alpaca'
             }];
             expect(res.json).toHaveBeenCalledWith(expectedPayload);
