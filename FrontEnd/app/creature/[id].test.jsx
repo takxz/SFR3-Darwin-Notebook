@@ -164,8 +164,7 @@ describe('CreatureDetailsPage', () => {
         });
 
         it('doit se rendre sans erreur', async () => {
-            expect(() => render(<CreatureDetailsPage />)).not.toThrow();
-            await act(async () => {});
+            await renderAndFlush(<CreatureDetailsPage />);
         });
 
         it('doit afficher le nom de la créature', async () => {
@@ -268,8 +267,7 @@ describe('CreatureDetailsPage', () => {
         });
 
         it('doit se rendre sans erreur', async () => {
-            expect(() => render(<CreatureDetailsPage />)).not.toThrow();
-            await act(async () => {});
+            await renderAndFlush(<CreatureDetailsPage />);
         });
 
         it('doit afficher le nom de la plante', async () => {
