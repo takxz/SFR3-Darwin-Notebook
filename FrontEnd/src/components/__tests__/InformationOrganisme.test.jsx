@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor, fireEvent, act } from '@testing-library/react-native';
+import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import InformationOrganisme from '../InformationOrganisme';
 
 // Mock expo-constants
@@ -15,10 +15,10 @@ jest.mock('lucide-react-native', () => ({
   ChevronsUp: () => 'ChevronsUpIcon'
 }));
 
-// Mock WaitingComponent
+// Mock WaitingComponent — on garde un placeholder testable.
 jest.mock('../WaitingComponent', () => {
   const { Text } = require('react-native');
-  return () => <Text testID="waiting-component">Chargement...</Text>;
+  return ({ status }) => <Text testID="waiting-component">Chargement... {status || ''}</Text>;
 });
 
 // Mock CardInformationStatAnimal
@@ -27,17 +27,60 @@ jest.mock('../CardInformationStatAnimal', () => {
   return ({ title }) => <Text testID={`stat-${title}`}>{title}</Text>;
 });
 
+const JOB_ID = 'job-abc-123';
+
+function mockSubmitResponse({ status = 'queued', queue } = {}) {
+  return {
+    ok: true,
+    status: 202,
+    text: async () =>
+      JSON.stringify({
+        success: true,
+        job_id: JOB_ID,
+        status,
+        queue: queue || { position: 1, queued_total: 1, processing_total: 0, max_workers: 8 },
+      }),
+  };
+}
+
+function mockStatusDone(resultPayload) {
+  return {
+    ok: true,
+    status: 200,
+    text: async () =>
+      JSON.stringify({
+        success: true,
+        job_id: JOB_ID,
+        status: 'done',
+        queue: { position: 0, queued_total: 0, processing_total: 1, max_workers: 8 },
+        result: resultPayload,
+      }),
+  };
+}
+
+function mockStatusError(errorMsg) {
+  return {
+    ok: false,
+    status: 500,
+    text: async () =>
+      JSON.stringify({
+        success: true,
+        job_id: JOB_ID,
+        status: 'error',
+        error: errorMsg,
+      }),
+  };
+}
+
 describe('InformationOrganisme Component', () => {
   const mockPhoto = { base64: 'mockbase64data', uri: 'file://mockuri' };
-  
+
   beforeEach(() => {
     global.fetch = jest.fn();
-    jest.useFakeTimers();
   });
 
   afterEach(() => {
     jest.clearAllMocks();
-    jest.useRealTimers();
   });
 
   it('renders nothing if photo is not provided', () => {
@@ -45,52 +88,34 @@ describe('InformationOrganisme Component', () => {
     expect(toJSON()).toBeNull();
   });
 
-  it('calls classification API on mount and shows loading', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      text: async () => JSON.stringify({ success: true, common_name: 'Chat' })
-    });
-
-    const { getByTestId } = render(<InformationOrganisme photo={mockPhoto} />);
-    
-    // Should show loading component immediately
-    expect(getByTestId('waiting-component')).toBeTruthy();
-    
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  it('displays organism details and calls onFinish on success', async () => {
+  it('submits and polls until result is ready', async () => {
     const mockOnFinish = jest.fn();
     const mockData = {
       success: true,
       common_name: 'Pikachu',
       scientific_name: 'Mouse Pokémon',
       sharpness_rank: 'A',
-      final_stats: { hp: 35, atk: 55, defense: 40, speed: 90 }
+      final_stats: { hp: 35, atk: 55, defense: 40, speed: 90 },
     };
 
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      text: async () => JSON.stringify(mockData)
-    });
+    global.fetch
+      .mockResolvedValueOnce(mockSubmitResponse({ status: 'queued' }))
+      .mockResolvedValueOnce(mockStatusDone(mockData));
 
     const { getByText, queryByTestId } = render(
       <InformationOrganisme photo={mockPhoto} onFinish={mockOnFinish} />
     );
 
-    // Wait for the fetch to be called
+    expect(queryByTestId('waiting-component')).toBeTruthy();
+
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
     });
 
-    // Advance the 2s timeout
-    act(() => {
-      jest.advanceTimersByTime(2000);
-    });
+    const [submitCall, statusCall] = global.fetch.mock.calls;
+    expect(submitCall[0]).toContain('/classification');
+    expect(statusCall[0]).toContain(`/classification/status/${JOB_ID}`);
 
-    // Wait for the UI to update with results
     await waitFor(() => {
       expect(queryByTestId('waiting-component')).toBeNull();
       expect(getByText('Pikachu')).toBeTruthy();
@@ -102,56 +127,68 @@ describe('InformationOrganisme Component', () => {
     expect(mockOnFinish).toHaveBeenCalledTimes(1);
   });
 
-  it('displays error and calls onFinish on API failure', async () => {
+  it('shows the business error when result.success === false', async () => {
     const mockOnFinish = jest.fn();
-    
-    global.fetch.mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-      text: async () => JSON.stringify({ success: false, error: 'Internal Server Error' })
-    });
+    global.fetch
+      .mockResolvedValueOnce(mockSubmitResponse())
+      .mockResolvedValueOnce(
+        mockStatusDone({
+          success: false,
+          is_organism: false,
+          message: "L'image ne correspond pas à un organisme vivant",
+        })
+      );
 
     const { getByText, queryByText, queryByTestId } = render(
       <InformationOrganisme photo={mockPhoto} onFinish={mockOnFinish} />
     );
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(1);
-    });
-
-    act(() => {
-      jest.advanceTimersByTime(2000);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
     });
 
     await waitFor(() => {
       expect(queryByTestId('waiting-component')).toBeNull();
-      expect(getByText('Internal Server Error')).toBeTruthy();
+      expect(getByText("L'image ne correspond pas à un organisme vivant")).toBeTruthy();
       expect(queryByText('Ajouter à la Collection')).toBeNull();
     });
 
     expect(mockOnFinish).toHaveBeenCalledTimes(1);
   });
 
-  it('calls addToDex when accept button is clicked', async () => {
+  it('shows the error when status returns error', async () => {
+    const mockOnFinish = jest.fn();
+    global.fetch
+      .mockResolvedValueOnce(mockSubmitResponse())
+      .mockResolvedValueOnce(mockStatusError('Internal Server Error'));
+
+    const { getByText, queryByTestId } = render(
+      <InformationOrganisme photo={mockPhoto} onFinish={mockOnFinish} />
+    );
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    await waitFor(() => {
+      expect(queryByTestId('waiting-component')).toBeNull();
+      expect(getByText('Internal Server Error')).toBeTruthy();
+    });
+
+    expect(mockOnFinish).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls addToDex with the result payload when accepted', async () => {
     const mockAddToDex = jest.fn();
     const mockData = { success: true, common_name: 'Chat' };
 
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      text: async () => JSON.stringify(mockData)
-    });
+    global.fetch
+      .mockResolvedValueOnce(mockSubmitResponse())
+      .mockResolvedValueOnce(mockStatusDone(mockData));
 
     const { getByText } = render(
       <InformationOrganisme photo={mockPhoto} addToDex={mockAddToDex} onFinish={jest.fn()} />
     );
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(1);
-    });
-
-    act(() => {
-      jest.advanceTimersByTime(2000);
-    });
 
     const acceptButton = await waitFor(() => getByText('Ajouter à la Collection'));
     fireEvent.press(acceptButton);

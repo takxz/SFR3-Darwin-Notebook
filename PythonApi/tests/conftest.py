@@ -18,6 +18,11 @@ def app_instance(monkeypatch):
     # Import après avoir posé DISABLE_MODEL_LOADING.
     import app as app_pkg
 
+    # Repart d'une queue propre pour éviter les fuites d'état entre tests
+    # (jobs résiduels, threads orphelins).
+    from app.classification_queue import reset_queue_for_tests
+    reset_queue_for_tests()
+
     # Modèle factice: renvoie toujours une prédiction.
     def fake_model(_image):
         return [{"label": "cheetah, something", "score": 0.99}]
