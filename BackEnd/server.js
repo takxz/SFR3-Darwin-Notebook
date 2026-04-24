@@ -95,9 +95,7 @@ io.on('connection', async (socket) => {
 // 4. 🎨 Initialisation du registre des modèles 3D au démarrage
 const MODELS_DIR = path.join(__dirname, 'src', 'assets', 'fight', 'models');
 const modelFilenameRegistry = createModelRegistry(MODELS_DIR);
-
-// Route pour les images uploadées (avatars, etc.)
-app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
+console.log(`✅ ${modelFilenameRegistry.size} modèles 3D indexés et prêts à être servis.`);
 
 // Route pour servir les modèles 3D avec cache HTTP natif
 app.get('/models/:name', (req, res) => {
