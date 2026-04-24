@@ -9,6 +9,7 @@ module.exports = {
 
     // L'alias pour qu'il comprenne tes imports avec "@/..."
     moduleNameMapper: {
+        "\\.(fbx|glb|gltf|wav|mp3|png|jpg|jpeg|svg)$": "<rootDir>/__mocks__/fileMock.js",
         "^@/(.*)$": "<rootDir>/src/$1"
     },
     // Ignorer les modules qui posent problème lors des tests
