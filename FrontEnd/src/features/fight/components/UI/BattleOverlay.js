@@ -3,6 +3,7 @@ import React, { useRef, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Animated, Easing, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import socketService from '@/services/SocketService';
 
 /**
  * 🌟 ROTATING HALO COMPONENT
@@ -107,7 +108,8 @@ export const BattleOverlay = ({
     hit, combo, isSpecial, isIntro,
     cinematicAnim, comboScaleAnim,
     stats, turn, isMyTurn, // NOUVEAUX PROPS NETWORK
-    sendAction, triggerHit, triggerSpecial, onFlee, onQuit
+    sendAction, triggerHit, triggerSpecial, onFlee, onQuit,
+    isDebugMode
 }) => {
     return (
         <View style={styles.overlay} pointerEvents="box-none">
@@ -118,18 +120,17 @@ export const BattleOverlay = ({
             {/* LOBBY / WAITING STATE */}
             {isIntro && (
                 <View style={styles.lobbyContainer}>
-                    <Text style={styles.lobbyTitle}>MATCHMAKING IN PROGRESS...</Text>
-                    <Text style={styles.lobbySubtext}>CONNECTING TO VPS @ ikdeksmp.fr:12000</Text>
+                    <Text style={styles.lobbyTitle}>MATCHMAKING EN COURS...</Text>
 
                     <View style={styles.statusBox}>
-                        <Text style={styles.statusText}>{hit > 10 ? "⚠️ SERVER STalled?" : "⌛ SEARCHING FOR OPPONENT..."}</Text>
+                        <Text style={styles.statusText}>RECHERCHE D'UN ADVERSAIRE...</Text>
                     </View>
 
                     <TouchableOpacity
                         style={styles.debugButton}
                         onPress={triggerSpecial} // On utilise le callback spécial pour forcer le start dans App.js
                     >
-                        <Text style={styles.debugText}>[ FORCE ARENA OPEN ]</Text>
+                        <Text style={styles.debugText}>[ forcer le début du combat ]</Text>
                     </TouchableOpacity>
                 </View>
             )}
@@ -150,12 +151,12 @@ export const BattleOverlay = ({
 
                     <View style={styles.healthRow}>
                         <View style={styles.healthBarWrapper}>
-                            <View style={[styles.healthBar, { width: `${(stats.hp / stats.maxHp) * 100}%`, backgroundColor: '#44ff00' }]} />
-                            <Text style={styles.hpLabel}>HERO: {stats.hp} HP</Text>
+                            <View testID='hero-health-bar' style={[styles.healthBar, { width: `${(stats.hp / stats.maxHp) * 100}%`, backgroundColor: '#44ff00' }]} />
+                            <Text style={styles.hpLabel}>{stats.nickname}: {stats.hp} HP</Text>
                         </View>
                         <View style={styles.healthBarWrapper}>
-                            <View style={[styles.healthBar, { width: `${(stats.opHp / stats.opMaxHp) * 100}%`, backgroundColor: '#ff4400', alignSelf: 'flex-end' }]} />
-                            <Text style={[styles.hpLabel, { textAlign: 'right' }]}>GOLEM: {stats.opHp} HP</Text>
+                            <View testID='enemy-health-bar' style={[styles.healthBar, { width: `${(stats.opHp / stats.opMaxHp) * 100}%`, backgroundColor: '#ff4400', alignSelf: 'flex-end' }]} />
+                            <Text style={[styles.hpLabel, { textAlign: 'right' }]}>{stats.opNickname}: {stats.opHp} HP</Text>
                         </View>
                     </View>
                     <Text style={styles.turnIndicator}>{isMyTurn ? "VOTRE TOUR" : "ATTENTE ADVERSAIRE..."}</Text>
@@ -181,8 +182,7 @@ export const BattleOverlay = ({
             {/* ENEMY BADGE */}
             {isIntro && (
                 <Animated.View style={[styles.enemyBadge, { opacity: cinematicAnim }]}>
-                    <Text style={styles.enemyLevel}>LVL 99</Text>
-                    <Text style={styles.enemyName}>ABYSSAL GOLEM</Text>
+                    <Text testID='enemy-badge' style={styles.enemyName}>{stats.opNickname}</Text>
                 </Animated.View>
             )}
 
@@ -201,8 +201,11 @@ export const BattleOverlay = ({
                 <View style={styles.actionMenuContainer}>
                     <View style={styles.actionRow}>
                         <BattleButton
-                            onPress={() => isMyTurn && sendAction('ATTACK')}
-                            disabled={!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0}
+                            onPress={() => {
+                                if (isDebugMode) triggerHit();
+                                else if (isMyTurn) sendAction('ATTACK');
+                            }}
+                            disabled={(!isMyTurn && !isDebugMode) || isSpecial || stats.hp <= 0 || stats.opHp <= 0}
                             style={styles.actionBtnTop}
                             colors={['#d14d53', '#8e1b1b']}
                         >
@@ -211,8 +214,8 @@ export const BattleOverlay = ({
                         </BattleButton>
 
                         <BattleButton
-                            onPress={() => isMyTurn && sendAction('DEFEND')}
-                            disabled={!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0}
+                            onPress={() => !isDebugMode && isMyTurn && sendAction('DEFEND')}
+                            disabled={(!isMyTurn && !isDebugMode) || isSpecial || stats.hp <= 0 || stats.opHp <= 0}
                             style={styles.actionBtnTop}
                             colors={['#6bb57c', '#2c693b']}
                         >
@@ -222,18 +225,18 @@ export const BattleOverlay = ({
 
                         <BattleButton
                             onPress={() => {
-                                if (isMyTurn && !isSpecial) {
+                                if (isMyTurn && !isSpecial && stats.specialCooldown === 0) {
                                     triggerSpecial();
-                                    sendAction('ATTACK');
+                                    sendAction('SPECIAL');
                                 }
                             }}
-                            disabled={isSpecial || !isMyTurn || stats.hp <= 0 || stats.opHp <= 0}
+                            disabled={isSpecial || !isMyTurn || stats.hp <= 0 || stats.opHp <= 0 || stats.specialCooldown > 0}
                             style={styles.actionBtnTop}
                             colors={['#71b5d6', '#327094']}
                         >
                             <MaterialCommunityIcons name="weather-windy" size={24} color="white" />
                             <Text style={styles.actionText}>
-                                {stats.specialCooldown > 0 ? `CD: ${stats.specialCooldown}` : "Spécial"}
+                                {stats.specialCooldown > 0 ? `RECHARGE: ${stats.specialCooldown}` : "Spécial"}
                             </Text>
                         </BattleButton>
                     </View>
@@ -241,22 +244,22 @@ export const BattleOverlay = ({
                     <View style={styles.actionRow}>
                         <BattleButton
                             onPress={() => {
-                                if (!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0) return;
-                                
+                                if ((!isMyTurn && !isDebugMode) || isSpecial || stats.hp <= 0 || stats.opHp <= 0) return;
+
                                 Alert.alert(
                                     "Abandonner le combat ?",
                                     "Si vous fuyez, vous serez déclaré vaincu. Voulez-vous continuer ?",
                                     [
                                         { text: "Rester et me battre", style: "cancel" },
-                                        { 
-                                            text: "Fuir", 
+                                        {
+                                            text: "Fuir",
                                             onPress: () => onFlee(),
                                             style: "destructive"
                                         }
                                     ]
                                 );
-                            }} 
-                            disabled={!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0} 
+                            }}
+                            disabled={(!isMyTurn && !isDebugMode) || isSpecial || stats.hp <= 0 || stats.opHp <= 0}
                             style={styles.actionBtnBottom}
                             colors={['#b87c53', '#69381b']}
                         >
@@ -265,8 +268,8 @@ export const BattleOverlay = ({
                         </BattleButton>
 
                         <BattleButton
-                            onPress={() => isMyTurn && sendAction('HEAL')}
-                            disabled={!isMyTurn || isSpecial || stats.hp <= 0 || stats.opHp <= 0}
+                            onPress={() => !isDebugMode && isMyTurn && sendAction('HEAL')}
+                            disabled={(!isMyTurn && !isDebugMode) || isSpecial || stats.hp <= 0 || stats.opHp <= 0}
                             style={styles.actionBtnBottom}
                             colors={['#b87c53', '#69381b']}
                         >
@@ -280,8 +283,8 @@ export const BattleOverlay = ({
             {/* RESULTS OVERLAY */}
             {(stats.hp <= 0 || stats.opHp <= 0) && (
                 <View style={styles.resultsOverlay}>
-                    <Text style={styles.resultTitle}>{stats.hp <= 0 ? "GAME OVER" : "VICTORY"}</Text>
-                    <Text style={styles.resultSubtext}>{stats.hp <= 0 ? "YOU HAVE FALLEN..." : "THE ABYSS HAS BEEN CONQUERED"}</Text>
+                    <Text style={styles.resultTitle}>{stats.hp <= 0 ? "DÉFAITE" : "VICTOIRE"}</Text>
+                    <Text testID={stats.hp <= 0 ? "defeat-text" : "victory-text"} style={styles.resultSubtext}>{stats.hp <= 0 ? "VOUS AVEZ ÉTÉ VAINCU..." : `${stats.opNickname} A ÉTÉ TERRASSÉ !`}</Text>
 
                     <BattleButton
                         onPress={onQuit}

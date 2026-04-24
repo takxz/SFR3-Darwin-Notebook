@@ -2,6 +2,12 @@ const matchmakingHandler = require('../../main/handlers/matchmakingHandler');
 const { store } = require('../../main/store/redisStore');
 
 // Mocks
+jest.mock('../../main/config/db', () => ({
+    query: jest.fn()
+}));
+
+const db = require('../../main/config/db');
+
 jest.mock('../../main/store/redisStore', () => ({
     store: {
         getQueueLength: jest.fn(),
@@ -40,6 +46,7 @@ describe('MatchmakingHandler', () => {
         findMatchHandler = socket.on.mock.calls.find(call => call[0] === 'findMatch')[1];
 
         jest.clearAllMocks();
+        db.query.mockResolvedValue({ rows: [] }); // Par défaut, pas de données DB
     });
 
     test('should add player to queue if queue is empty', async () => {
@@ -63,7 +70,8 @@ describe('MatchmakingHandler', () => {
         expect(socket.join).toHaveBeenCalledWith(expect.stringContaining(`battle_${opponentId}`));
         expect(io.in).toHaveBeenCalledWith(opponentId);
         expect(io.socketsJoin).toHaveBeenCalledWith(expect.stringContaining(`battle_${opponentId}`));
-        expect(io.to).toHaveBeenCalledWith(expect.stringContaining(`battle_${opponentId}`));
+        expect(io.to).toHaveBeenCalledWith(socket.id);
+        expect(io.to).toHaveBeenCalledWith(opponentId);
         expect(io.emit).toHaveBeenCalledWith('matchFound', expect.any(Object));
     });
 
@@ -75,5 +83,61 @@ describe('MatchmakingHandler', () => {
 
         expect(store.addToQueue).toHaveBeenCalledWith(socket.id);
         expect(store.createBattle).not.toHaveBeenCalled();
+    });
+
+    test('should query CREATURE table if creatureId is a UUID', async () => {
+        store.getQueueLength.mockResolvedValue(0); // Rest in queue
+        const validUUID = '550e8400-e29b-41d4-a716-446655440000';
+        
+        db.query.mockResolvedValue({
+            rows: [{ model_path: 'Bull', type: 'Mamifère', latin_name: 'Bovidae' }]
+        });
+
+        await findMatchHandler({ creatureId: validUUID });
+
+        expect(db.query).toHaveBeenCalledWith(expect.stringContaining('FROM "CREATURE"'), [validUUID]);
+        expect(store.client.hset).toHaveBeenCalledWith(
+            expect.any(String),
+            'creatureId', validUUID,
+            'nickname', expect.any(String),
+            'modelPath', 'Bull',
+            'animalType', 'Mamifère',
+            'latinName', 'Bovidae'
+        );
+    });
+
+    test('should NOT query DB if creatureId is NOT a UUID (e.g. test bot)', async () => {
+        store.getQueueLength.mockResolvedValue(0); 
+        const nonUUID = 51;
+        
+        await findMatchHandler({ creatureId: nonUUID });
+
+        expect(db.query).not.toHaveBeenCalled();
+        expect(store.client.hset).toHaveBeenCalledWith(
+            expect.any(String),
+            'creatureId', 51,
+            'nickname', expect.any(String),
+            'modelPath', 'shark',
+            'animalType', 'Poisson',
+            'latinName', 'Selachimorpha'
+        );
+    });
+
+    test('should fallback to Pig if DB query fails', async () => {
+        store.getQueueLength.mockResolvedValue(0);
+        const validUUID = '550e8400-e29b-41d4-a716-446655440000';
+        
+        db.query.mockRejectedValue(new Error('DB connection lost'));
+
+        await findMatchHandler({ creatureId: validUUID });
+
+        expect(store.client.hset).toHaveBeenCalledWith(
+            expect.any(String),
+            'creatureId', validUUID,
+            'nickname', expect.any(String),
+            'modelPath', 'Pig',
+            'animalType', 'Mamifère',
+            'latinName', ''
+        );
     });
 });

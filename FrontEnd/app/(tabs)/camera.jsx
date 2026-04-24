@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import SpotlightTooltip from '@/components/SpotlightTooltip';
+import { useSpotlight } from '@/hooks/useSpotlight';
+import { useUserId } from '@/hooks/useUserId';
 import { View, Text, Alert, StyleSheet, Pressable } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { Aperture } from 'lucide-react-native';
@@ -14,12 +17,28 @@ const USER_API_URL = process.env.EXPO_PUBLIC_USER_API_URL || (expoHost ? `http:/
 
 export default function CameraScreen() {
   const { permission, requestPermission, cameraRef, takePicture } = useCamera();
+  const userId = useUserId();
+  const { visible, targetLayout, ref, onLayout, dismiss } = useSpotlight('capture_button', userId);
   const [photo, setPhoto] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleCapture = async () => {
-    const captured = await takePicture();
-    if (captured) setPhoto(captured);
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+      const captured = await takePicture();
+      if (captured) {
+        setPhoto(captured);
+      } else {
+        setIsProcessing(false);
+      }
+    } catch (err) {
+      console.error('Erreur capture:', err);
+      setIsProcessing(false);
+    }
   };
+
+
 
   const addToDex = async (result) => {
     try {
@@ -31,9 +50,12 @@ export default function CameraScreen() {
       }
 
       const formData = new FormData();
-      // Forçage de l'ID de l'espèce à 1 de manière temporaire car la base de données distante n'a que ça pour le moment
-      formData.append('species_id', '1');
+      // Utilisation de l'animal_id recupéré de la classification ou 1 par défaut
+      formData.append('species_id', result?.animal_id ? String(result.animal_id) : '1');
       formData.append('gamification_name', result?.common_name || result?.scientific_name || 'Créature inconnue');
+      if (result?.scientific_name) {
+        formData.append('scientific_name', result.scientific_name);
+      }
 
       // On s'assure que la qualité du scan est aussi un entier
       const rawQuality = result?.sharpness_score ?? 95;
@@ -146,14 +168,33 @@ export default function CameraScreen() {
   return (
     <View style={styles.container}>
       <CameraView style={styles.camera} ref={cameraRef}>
-        <Pressable onPress={handleCapture} style={styles.captureButton}>
-          <View style={styles.captureInner}>
+        <View ref={ref} onLayout={onLayout} collapsable={false} style={styles.captureButton}>
+          <Pressable
+            testID="capture-button"
+            onPress={handleCapture}
+            style={[styles.captureInner, isProcessing && styles.captureButtonDisabled]}
+            disabled={isProcessing}
+          >
             <Aperture size={32} style={styles.aperture} />
-          </View>
-        </Pressable>
+          </Pressable>
+        </View>
 
-        <InformationOrganisme photo={photo} onClose={() => setPhoto(null)} addToDex={addToDex} />
+        <InformationOrganisme 
+          photo={photo} 
+          onClose={() => {
+            setPhoto(null);
+            setIsProcessing(false);
+          }} 
+          onFinish={() => setIsProcessing(false)}
+          addToDex={addToDex} 
+        />
       </CameraView>
+      <SpotlightTooltip
+        visible={visible}
+        targetLayout={targetLayout}
+        description={fr.tutorial.camera}
+        onDismiss={dismiss}
+      />
     </View>
   );
 }
@@ -174,6 +215,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  captureButtonDisabled: {
+    opacity: 0.3,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+
   captureInner: {
     width: 62,
     height: 62,

@@ -123,6 +123,25 @@ else
     echo -e "${RED}Erreur : Répertoire 'PythonApi' manquant.${NC}"
 fi
 
+# 4.5 Installation des dépendances StatusService
+echo -e "\n${YELLOW}[Step 4.5/5] Installation des dépendances StatusService...${NC}"
+if [ -d "StatusService" ]; then
+    cd StatusService
+    if [ "$CLEAN_INSTALL" = true ]; then
+        echo -e "${YELLOW}Nettoyage forcé de StatusService/node_modules (SUDO)...${NC}"
+        sudo rm -rf node_modules package-lock.json
+    fi
+    npm install
+    if [ ! -f ".env" ] && [ -f ".env.example" ]; then
+        echo -e "${YELLOW}Copie de .env.example vers .env — pense à renseigner DISCORD_WEBHOOK_URL${NC}"
+        cp .env.example .env
+    fi
+    cd ..
+    echo -e "${GREEN}StatusService prêt !${NC}"
+else
+    echo -e "${RED}Erreur : Répertoire 'StatusService' manquant.${NC}"
+fi
+
 # 5. Lancement des services avec PM2
 echo -e "\n${YELLOW}[Step 5/5] Lancement des services via ecosystem.config.js...${NC}"
 if [ -f "ecosystem.config.js" ]; then

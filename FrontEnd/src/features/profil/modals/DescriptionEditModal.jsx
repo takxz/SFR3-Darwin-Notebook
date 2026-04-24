@@ -1,6 +1,7 @@
 import { View, Text, TextInput, Pressable, Modal } from 'react-native';
 import { X } from 'lucide-react-native';
 import { styles } from './profilStyles';
+import fr from '@/assets/locales/fr.json';
 
 export function DescriptionEditModal({
   visible,
@@ -21,7 +22,7 @@ export function DescriptionEditModal({
         <View style={styles.descriptionModal}>
           {/* Modal Header */}
           <View style={styles.descriptionModalHeader}>
-            <Text style={styles.descriptionModalTitle}>Modifier la description</Text>
+            <Text style={styles.descriptionModalTitle}>{fr.descriptionEditModal.title}</Text>
             <Pressable onPress={onClose} style={styles.closeButton}>
               <X size={24} color="#97572B" />
             </Pressable>
@@ -29,12 +30,12 @@ export function DescriptionEditModal({
 
           {/* Modal Content */}
           <View style={styles.descriptionModalContent}>
-            <Text style={styles.descriptionLabel}>Votre description</Text>
+            <Text style={styles.descriptionLabel}>{fr.descriptionEditModal.label}</Text>
             <TextInput
               style={styles.descriptionInput}
               value={description}
               onChangeText={onDescriptionChange}
-              placeholder="Écris ta description ici..."
+              placeholder={fr.descriptionEditModal.placeholder}
               placeholderTextColor="#8B5E3C"
               multiline
               maxLength={150}
@@ -47,7 +48,7 @@ export function DescriptionEditModal({
               disabled={isSaving}
             >
               <Text style={styles.saveButtonText}>
-                {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                {isSaving ? fr.descriptionEditModal.saving : fr.descriptionEditModal.save}
               </Text>
             </Pressable>
           </View>

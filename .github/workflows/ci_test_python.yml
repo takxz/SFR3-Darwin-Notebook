@@ -12,17 +12,39 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: PythonApi
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r PythonApi/requirements.txt
+          pip install -r requirements.txt
+
       - name: Test Python API with pytest
+        # L'ajout de -v (verbose) permet d'avoir le nom de chaque test dans les logs pour un meilleur repérage
         run: |
-          pytest
+          pytest -v
+
+      - name: Get test coverage
+        # if: always() permet de s'assurer d'obtenir le rapport de couverture, même en cas d'échec d'un test
+        if: always()
+        run: |
+          coverage run -m pytest --tb=short
+          coverage report
+          coverage xml
+        working-directory: PythonApi
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./PythonApi/coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true

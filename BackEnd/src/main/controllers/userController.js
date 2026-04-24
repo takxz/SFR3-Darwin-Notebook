@@ -1,54 +1,73 @@
 const db = require('../config/db');
+const userService = require('../services/userService');
+
+exports.purgeExpiredAccounts = async () => {
+    await userService.purgeExpiredAccounts();
+};
+
+exports.deleteAccount = async (req, res) => {
+    try {
+        await userService.requestAccountDeletion(req.user.id);
+        res.status(200).json({ message: "Votre compte sera supprimé définitivement dans 30 jours." });
+    } catch (err) {
+        console.error('Erreur lors de la demande de suppression du compte:', err);
+        res.status(500).json({ error: "Erreur interne du serveur." });
+    }
+};
+
+exports.cancelDeleteAccount = async (req, res) => {
+    try {
+        await userService.cancelAccountDeletion(req.user.id);
+        res.status(200).json({ message: "Demande de suppression annulée." });
+    } catch (err) {
+        console.error('Erreur lors de l\'annulation de la suppression:', err);
+        res.status(500).json({ error: "Erreur interne du serveur." });
+    }
+};
+
+// Reconstruit l'URL publique à partir d'un scan_url stocké en base.
+// Retourne l'URL telle quelle si c'est déjà une URL absolue (ancienne donnée ou source externe),
+// sinon préfixe avec l'URL de base + "/uploads/".
+const buildScanUrl = (req, storedValue) => {
+    if (!storedValue) return null;
+    if (/^https?:\/\//i.test(storedValue)) return storedValue;
+    return `${req.protocol}://${req.get('host')}/uploads/${storedValue}`;
+};
 
 exports.getProfile = async (req, res) => {
     try {
-        // req.user.id vient du middleware d'authentification
-        const userId = req.user.id;
-
-        const result = await db.query(
-            'SELECT id, email, pseudo, player_level, bio_token FROM "PLAYER" WHERE id = $1',
-            [userId]
-        );
-
-        if (result.rows.length === 0) {
+        const userProfile = await userService.getProfile(req.user.id);
+        if (!userProfile) {
             return res.status(404).json({ error: "Utilisateur non trouvé." });
         }
-
-        res.json(result.rows[0]);
+        res.json(userProfile);
     } catch (err) {
         console.error('Erreur lors de la récupération du profil:', err);
         res.status(500).json({ error: "Erreur interne du serveur." });
     }
 };
 
-// Obtenir le profil public de n'importe quel utilisateur par son ID
 exports.getUserById = async (req, res) => {
     try {
         const targetId = req.params.id;
-
-        const result = await db.query(
-            'SELECT id, pseudo, player_level, bio_token FROM "PLAYER" WHERE id = $1',
-            [targetId]
-        );
-
-        if (result.rows.length === 0) {
+        const userProfile = await userService.getPublicProfileById(targetId);
+        if (!userProfile) {
             return res.status(404).json({ error: "Utilisateur non trouvé." });
         }
-
-        res.json(result.rows[0]);
+        res.json(userProfile);
     } catch (err) {
         console.error('Erreur lors de la récupération du profil public:', err);
         res.status(500).json({ error: "Erreur interne du serveur." });
     }
 };
 
-// Ajouter une créature à un utilisateur (gère aussi l'upload d'image)
 exports.addCreature = async (req, res) => {
     try {
         const { 
             species_id, 
             player_id, 
             gamification_name, 
+            scientific_name,
             scan_quality, 
             gps_location,
             stat_atq,
@@ -58,21 +77,41 @@ exports.addCreature = async (req, res) => {
         } = req.body;
 
         const userId = player_id || req.user.id;
+        // On stocke uniquement le nom du fichier en base pour les uploads locaux.
+        // Pour les URLs externes (ex: image renvoyée par l'API Python), on conserve l'URL telle quelle.
         let finalScanUrl = req.body.scan_url || null;
 
-        // Si une image a été envoyée, on génère son URL
         if (req.file) {
-            const protocol = req.protocol;
-            const host = req.get('host');
-            finalScanUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+            finalScanUrl = req.file.filename;
         }
 
         // 1. Récupérer les informations de l'espèce pour les stats de base
-        const speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE id = $1', [species_id]);
-        if (speciesQuery.rows.length === 0) {
-            return res.status(404).json({ error: "Espèce non trouvée." });
+        let speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE LOWER(latin_name) = LOWER($1)', [scientific_name]);
+        let species;
+
+        if (speciesQuery.rows.length > 0) {
+            species = speciesQuery.rows[0];
+        } else {
+            speciesQuery = await db.query('SELECT * FROM "SPECIES" WHERE id = $1', [species_id]);
+            if (speciesQuery.rows.length > 0) {
+                species = speciesQuery.rows[0];
+            } else {
+                // Création d'une nouvelle espèce si non trouvée
+                const insertSpecies = await db.query(
+                    `INSERT INTO "SPECIES" (latin_name, name, type, rarity, base_stat_atq, base_stat_def, base_stat_pv, base_stat_speed)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+                    [
+                        scientific_name || 'Inconnu',
+                        gamification_name || 'Inconnu',
+                        'Inconnu', 'Commun',
+                        stat_atq || 10, stat_def || 10, stat_pv || 10, stat_speed || 10,
+                    ]
+                );
+                species = insertSpecies.rows[0];
+            }
         }
-        const species = speciesQuery.rows[0];
+
+        const actual_species_id = species.id;
 
         // 2. Insérer la nouvelle créature
         const query = `
@@ -95,7 +134,7 @@ exports.addCreature = async (req, res) => {
         `;
 
         const result = await db.query(query, [
-            species_id,
+            actual_species_id,
             userId,
             gamification_name || species.name,
             finalScanUrl,
@@ -143,40 +182,36 @@ exports.getUserCreatures = async (req, res) => {
         const userId = req.params.id;
 
         // 1. Récupération des données brutes enrichies
-        // On sélectionne toutes les colonnes de la créature (c.*)
-        // et on y ajoute les infos de l'espèce associée (s.name, s.model_path)
-        const query = `
-            SELECT
-                c.*,
-                s.name AS species_name,
-                s.type AS species_type,
-                s.rarity AS species_rarity,
-                s.average_weight AS weight,
-                s.average_life_expectancy AS lifespan,
-                s.model_path AS species_model_path
-            FROM public."CREATURE" c
-            JOIN public."SPECIES" s ON c.species_id = s.id
-            WHERE c.player_id = $1
-            ORDER BY c.scan_date DESC;
-        `;
+         // On sélectionne toutes les colonnes de la créature (c.*)
+         // et on y ajoute les infos de l'espèce associée (s.name, s.model_path, ...)
+         const query = `
+             SELECT
+                 c.*,
+                 s.name AS species_name,
+                 s.type AS species_type,
+                 s.rarity AS species_rarity,
+                 s.average_weight AS weight,
+                 s.average_life_expectancy AS lifespan,
+                 s.model_path AS species_model_path,
+                 s.latin_name AS latin_name
+             FROM public."CREATURE" c
+             JOIN public."SPECIES" s ON c.species_id = s.id
+             WHERE c.player_id = $1
+             ORDER BY c.scan_date DESC;
+         `;
 
         const result = await db.query(query, [userId]);
 
-        // 2. Construction dynamique de la base de l'URL pour les assets statiques
-        // req.protocol = http ou https
-        // req.get('host') = domaine ou IP + port (ex: 192.168.1.15:3001)
-        // Résultat final attendu : "http://192.168.1.15:3001/models/"
-        const baseUrl = `${req.protocol}://${req.get('host')}/models/`;
-
-        // 3. Formatage du payload de sortie (Data Mapping)
-        // On itère sur chaque ligne SQL pour assembler l'URL absolue du modèle 3D
+        // 2. Formatage du payload de sortie (Data Mapping)
+        // On itère sur chaque ligne SQL pour enrichir avec l'URL du modèle
+        // Note: Chemin relatif, le front sait que c'est /models/{model_path}
         const creaturesWithModels = result.rows.map(creature => ({
-            ...creature, // On conserve l'intégralité des données d'origine (id, stats, etc.)
-            // On crée la nouvelle clé avec le modèle3D
-            model_3d_url: creature.species_model_path ? `${baseUrl}${creature.species_model_path}` : null
+            ...creature,
+            scan_url: buildScanUrl(req, creature.scan_url),
+            model_url: creature.species_model_path ? `/models/${creature.species_model_path}` : null
         }));
 
-        // 4. Envoi de la réponse JSON enrichie au client (Code HTTP 200 implicite)
+        // 3. Envoi de la réponse JSON enrichie au client (Code HTTP 200 implicite)
         res.json(creaturesWithModels);
 
     } catch (err) {
@@ -205,7 +240,12 @@ exports.getUserPlants = async (req, res) => {
 
         const result = await db.query(query, [userId]);
 
-        res.json(result.rows);
+        const plantsWithUrls = result.rows.map(row => ({
+            ...row,
+            scan_url: buildScanUrl(req, row.scan_url)
+        }));
+
+        res.json(plantsWithUrls);
     } catch (err) {
         console.error('Erreur lors de la récupération des plantes:', err);
         res.status(500).json({ error: "Erreur lors de la récupération des plantes." });
@@ -218,37 +258,38 @@ exports.getUserCreatureDetails = async(req, res) => {
         const userId = req.params.id;
         const creatureId = req.params.creatureid;
 
-        const query = `
-            SELECT
-                c.*,
-                c.plant_link_id AS "plantLinkId",
-                s.name AS species_name,
-                s.type AS species_type,
-                s.rarity AS species_rarity,
-                s.average_weight AS weight,
-                s.average_life_expectancy AS lifespan,
-                s.model_path AS species_model_path
-            FROM public."CREATURE" c
-            JOIN public."SPECIES" s ON c.species_id = s.id
-            WHERE c.player_id = $1 AND c.id = $2;
-        `;
+         const query = `
+             SELECT
+                 c.*,
+                 c.plant_link_id AS "plantLinkId",
+                 s.name AS species_name,
+                 s.type AS species_type,
+                 s.rarity AS species_rarity,
+                 s.average_weight AS weight,
+                 s.average_life_expectancy AS lifespan,
+                 s.model_path AS species_model_path,
+                 s.latin_name AS latin_name
+             FROM public."CREATURE" c
+             JOIN public."SPECIES" s ON c.species_id = s.id
+             WHERE c.player_id = $1 AND c.id = $2;
+         `;
 
-        const result = await db.query(query, [userId, creatureId]);
+         const result = await db.query(query, [userId, creatureId]);
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: "Créature non trouvée ou n'appartenant pas à ce joueur." });
-        }
+         if (result.rows.length === 0) {
+             return res.status(404).json({ error: "Créature non trouvée ou n'appartenant pas à ce joueur." });
+         }
 
-        const creature = result.rows[0];
-        const baseUrl = `${req.protocol}://${req.get('host')}/models/`;
+         const creature = result.rows[0];
 
-        // Assemblage de l'objet de retour
-        const creatureDetails = {
-            ...creature,
-            model_3d_url: creature.species_model_path ? `${baseUrl}${creature.species_model_path}` : null
-        };
+         // Assemblage de l'objet de retour
+         const creatureDetails = {
+             ...creature,
+             scan_url: buildScanUrl(req, creature.scan_url),
+             model_url: creature.species_model_path ? `/models/${creature.species_model_path}` : null
+         };
 
-        res.json(creatureDetails);
+         res.json(creatureDetails);
 
     } catch (err) {
         console.error('Erreur SQL dans getUserCreatureDetails :', err);
@@ -298,7 +339,7 @@ exports.linkPlantToCreature = async (req, res) => {
             plant.stat_atq || 0,
             plant.stat_def || 0,
             plant.stat_speed || 0,
-            creatureId, 
+            creatureId,
             userId
         ]);
 
@@ -346,7 +387,7 @@ exports.unlinkPlantFromCreature = async (req, res) => {
             }
         }
 
-        // 3. Remove the link and rollback the stats 
+        // 3. Remove the link and rollback the stats
         const query = `
             UPDATE "CREATURE"
             SET 
@@ -364,7 +405,7 @@ exports.unlinkPlantFromCreature = async (req, res) => {
             baseStatAtq,
             baseStatDef,
             baseStatSpeed,
-            creatureId, 
+            creatureId,
             userId
         ]);
 
@@ -386,7 +427,12 @@ exports.getLastCapturedCreatures = async (req, res) => {
 
     const result = await db.query(query)
 
-    res.json(result.rows)
+    const rowsWithUrls = result.rows.map(row => ({
+        ...row,
+        scan_url: buildScanUrl(req, row.scan_url)
+    }));
+
+    res.json(rowsWithUrls)
     } catch (err) {
         console.error('Erreur lors de la récupération des 5 dernières créatures capturées:', err);
         res.status(500).json({ error: "Erreur lors de la récupération des 5 dernières créatures capturées"})

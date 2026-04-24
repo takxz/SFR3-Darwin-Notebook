@@ -2,6 +2,7 @@ import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
 import { Settings, LogOut, Trash2, User, Bell, Lock, HelpCircle, Shield, X, Info } from 'lucide-react-native';
 import { styles } from './profilStyles';
 import SettingsItem from '@/components/SettingsItem';
+import fr from '@/assets/locales/fr.json';
 
 export function SettingsModal({ visible, onClose, onLogout, onDeleteAccount }) {
   return (
@@ -19,7 +20,7 @@ export function SettingsModal({ visible, onClose, onLogout, onDeleteAccount }) {
               <View style={styles.settingsIcon}>
                 <Settings size={20} color="#97572B" />
               </View>
-              <Text style={styles.settingsTitle}>Paramètres</Text>
+              <Text style={styles.settingsTitle}>{fr.settingsModal.title}</Text>
             </View>
             <Pressable onPress={onClose} style={styles.closeButton}>
               <X size={24} color="#97572B" />
@@ -27,59 +28,59 @@ export function SettingsModal({ visible, onClose, onLogout, onDeleteAccount }) {
           </View>
 
           {/* Settings Content */}
-          <ScrollView style={styles.settingsContent}>
+          <ScrollView testID="settings-scroll" style={styles.settingsContent}>
             {/* Account Section */}
             <View style={styles.settingsSection}>
-              <Text style={styles.sectionTitle}>Compte</Text>
+              <Text style={styles.sectionTitle}>{fr.settingsModal.section_account}</Text>
               <View style={styles.settingsItems}>
                 <SettingsItem
                   icon={User}
-                  label="Modifier le profil"
-                  onPress={() => console.log('Modifier le profil')}
+                  label={fr.settingsModal.item_edit_profile}
+                  onPress={() => {}}
                 />
                 <SettingsItem
                   icon={Lock}
-                  label="Confidentialité"
-                  onPress={() => console.log('Confidentialité')}
+                  label={fr.settingsModal.item_privacy}
+                  onPress={() => {}}
                 />
                 <SettingsItem
                   icon={Bell}
-                  label="Notifications"
-                  onPress={() => console.log('Notifications')}
+                  label={fr.settingsModal.item_notifications}
+                  onPress={() => {}}
                 />
               </View>
             </View>
 
             {/* General Section */}
             <View style={styles.settingsSection}>
-              <Text style={styles.sectionTitle}>Général</Text>
+              <Text style={styles.sectionTitle}>{fr.settingsModal.section_general}</Text>
               <View style={styles.settingsItems}>
                 <SettingsItem
                   icon={Shield}
-                  label="Sécurité"
-                  onPress={() => console.log('Sécurité')}
+                  label={fr.settingsModal.item_security}
+                  onPress={() => {}}
                 />
                 <SettingsItem
                   icon={HelpCircle}
-                  label="Aide & Support"
-                  onPress={() => console.log('Aide & Support')}
+                  label={fr.settingsModal.item_help}
+                  onPress={() => {}}
                 />
               </View>
             </View>
 
             {/* Account Actions */}
             <View style={styles.settingsSection}>
-              <Text style={styles.sectionTitle}>Actions</Text>
+              <Text style={styles.sectionTitle}>{fr.settingsModal.section_actions}</Text>
               <View style={styles.settingsItems}>
                 <SettingsItem
                   icon={LogOut}
-                  label="Se déconnecter"
+                  label={fr.settingsModal.item_logout}
                   onPress={onLogout}
                   variant="primary"
                 />
                 <SettingsItem
                   icon={Trash2}
-                  label="Supprimer le compte"
+                  label={fr.settingsModal.item_delete_account}
                   onPress={onDeleteAccount}
                   variant="danger"
                 />
@@ -88,7 +89,7 @@ export function SettingsModal({ visible, onClose, onLogout, onDeleteAccount }) {
 
             {/* Version Info */}
             <View style={styles.settingsSection}>
-              <Text style={styles.sectionTitle}>À propos</Text>
+              <Text style={styles.sectionTitle}>{fr.settingsModal.section_about}</Text>
               <View style={styles.versionContainer}>
                 <Info size={16} color="#97572B60" />
                 <Text style={styles.versionText}>Version {process.env.EXPO_PUBLIC_APP_VERSION}</Text>

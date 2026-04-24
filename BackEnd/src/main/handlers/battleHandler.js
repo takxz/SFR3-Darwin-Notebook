@@ -11,10 +11,12 @@ module.exports = function (io, socket) {
         const battle = await store.getBattle(roomId);
         if (!battle) return;
 
-        battle.readyCount = (battle.readyCount || 0) + 1;
+        battle.readyPlayers = battle.readyPlayers || {};
+        battle.readyPlayers[socket.id] = true;
 
-        if (battle.readyCount === 2) {
-            io.to(roomId).emit('battleStart', { turn: battle.turn });
+        if (Object.keys(battle.readyPlayers).length === 2 && !battle.isStarted) {
+            battle.isStarted = true;
+            io.to(roomId).emit('battleStart', { turn: battle.turn, players: battle.players });
             battle.logs.push("Le combat commence !");
         }
 
@@ -48,11 +50,24 @@ module.exports = function (io, socket) {
             opState.hp = Math.max(0, opState.hp - dmg);
             myState.action = 'ATTACK';
             opState.action = 'HIT';
-            message = `Joueur ${socket.id.substr(0, 4)} attaque (-${dmg} PV)`;
+            message = `${myState.nickname} attaque (-${dmg} PV)`;
+
+        } else if (data.action === 'SPECIAL') {
+            if (myState.specialCooldown === 0) {
+                const dmg = 25 + Math.floor(Math.random() * 15);
+                opState.hp = Math.max(0, opState.hp - dmg);
+                myState.action = 'SPECIAL';
+                opState.action = 'HIT';
+                myState.specialCooldown = 5;
+                message = `${myState.nickname} lance son ATTAQUE SPÉCIALE ! (-${dmg} PV)`;
+            } else {
+                socket.emit('error', 'Attaque spéciale en recharge !');
+                return;
+            }
 
         } else if (data.action === 'DEFEND') {
             myState.action = 'IDLE';
-            message = `Joueur ${socket.id.substr(0, 4)} se défend.`;
+            message = `${myState.nickname} se défend.`;
 
         } else if (data.action === 'HEAL') {
             if (myState.inventory.potion > 0) {
@@ -60,10 +75,16 @@ module.exports = function (io, socket) {
                 const heal = 30;
                 myState.hp = Math.min(myState.maxHp, myState.hp + heal);
                 myState.action = 'HEAL';
-                message = `Joueur ${socket.id.substr(0, 4)} se soigne (+${heal} PV)`;
+                message = `${myState.nickname} se soigne (+${heal} PV)`;
             } else {
                 message = "Plus de potions !";
             }
+        }
+
+        // Gestion du cooldown : on décrémente à la fin de son tour si on n'a pas utilisé le spécial ce tour-ci
+        // Ou plus simple : si on a utilisé le spécial, il est à 5. Si on ne l'a pas utilisé et qu'il est > 0, on baisse.
+        if (data.action !== 'SPECIAL' && myState.specialCooldown > 0) {
+            myState.specialCooldown--;
         }
 
         let result = null;
@@ -84,9 +105,34 @@ module.exports = function (io, socket) {
         });
 
         if (result) {
-            // Attribution des récompenses (XP / BioTokens)
+            // 1. Enregistrement du combat dans l'historique (Table FIGHT)
+            try {
+                const p1 = battle.players[socket.id]; // Le perdant ou gagnant actuel
+                const p2 = battle.players[opponentId];
+                
+                // On détermine qui est player1 et player2 pour la table FIGHT
+                await db.query(
+                    `INSERT INTO "FIGHT" (played_at, player1_id, player2_id, creature1_id, creature2_id, winner_id)
+                     VALUES (NOW(), $1, $2, $3, $4, $5)`,
+                    [
+                        p1.playerId, 
+                        p2.playerId, 
+                        p1.creatureId, 
+                        p2.creatureId, 
+                        battle.players[result.winner]?.playerId
+                    ]
+                );
+                console.log(`[BattleHandler] 📜 Combat enregistré dans la table FIGHT`);
+            } catch (fightErr) {
+                console.error("[BattleHandler] ⚠️ Impossible d'enregistrer l'historique FIGHT:", fightErr.message);
+            }
+
+            // 2. Attribution des récompenses (XP / BioTokens)
             const winnerCreatureId = battle.players[result.winner]?.creatureId;
-            if (winnerCreatureId) {
+            // Regex plus souple pour accepter tous les UUID (v1-v5) et les formats de test
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(winnerCreatureId);
+
+            if (winnerCreatureId && isUUID) {
                 try {
                     const xpGain = 50;
                     const bioTokenGain = 10;
@@ -117,6 +163,8 @@ module.exports = function (io, socket) {
                 } catch (err) {
                     console.error("[BattleHandler] ❌ Erreur SQL récompenses:", err.message);
                 }
+            } else if (winnerCreatureId) {
+                console.warn(`[BattleHandler] ⚠️ ID créature invalide (pas un UUID): ${winnerCreatureId}. Récompenses créature ignorées.`);
             }
 
             await store.deleteBattle(roomId);
@@ -127,4 +175,3 @@ module.exports = function (io, socket) {
         }
     });
 };
-

@@ -1,12 +1,17 @@
-
 import { useEffect, useState } from 'react';
 import socketService from '@/services/SocketService';
 
-
 export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
-    const [stats, setStats] = useState({ hp: 100, maxHp: 100, opHp: 100, opMaxHp: 100 });
+    const [stats, setStats] = useState({ 
+        hp: 100, maxHp: 100, 
+        opHp: 100, opMaxHp: 100,
+        nickname: 'Hero', opNickname: 'Opponent',
+        specialCooldown: 5 // DEFAULT TO 5 NOW
+    });
     const [turn, setTurn] = useState(null);
     const [result, setResult] = useState(null);
+    // NEW: state for Matchmaking UI tracking
+    const [matchStatus, setMatchStatus] = useState('idle'); // idle | searching | found | started
 
     useEffect(() => {
         // Connexion initiale
@@ -15,29 +20,51 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
         // 1. Écoute du Matchmaking
         socketService.on('waitingForMatch', () => {
             console.log('[BattleNetwork] In queue, waiting for opponent...');
+            setMatchStatus('searching');
         });
 
         let readyInterval;
 
+        const handlePlayersData = (dataPlayers) => {
+            if (!dataPlayers) return;
+            const myId = socketService.socket?.id;
+            const opId = Object.keys(dataPlayers).find(id => id !== myId);
+            
+            if (myId && dataPlayers[myId]) {
+                const me = dataPlayers[myId];
+                const op = dataPlayers[opId];
+                setStats(prev => ({
+                    ...prev,
+                    nickname: me.nickname || 'Hero',
+                    opNickname: op?.nickname || 'Opponent',
+                    modelPath: me.modelPath,
+                    animalType: me.animalType,
+                    latinName: me.latinName,
+                    opModelPath: op?.modelPath,
+                    opAnimalType: op?.animalType,
+                    opLatinName: op?.latinName,
+                    specialCooldown: me.specialCooldown !== undefined ? me.specialCooldown : 5
+                }));
+            }
+        };
+
         socketService.on('matchFound', (data) => {
             console.log('[BattleNetwork] Match Found! Room:', data.roomId);
+            setMatchStatus('found');
             
-            // Envoi immédiat
-            socketService.emit('playerReady');
-            
-            // FRONTEND WORKAROUND : on renvoie 'playerReady' régulièrement. 
-            // Pourquoi ? Car si les 2 téléphones envoient le signal à la milliseconde près,
-            // le backend (Redis) risque d'écrire en même temps et de bloquer le compteur à 1.
-            // On renvoie jusqu'à ce que le serveur nous confirme que le combat a commencé.
-            readyInterval = setInterval(() => {
-                socketService.emit('playerReady');
-            }, 800);
+            // On extrait déjà les noms pour l'affichage initial (Intro)
+            handlePlayersData(data.players);
         });
 
         // 2. Écoute du début de combat (Matchmaking terminé)
         socketService.on('battleStart', (data) => {
             if (readyInterval) clearInterval(readyInterval);
             console.log('[BattleNetwork] Battle Starting! Turn:', data.turn);
+            setMatchStatus('started');
+            
+            // Re-extract in case we missed it or ID changed
+            handlePlayersData(data.players);
+            
             setTurn(data.turn);
             if (onBattleStart) onBattleStart(data);
         });
@@ -58,7 +85,16 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
                     hp: me.hp,
                     maxHp: me.maxHp || 100,
                     opHp: op?.hp || 0,
-                    opMaxHp: op?.maxHp || 100
+                    opMaxHp: op?.maxHp || 100,
+                    nickname: me.nickname || 'Hero',
+                    opNickname: op?.nickname || 'Opponent',
+                    modelPath: me.modelPath,
+                    animalType: me.animalType,
+                    latinName: me.latinName,
+                    opModelPath: op?.modelPath,
+                    opAnimalType: op?.animalType,
+                    opLatinName: op?.latinName,
+                    specialCooldown: me.specialCooldown !== undefined ? me.specialCooldown : 5
                 });
 
                 setTurn(update.turn);
@@ -82,13 +118,16 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
             socketService.off('battleStart');
             socketService.off('gameUpdate');
             socketService.off('playerDisconnected');
+            socketService.off('waitingForMatch');
+            socketService.off('matchFound');
         };
     }, []);
 
     // ACTIONS À ENVOYER AU SERVEUR
-    const findMatch = () => {
-        console.log('[BattleNetwork] Looking for a match...');
-        socketService.emit('findMatch');
+    const findMatch = (data) => {
+        console.log('[BattleNetwork] Looking for a match...', data);
+        setMatchStatus('searching');
+        socketService.emit('findMatch', data);
     };
 
     const sendReady = () => {
@@ -112,8 +151,9 @@ export const useBattleNetwork = (onBattleStart, onGameUpdate) => {
         stats,
         turn,
         result,
+        matchStatus, // <--- EXPOSED
         isMyTurn: turn === socketService.socket?.id,
-        findMatch, // Ajout du retour
+        findMatch,
         sendReady,
         sendAction,
         abandon

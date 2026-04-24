@@ -7,35 +7,21 @@ import {
   StyleSheet,
   Text,
   View,
+  TouchableOpacity,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Asset } from 'expo-asset';
+import fr from '@/assets/locales/fr.json';
 
 const { width: W, height: H } = Dimensions.get('window');
 
 // ─── Assets ──────────────────────────────────────────────────────────────────
 const SLIDES = [
-  {
-    image: require('./images/Start.png'),
-    caption:
-      'Pendant des siècles, le monde a prospéré en parfaite harmonie, un âge d\'or où la nature et la technologie ne faisaient qu\'un.',
-  },
-  {
-    image: require('./images/Attack.png'),
-    caption:
-      "Puis vint l'Erosion. Des entités connues sous le nom de 'Vides' sont descendues sur Terre, cherchant à effacer la réalité.",
-  },
-  {
-    image: require('./images/Observer.png'),
-    caption:
-      "Face à ce cataclysme, les Observateurs sont apparus. Leur mission : scanner, documenter et préserver l'essence même de la vie.",
-  },
-  {
-    image: require('./images/Combat.png'),
-    caption:
-      'Grâce à leurs appareils, ils matérialisent et sauvegardes les créatures disparues pour repousser le Vide.',
-  },
+  { image: require('./images/Start.png'),    caption: fr.cinematicScreen.slide1 },
+  { image: require('./images/Attack.png'),   caption: fr.cinematicScreen.slide2 },
+  { image: require('./images/Observer.png'), caption: fr.cinematicScreen.slide3 },
+  { image: require('./images/Combat.png'),   caption: fr.cinematicScreen.slide4 },
 ];
 
 // ─── Timing ──────────────────────────────────────────────────────────────────
@@ -247,12 +233,20 @@ export default function Cinematic() {
       {/* White overlay + finale text */}
       <Animated.View style={[styles.whiteOverlay, { opacity: whiteOpacity }]}>
         <Animated.Text style={[styles.finaleText, { opacity: finaleOpacity }]}>
-          À toi de jouer
+          {fr.cinematicScreen.finale}
         </Animated.Text>
       </Animated.View>
 
       {/* Letterbox — bottom */}
       <View style={styles.barBottom} />
+
+      {/* Skip Button */}
+      <TouchableOpacity 
+        style={styles.skipButton} 
+        onPress={() => router.replace('/')}
+      >
+        <Text style={styles.skipText}>{fr.cinematicScreen.skip}</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -338,5 +332,24 @@ const styles = StyleSheet.create({
     height: H * 0.055,
     backgroundColor: '#000',
     zIndex: 10,
+  },
+  skipButton: {
+    position: 'absolute',
+    top: H * 0.055 + 20,
+    right: 20,
+    zIndex: 100,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(210,180,110,0.4)',
+  },
+  skipText: {
+    color: 'rgba(242,230,200,0.8)',
+    fontFamily: 'serif',
+    fontSize: 14,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
 });

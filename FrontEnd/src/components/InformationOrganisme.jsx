@@ -7,7 +7,10 @@ import { ChevronsUp, Heart, Shield, Sword } from 'lucide-react-native';
 import fr from '../assets/locales/fr.json';
 
 const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
-const API_URL = process.env.EXPO_PUBLIC_API_URL || (expoHost ? `http://${expoHost}:5001` : 'http://localhost:5001');
+const API_URL = process.env.EXPO_PUBLIC_API_URL || (expoHost ? `http://${expoHost}:5002` : 'http://localhost:5002');
+
+const POLL_INTERVAL_MS = 800;
+const POLL_TIMEOUT_MS = 90_000;
 
 async function parseResponseBody(response) {
   const raw = await response.text();
@@ -25,25 +28,104 @@ async function parseResponseBody(response) {
   }
 }
 
-export default function InformationOrganisme({ photo, onClose, addToDex }) {
+export default function InformationOrganisme({ photo, onClose, addToDex, onFinish }) {
   const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [status, setStatus] = useState('submitting'); // submitting | queued | processing | done | error
+  const [queueInfo, setQueueInfo] = useState(null);
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    if (!photo?.uri) return;
+    let cancelled = false;
+    let pollTimer = null;
+    const startedAt = Date.now();
 
-    const classify = async () => {
+    const finish = (cb) => {
+      if (cancelled) return;
+      setLoading(false);
+      onFinish?.();
+      cb?.();
+    };
+
+    const handleResult = (resultPayload) => {
+      // Le worker peut renvoyer des cas "métier" non-success (organisme inconnu,
+      // modèle indisponible). On les traite comme des messages d'erreur côté UI
+      // sans considérer la requête comme un échec technique.
+      if (!resultPayload || resultPayload.success === false) {
+        const message =
+          resultPayload?.message ||
+          resultPayload?.error ||
+          'Erreur API';
+        setError(message);
+        setStatus('error');
+        finish();
+        return;
+      }
+      setResult(resultPayload);
+      setStatus('done');
+      finish();
+    };
+
+    const poll = async (jobId) => {
+      if (cancelled) return;
+      if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
+        setError('Délai dépassé. Réessayez dans un instant.');
+        setStatus('error');
+        finish();
+        return;
+      }
+      try {
+        const r = await fetch(`${API_URL}/classification/status/${jobId}`);
+        const { parsed: data } = await parseResponseBody(r);
+        if (cancelled) return;
+
+        if (r.status === 404) {
+          throw new Error('Session de reconnaissance expirée.');
+        }
+        if (!data) {
+          throw new Error(`Statut invalide (${r.status})`);
+        }
+
+        if (data.queue) setQueueInfo(data.queue);
+
+        if (data.status === 'done') {
+          handleResult(data.result);
+          return;
+        }
+        if (data.status === 'error') {
+          setError(data.error || 'Erreur de traitement');
+          setStatus('error');
+          finish();
+          return;
+        }
+
+        // queued | processing
+        setStatus(data.status);
+        pollTimer = setTimeout(() => poll(jobId), POLL_INTERVAL_MS);
+      } catch (e) {
+        if (cancelled) return;
+        const message = e?.message || 'Erreur inconnue';
+        if (message.toLowerCase().includes('network request failed')) {
+          setError(`Connexion API impossible: ${API_URL}/classification`);
+        } else {
+          setError(message);
+        }
+        setStatus('error');
+        finish();
+      }
+    };
+
+    const submit = async () => {
+      if (!photo?.uri) return;
       setLoading(true);
-      setError('');
+      setError(null);
       setResult(null);
+      setStatus('submitting');
+      setQueueInfo(null);
 
       try {
-        console.log(`[Classification] Tentative d'appel API sur : ${API_URL}/classification`);
-
         if (!photo.base64) {
-          console.error('[Classification] Erreur: Image Base64 manquante');
           throw new Error('Image invalide');
         }
 
@@ -53,38 +135,39 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
           body: JSON.stringify({ imageData: `data:image/jpeg;base64,${photo.base64}` }),
         });
 
-        console.log(`[Classification] Statut réponse: ${response.status}`);
-
         const { parsed: data, raw } = await parseResponseBody(response);
+        if (cancelled) return;
 
         if (!data) {
-          console.error('[Classification] Réponse non-JSON reçue:', raw.substring(0, 200));
+          console.error('[Classification] Réponse non-JSON reçue:', raw?.substring(0, 200));
           throw new Error(`Erreur serveur (${response.status}): Réponse invalide reçue.`);
         }
-
-        await new Promise((res) => setTimeout(res, 2000)); // Petit délai pour l'UX
-
-        if (!response.ok || !data?.success) {
-          console.error('[Classification] Erreur API:', { status: response.status, data, raw });
-          throw new Error(data?.message || data?.error || 'Erreur API');
+        if (!response.ok || !data?.success || !data.job_id) {
+          throw new Error(data?.error || data?.message || 'Erreur API');
         }
 
-        console.log('[Classification] Succès:', data.common_name);
-        setResult(data);
+        if (data.queue) setQueueInfo(data.queue);
+        setStatus(data.status || 'queued');
+        poll(data.job_id);
       } catch (e) {
+        if (cancelled) return;
         const message = e?.message || 'Erreur inconnue';
-        console.error('[Classification] Catch Error:', message);
         if (message.toLowerCase().includes('network request failed')) {
           setError(`Connexion API impossible: ${API_URL}/classification`);
         } else {
           setError(message);
         }
-      } finally {
-        setLoading(false);
+        setStatus('error');
+        finish();
       }
     };
 
-    classify();
+    submit();
+
+    return () => {
+      cancelled = true;
+      if (pollTimer) clearTimeout(pollTimer);
+    };
   }, [photo]);
 
   if (!photo) return null;
@@ -101,18 +184,20 @@ export default function InformationOrganisme({ photo, onClose, addToDex }) {
         onContentSizeChange={() => scrollRef.current?.flashScrollIndicators()}
         contentContainerStyle={styles.contentContainer}
       >
-        {loading ? <WaitingComponent /> : null}
+        {loading ? <WaitingComponent status={status} queueInfo={queueInfo} /> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
         {result ? (
           <>
-            {result.image_url ? <Image source={{ uri: result.image_url }} style={styles.image} /> : null}
-            <Text style={styles.title}>{result.common_name || 'Nom inconnu'}</Text>
-            <Text style={styles.subtitle}>{result.scientific_name || ''}</Text>
+            <Image source={{ uri: `data:image/jpeg;base64,${photo.base64}` }} style={styles.image} />
+            <View style={styles.mainContainerTitle}>
+              <Text style={styles.title}>{result.common_name || fr.informationOrganismeScreen.unknown_name}</Text>
+              <Text style={styles.subtitle}>{result.scientific_name || ''}</Text>
+            </View>
             <View style={styles.sharpnessBadge}>
-              <Text style={styles.sharpnessLabel}>Netteté :</Text>
+              <Text style={styles.sharpnessLabel}>{fr.informationOrganismeScreen.sharpness_label}</Text>
               <Text style={styles.sharpnessValue}>{result.sharpness_rank || '-'}</Text>
             </View>
-            <Text style={styles.battleStatsTitle}>Statistique de la créature</Text>
+            <Text style={styles.battleStatsTitle}>{fr.informationOrganismeScreen.battle_stats_title}</Text>
             <View style={styles.hrLine} />
             <View style={styles.gap} />
             <View style={styles.mainContainer}>
@@ -234,12 +319,18 @@ const styles = StyleSheet.create({
     padding: 8,
     marginBottom: 4,
   },
+  mainContainerTitle: {
+    flexDirection: 'column',
+    gap: 2,
+    marginVertical: 4,
+  },
   mainContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     rowGap: 10,
   },
+
   statItem: {
     width: '48%',
   },

@@ -3,11 +3,11 @@ import React, { forwardRef, useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber/native';
 import { useFBX } from '@react-three/drei/native';
 import * as THREE from 'three';
-import { FBX_ASSETS } from '../../constants/FightAssets';
-
-
-const TargetGolem = forwardRef(({ attackTrigger, damageTrigger, color, isSpecialAttack }, ref) => {
-    const model = useFBX(FBX_ASSETS.ENEMY);
+const TargetGolem = forwardRef(({ attackTrigger, damageTrigger, color, isSpecialAttack, modelSource }, ref) => {
+    // Note: useMemo is critical when rendering dynamic components so we don't recreate geometries every frame
+    const model = React.useMemo(() => {
+        return useFBX(modelSource || require('@/assets/fight/models/Pig.fbx')).clone();
+    }, [modelSource]);
 
     const matRefs = useRef([]);
 
