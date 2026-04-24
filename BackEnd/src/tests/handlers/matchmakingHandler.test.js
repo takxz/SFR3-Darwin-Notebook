@@ -143,4 +143,33 @@ describe('MatchmakingHandler', () => {
             'latinName', ''
         );
     });
+
+    test('should fetch a creature from DB if creatureId is missing but playerId is present', async () => {
+        store.getQueueLength.mockResolvedValue(0);
+        db.query.mockResolvedValueOnce({ rows: [{ id: 'found-creature-uuid' }] }); // First call for finding creature
+        db.query.mockResolvedValueOnce({ rows: [{ model_path: 'Wolf', type: 'Mamifère', latin_name: 'Canis lupus' }] }); // Second call for model_path
+
+        await findMatchHandler({ playerId: 123, creatureId: '1' });
+
+        expect(db.query).toHaveBeenCalledWith(expect.stringContaining('SELECT id FROM "CREATURE"'), [123]);
+        expect(store.client.hset).toHaveBeenCalledWith(
+            expect.any(String),
+            'playerId', 123,
+            'creatureId', 'found-creature-uuid',
+            expect.any(String), expect.any(String),
+            expect.any(String), expect.any(String),
+            expect.any(String), expect.any(String),
+            expect.any(String), expect.any(String)
+        );
+    });
+
+    test('should handle DB error when fetching creature from DB', async () => {
+        store.getQueueLength.mockResolvedValue(0);
+        db.query.mockRejectedValueOnce(new Error('DB error finding creature'));
+
+        await findMatchHandler({ playerId: 123, creatureId: null });
+
+        expect(db.query).toHaveBeenCalledWith(expect.stringContaining('SELECT id FROM "CREATURE"'), [123]);
+        // Should continue with default creatureId (null/empty)
+    });
 });
