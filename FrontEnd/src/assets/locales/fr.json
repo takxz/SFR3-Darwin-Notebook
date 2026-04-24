@@ -66,7 +66,14 @@
     },
     "waitingScreen": {
         "analyzing": "Analyse en cours...",
-        "description": "Identification de l'organisme..."
+        "description": "Identification de l'organisme...",
+        "queued_title": "En file d'attente",
+        "queued_position": "Position {position} sur {total}",
+        "queued_description": "Nos agents de reconnaissance arrivent vers vous, encore quelques instants...",
+        "queued_only_yours": "Vous êtes le prochain !",
+        "submitting_title": "Préparation...",
+        "submitting_description": "Envoi de la photo à l'analyse",
+        "agents_busy": "{processing}/{max} agents occupés"
     },
     "informationAnimalScreen": {
         "reject_button": "Rejeter",
